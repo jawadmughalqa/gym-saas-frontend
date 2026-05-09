@@ -102,7 +102,8 @@ function DashboardTab() {
   const { data, isLoading } = useGetReportsDashboard(undefined, {
     query: { staleTime: 1000 * 60 },
   });
-  const d = data?.data;
+  
+  const dashboardData = data?.data;
 
   return (
     <div className="space-y-6">
@@ -110,25 +111,41 @@ function DashboardTab() {
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <StatCard
           title="Total Members"
-          value={isLoading ? '—' : String(d?.totalMembers ?? 0)}
+          value={isLoading ? '—' : String(dashboardData?.members?.total ?? 0)}
           icon={Users}
         />
         <StatCard
           title="Active Members"
-          value={isLoading ? '—' : String(d?.activeMembers ?? 0)}
+          value={isLoading ? '—' : String(dashboardData?.members?.active ?? 0)}
           icon={UserCheck}
           iconClassName="bg-green-500/10"
         />
         <StatCard
           title="New This Month"
-          value={isLoading ? '—' : String(d?.newMembersThisMonth ?? 0)}
+          value={isLoading ? '—' : String(dashboardData?.members?.newThisMonth ?? 0)}
           icon={TrendingUp}
         />
         <StatCard
-          title="Expired Subscriptions"
-          value={isLoading ? '—' : String(d?.expiredSubscriptions ?? 0)}
-          icon={AlertCircle}
-          iconClassName="bg-yellow-500/10"
+          title="Active Subscriptions"
+          value={isLoading ? '—' : String(dashboardData?.subscriptions?.active ?? 0)}
+          icon={ClipboardList}
+          iconClassName="bg-blue-500/10"
+        />
+      </div>
+
+      <SectionTitle>Check-ins</SectionTitle>
+      <div className="grid gap-4 sm:grid-cols-2">
+        <StatCard
+          title="Today's Check-ins"
+          value={isLoading ? '—' : String(dashboardData?.checkIns?.today ?? 0)}
+          icon={Activity}
+          iconClassName="bg-purple-500/10"
+        />
+        <StatCard
+          title="This Month Check-ins"
+          value={isLoading ? '—' : String(dashboardData?.checkIns?.thisMonth ?? 0)}
+          icon={Activity}
+          iconClassName="bg-purple-500/10"
         />
       </div>
 
@@ -136,48 +153,57 @@ function DashboardTab() {
       <div className="grid gap-4 sm:grid-cols-3">
         <StatCard
           title="Revenue This Month"
-          value={isLoading ? '—' : `$${(d?.revenueThisMonth ?? 0).toLocaleString()}`}
+          value={isLoading ? '—' : `$${(dashboardData?.revenue?.thisMonth ?? 0).toLocaleString()}`}
           icon={DollarSign}
           iconClassName="bg-green-500/10"
         />
         <StatCard
-          title="Outstanding Invoices"
-          value={isLoading ? '—' : String(d?.outstandingInvoices ?? 0)}
+          title="Revenue Last Month"
+          value={isLoading ? '—' : `$${(dashboardData?.revenue?.lastMonth ?? 0).toLocaleString()}`}
           icon={DollarSign}
         />
         <StatCard
-          title="Overdue Invoices"
-          value={isLoading ? '—' : String(d?.overdueInvoices ?? 0)}
-          icon={AlertCircle}
-          iconClassName="bg-red-500/10"
+          title="Monthly Growth"
+          value={isLoading ? '—' : dashboardData?.revenue?.growthVsLastMonthPct === null 
+            ? 'N/A' 
+            : `${(dashboardData?.revenue?.growthVsLastMonthPct ?? 0) > 0 ? '+' : ''}${(dashboardData?.revenue?.growthVsLastMonthPct ?? 0).toFixed(1)}%`}
+          icon={TrendingUp}
+          iconClassName={(dashboardData?.revenue?.growthVsLastMonthPct ?? 0) > 0 
+            ? 'bg-green-500/10' 
+            : (dashboardData?.revenue?.growthVsLastMonthPct ?? 0) < 0 
+            ? 'bg-red-500/10' 
+            : undefined}
         />
       </div>
 
-      <SectionTitle>Operations</SectionTitle>
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+      <SectionTitle>Operations & Alerts</SectionTitle>
+      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
         <StatCard
-          title="Total Trainers"
-          value={isLoading ? '—' : String(d?.totalTrainers ?? 0)}
-          icon={Star}
-        />
-        <StatCard
-          title="Active Trainers"
-          value={isLoading ? '—' : String(d?.activeTrainers ?? 0)}
-          icon={Star}
-          iconClassName="bg-green-500/10"
-        />
-        <StatCard
-          title="Total Equipment"
-          value={isLoading ? '—' : String(d?.totalEquipment ?? 0)}
-          icon={Wrench}
+          title="Overdue Invoices"
+          value={isLoading ? '—' : String(dashboardData?.alerts?.overdueInvoices ?? 0)}
+          icon={AlertCircle}
+          iconClassName={(dashboardData?.alerts?.overdueInvoices ?? 0) > 0 ? 'bg-red-500/10' : undefined}
         />
         <StatCard
           title="Open Work Orders"
-          value={isLoading ? '—' : String(d?.openWorkOrders ?? 0)}
+          value={isLoading ? '—' : String(dashboardData?.alerts?.openWorkOrders ?? 0)}
           icon={ClipboardList}
-          iconClassName={d?.openWorkOrders && d.openWorkOrders > 0 ? 'bg-yellow-500/10' : undefined}
+          iconClassName={(dashboardData?.alerts?.openWorkOrders ?? 0) > 0 ? 'bg-yellow-500/10' : undefined}
+        />
+        <StatCard
+          title="Equipment Under Maintenance"
+          value={isLoading ? '—' : String(dashboardData?.alerts?.equipmentUnderMaintenance ?? 0)}
+          icon={Wrench}
+          iconClassName={(dashboardData?.alerts?.equipmentUnderMaintenance ?? 0) > 0 ? 'bg-orange-500/10' : undefined}
         />
       </div>
+
+      {/* Optional: Display last generated timestamp */}
+      {dashboardData?.generatedAt && (
+        <div className="text-right text-xs text-muted-foreground">
+          Last updated: {format(new Date(dashboardData.generatedAt), 'MMM dd, yyyy h:mm a')}
+        </div>
+      )}
     </div>
   );
 }

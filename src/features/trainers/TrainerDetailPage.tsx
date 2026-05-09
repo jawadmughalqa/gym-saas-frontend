@@ -27,9 +27,18 @@ import { useConfirm } from '@/hooks/use-confirm';
 import { usePermission } from '@/hooks/use-permission';
 import { formatDate, formatDateTime } from '@/utils/format';
 import {
-  useTrainer, useTrainerAssignments, useTrainerNotes, useTrainerRatings,
-  useEndAssignment, useCreateAssignment, useCreateNote,
-} from './hooks/use-trainers';
+  useGetTrainersTrainerId,
+  useGetTrainersTrainerIdAssignments,
+  useGetTrainersTrainerIdNotes,
+  useGetTrainersTrainerIdRatings,
+  usePostTrainersTrainerIdAssignmentsAssignmentIdEnd,
+  usePostTrainersTrainerIdAssignments,
+  usePostTrainersTrainerIdNotes,
+} from '@/api/generated/trainers/trainers';
+import { useGetMembers } from '@/api/generated/members/members';
+import { useGetBranches } from '@/api/generated/branches/branches';
+import { useQueryClient } from '@tanstack/react-query';
+import { getGetTrainersTrainerIdAssignmentsQueryKey, getGetTrainersTrainerIdNotesQueryKey } from '@/api/generated/trainers/trainers';
 import TrainerForm from './components/TrainerForm';
 import type {
   TrainerAssignment, TrainingNote, TrainerRating,
@@ -58,7 +67,9 @@ function Stars({ value }: { value: number }) {
 // ─── Profile Tab ──────────────────────────────────────────────────────────────
 
 function ProfileTab({ trainerId }: { trainerId: string }) {
-  const { data: trainer, isLoading } = useTrainer(trainerId);
+  const { data, isLoading } = useGetTrainersTrainerId(trainerId);
+  const trainer = data?.data;
+
   if (isLoading) return <CardSkeleton />;
   if (!trainer) return null;
 
@@ -92,9 +103,11 @@ function ProfileTab({ trainerId }: { trainerId: string }) {
           <div>
             <p className="text-xs text-muted-foreground uppercase tracking-wide">Rating</p>
             <div className="flex items-center gap-2 mt-0.5">
-              <Stars value={Math.round(trainer.ratingAvg)} />
+              <Stars value={Math.round(trainer.ratingAvg ?? 0)} />
               <span className="text-sm text-muted-foreground">
-                {trainer.ratingAvg > 0 ? `${trainer.ratingAvg.toFixed(1)} (${trainer.ratingCount})` : 'No ratings yet'}
+                {(trainer.ratingAvg ?? 0) > 0
+                  ? `${trainer.ratingAvg!.toFixed(1)} (${trainer.ratingCount})`
+                  : 'No ratings yet'}
               </span>
             </div>
           </div>
@@ -109,9 +122,9 @@ function ProfileTab({ trainerId }: { trainerId: string }) {
         <CardContent className="space-y-4">
           <div>
             <p className="text-xs text-muted-foreground uppercase tracking-wide mb-2">Specializations</p>
-            {trainer.specializations.length > 0 ? (
+            {(trainer.specializations?.length ?? 0) > 0 ? (
               <div className="flex flex-wrap gap-1.5">
-                {trainer.specializations.map((s) => (
+                {trainer.specializations!.map((s) => (
                   <Badge key={s} variant="secondary" className="capitalize">{s}</Badge>
                 ))}
               </div>
@@ -119,9 +132,9 @@ function ProfileTab({ trainerId }: { trainerId: string }) {
           </div>
           <div>
             <p className="text-xs text-muted-foreground uppercase tracking-wide mb-2">Certifications</p>
-            {trainer.certifications.length > 0 ? (
+            {(trainer.certifications?.length ?? 0) > 0 ? (
               <ul className="space-y-1">
-                {trainer.certifications.map((c) => (
+                {trainer.certifications!.map((c) => (
                   <li key={c} className="text-sm flex items-center gap-1.5">
                     <span className="h-1.5 w-1.5 rounded-full bg-primary flex-shrink-0" />
                     {c}
@@ -139,9 +152,9 @@ function ProfileTab({ trainerId }: { trainerId: string }) {
           <CardTitle className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">Weekly Availability</CardTitle>
         </CardHeader>
         <CardContent>
-          {trainer.availability.length > 0 ? (
+          {(trainer.availability?.length ?? 0) > 0 ? (
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
-              {trainer.availability.map((slot, i) => (
+              {trainer.availability!.map((slot, i) => (
                 <div key={i} className="rounded-md border px-3 py-2 text-sm">
                   <p className="font-medium">{DAY_NAMES[slot.day]}</p>
                   <p className="text-xs text-muted-foreground">{slot.startTime} – {slot.endTime}</p>
@@ -167,10 +180,21 @@ const ASSIGNMENT_VARIANT: Record<AssignmentStatus, 'success' | 'warning' | 'seco
 
 function AssignmentsTab({ trainerId }: { trainerId: string }) {
   const { can } = usePermission();
-  const { data: assignments, isLoading } = useTrainerAssignments(trainerId);
+  const qc = useQueryClient();
+  const { data: assignmentsData, isLoading } = useGetTrainersTrainerIdAssignments(trainerId);
+  // API returns { success, data: [...assignments] }
+  const assignments = (assignmentsData?.data ?? []) as TrainerAssignment[];
+
   const [assignOpen, setAssignOpen] = useState(false);
   const { confirm, confirmProps } = useConfirm();
-  const end = useEndAssignment(trainerId);
+
+  const end = usePostTrainersTrainerIdAssignmentsAssignmentIdEnd({
+    mutation: {
+      onSuccess: () => {
+        qc.invalidateQueries({ queryKey: getGetTrainersTrainerIdAssignmentsQueryKey(trainerId) });
+      },
+    },
+  });
 
   const columns: ColumnDef<TrainerAssignment>[] = [
     {
@@ -218,8 +242,13 @@ function AssignmentsTab({ trainerId }: { trainerId: string }) {
             onClick={(e) => {
               e.stopPropagation();
               confirm(
-                { title: `End assignment with ${row.memberId.firstName}?`, description: 'This will end the assignment and free up a client slot.', variant: 'destructive', confirmLabel: 'End Assignment' },
-                () => end.mutate({ assignmentId: row._id, body: { reason: 'Ended by staff' } }),
+                {
+                  title: `End assignment with ${row.memberId.firstName}?`,
+                  description: 'This will end the assignment and free up a client slot.',
+                  variant: 'destructive',
+                  confirmLabel: 'End Assignment',
+                },
+                () => end.mutate({ trainerId, assignmentId: row._id, data: { reason: 'Ended by staff' } }),
               );
             }}
           >
@@ -230,11 +259,13 @@ function AssignmentsTab({ trainerId }: { trainerId: string }) {
     },
   ];
 
+  const activeCount = assignments.filter((a) => a.status === 'active').length;
+
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
         <p className="text-sm text-muted-foreground">
-          {assignments?.filter((a) => a.status === 'active').length ?? 0} active assignment{assignments?.filter((a) => a.status === 'active').length !== 1 ? 's' : ''}
+          {activeCount} active assignment{activeCount !== 1 ? 's' : ''}
         </p>
         {can('trainer.assign') && (
           <Button size="sm" onClick={() => setAssignOpen(true)}>
@@ -244,7 +275,7 @@ function AssignmentsTab({ trainerId }: { trainerId: string }) {
         )}
       </div>
 
-      {!isLoading && (!assignments || assignments.length === 0) ? (
+      {!isLoading && assignments.length === 0 ? (
         <EmptyState
           icon={<Users className="h-10 w-10" />}
           title="No assignments"
@@ -254,7 +285,7 @@ function AssignmentsTab({ trainerId }: { trainerId: string }) {
       ) : (
         <DataTable
           columns={columns}
-          data={assignments ?? []}
+          data={assignments}
           keyExtractor={(r) => r._id}
           loading={isLoading}
           skeletonRows={5}
@@ -268,33 +299,71 @@ function AssignmentsTab({ trainerId }: { trainerId: string }) {
 }
 
 // ─── Assign Member Dialog ─────────────────────────────────────────────────────
+// Fixed: uses dropdowns for branch and member instead of free-text inputs
+// Branch → member filtering: members are filtered by the selected branch
 
 const assignSchema = z.object({
-  memberId:               z.string().min(1, 'Member ID is required'),
-  branchId:               z.string().min(1, 'Branch ID is required'),
-  goal:                   z.string().max(300).optional(),
+  memberId:                z.string().min(1, 'Please select a member'),
+  branchId:                z.string().min(1, 'Please select a branch'),
+  goal:                    z.string().max(300).optional(),
   sessionFrequencyPerWeek: z.coerce.number().int().min(1).max(14).optional(),
-  notes:                  z.string().optional(),
-  startDate:              z.string().optional(),
+  notes:                   z.string().optional(),
+  startDate:               z.string().optional(),
 });
 type AssignFormValues = z.infer<typeof assignSchema>;
 
 function AssignMemberDialog({ trainerId, open, onOpenChange }: {
-  trainerId: string; open: boolean; onOpenChange: (v: boolean) => void;
+  trainerId: string;
+  open: boolean;
+  onOpenChange: (v: boolean) => void;
 }) {
-  const assign = useCreateAssignment(trainerId, { onSuccess: () => onOpenChange(false) });
-  const { register, handleSubmit, reset, formState: { errors } } = useForm<AssignFormValues>({
-    resolver: zodResolver(assignSchema),
+  const qc = useQueryClient();
+
+  const assign = usePostTrainersTrainerIdAssignments({
+    mutation: {
+      onSuccess: () => {
+        qc.invalidateQueries({ queryKey: getGetTrainersTrainerIdAssignmentsQueryKey(trainerId) });
+        reset();
+        onOpenChange(false);
+      },
+    },
   });
+
+  const { register, handleSubmit, reset, watch, setValue, formState: { errors } } = useForm<AssignFormValues>({
+    resolver: zodResolver(assignSchema),
+    defaultValues: { memberId: '', branchId: '', goal: '', notes: '', startDate: '' },
+  });
+
+  const selectedBranchId = watch('branchId');
+
+  // Load branches for the branch dropdown
+  const { data: branchesData } = useGetBranches(
+    { limit: 100, status: 'active' },
+    { query: { enabled: open } },
+  );
+  const branches = branchesData?.data ?? [];
+
+  // Load members filtered by the selected branch
+  const { data: membersData } = useGetMembers(
+    {
+      limit: 100,
+      ...(selectedBranchId ? { branchId: selectedBranchId } : {}),
+    },
+    { query: { enabled: open && !!selectedBranchId } },
+  );
+  const members = membersData?.data ?? [];
 
   function onSubmit(values: AssignFormValues) {
     assign.mutate({
-      memberId: values.memberId,
-      branchId: values.branchId,
-      goal: values.goal || undefined,
-      sessionFrequencyPerWeek: values.sessionFrequencyPerWeek,
-      notes: values.notes || undefined,
-      startDate: values.startDate || undefined,
+      trainerId,
+      data: {
+        memberId:                values.memberId,
+        branchId:                values.branchId,
+        goal:                    values.goal || undefined,
+        sessionFrequencyPerWeek: values.sessionFrequencyPerWeek,
+        notes:                   values.notes || undefined,
+        startDate:               values.startDate || undefined,
+      },
     });
   }
 
@@ -303,20 +372,68 @@ function AssignMemberDialog({ trainerId, open, onOpenChange }: {
       <DialogContent className="sm:max-w-sm">
         <DialogHeader><DialogTitle>Assign Member</DialogTitle></DialogHeader>
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+
+          {/* Branch dropdown */}
           <div className="space-y-1.5">
-            <Label>Member ID *</Label>
-            <Input placeholder="Member ID" disabled={assign.isPending} className={errors.memberId ? 'border-destructive' : ''} {...register('memberId')} />
-            {errors.memberId && <p className="text-xs text-destructive">{errors.memberId.message}</p>}
-          </div>
-          <div className="space-y-1.5">
-            <Label>Branch ID *</Label>
-            <Input placeholder="Branch ID" disabled={assign.isPending} className={errors.branchId ? 'border-destructive' : ''} {...register('branchId')} />
+            <Label>Branch <span className="text-destructive">*</span></Label>
+            <Select
+              value={watch('branchId')}
+              onValueChange={(v) => {
+                setValue('branchId', v, { shouldValidate: true });
+                // Reset member when branch changes
+                setValue('memberId', '');
+              }}
+              disabled={assign.isPending}
+            >
+              <SelectTrigger className={errors.branchId ? 'border-destructive' : ''}>
+                <SelectValue placeholder="Select a branch…" />
+              </SelectTrigger>
+              <SelectContent>
+                {branches.map((b) => (
+                  <SelectItem key={b._id} value={b._id!}>
+                    {b.name}
+                    {b.isHeadquarters && <span className="ml-1 text-xs text-muted-foreground">(HQ)</span>}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
             {errors.branchId && <p className="text-xs text-destructive">{errors.branchId.message}</p>}
           </div>
+
+          {/* Member dropdown — only active once branch is selected */}
+          <div className="space-y-1.5">
+            <Label>Member <span className="text-destructive">*</span></Label>
+            <Select
+              value={watch('memberId')}
+              onValueChange={(v) => setValue('memberId', v, { shouldValidate: true })}
+              disabled={assign.isPending || !selectedBranchId}
+            >
+              <SelectTrigger className={errors.memberId ? 'border-destructive' : ''}>
+                <SelectValue placeholder={selectedBranchId ? 'Select a member…' : 'Select a branch first'} />
+              </SelectTrigger>
+              <SelectContent>
+                {members.length === 0 ? (
+                  <div className="px-2 py-4 text-center text-sm text-muted-foreground">
+                    No members in this branch
+                  </div>
+                ) : (
+                  members.map((m) => (
+                    <SelectItem key={m._id} value={m._id!}>
+                      {m.firstName} {m.lastName}
+                      <span className="ml-1 text-xs text-muted-foreground">· {m.email}</span>
+                    </SelectItem>
+                  ))
+                )}
+              </SelectContent>
+            </Select>
+            {errors.memberId && <p className="text-xs text-destructive">{errors.memberId.message}</p>}
+          </div>
+
           <div className="space-y-1.5">
             <Label>Goal</Label>
             <Input placeholder="e.g. Weight loss" disabled={assign.isPending} {...register('goal')} />
           </div>
+
           <div className="grid grid-cols-2 gap-3">
             <div className="space-y-1.5">
               <Label>Sessions / week</Label>
@@ -327,12 +444,16 @@ function AssignMemberDialog({ trainerId, open, onOpenChange }: {
               <Input type="date" disabled={assign.isPending} {...register('startDate')} />
             </div>
           </div>
+
           <div className="space-y-1.5">
             <Label>Notes</Label>
             <Textarea placeholder="Optional…" disabled={assign.isPending} {...register('notes')} />
           </div>
+
           <DialogFooter>
-            <Button type="button" variant="outline" onClick={() => onOpenChange(false)} disabled={assign.isPending}>Cancel</Button>
+            <Button type="button" variant="outline" onClick={() => onOpenChange(false)} disabled={assign.isPending}>
+              Cancel
+            </Button>
             <Button type="submit" disabled={assign.isPending}>
               {assign.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
               Assign
@@ -345,6 +466,8 @@ function AssignMemberDialog({ trainerId, open, onOpenChange }: {
 }
 
 // ─── Notes Tab ────────────────────────────────────────────────────────────────
+// Fixed: API returns { success, data: [...], pagination: {...} }
+// data.data is the notes array, data.pagination is pagination meta
 
 const VISIBILITY_LABEL: Record<NoteVisibility, string> = {
   trainer_only:   'Trainer Only',
@@ -360,13 +483,23 @@ const VISIBILITY_VARIANT: Record<NoteVisibility, 'outline' | 'secondary' | 'defa
 function NotesTab({ trainerId }: { trainerId: string }) {
   const { can } = usePermission();
   const [page, setPage] = useState(1);
-  const { data, isLoading } = useTrainerNotes(trainerId, { page, limit: 15 });
+  const limit = 15;
+
+  const { data, isLoading } = useGetTrainersTrainerIdNotes(trainerId, { page, limit });
+
+  // ✅ Correct: API response shape is { success, data: [...], pagination: {...} }
+  const notes = (data?.data ?? []) as TrainingNote[];
+  const pagination = data?.pagination;
+  const totalNotes = pagination?.total ?? 0;
+
   const [noteOpen, setNoteOpen] = useState(false);
 
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
-        <p className="text-sm text-muted-foreground">{data?.pagination.total ?? 0} session note{data?.pagination.total !== 1 ? 's' : ''}</p>
+        <p className="text-sm text-muted-foreground">
+          {totalNotes} session note{totalNotes !== 1 ? 's' : ''}
+        </p>
         {can('training_note.create') && (
           <Button size="sm" onClick={() => setNoteOpen(true)}>
             <Plus className="mr-2 h-4 w-4" />
@@ -375,7 +508,7 @@ function NotesTab({ trainerId }: { trainerId: string }) {
         )}
       </div>
 
-      {!isLoading && (!data?.notes || data.notes.length === 0) ? (
+      {!isLoading && notes.length === 0 ? (
         <EmptyState
           icon={<FileText className="h-10 w-10" />}
           title="No session notes"
@@ -388,11 +521,17 @@ function NotesTab({ trainerId }: { trainerId: string }) {
             ? Array.from({ length: 5 }).map((_, i) => (
                 <div key={i} className="h-24 rounded-md border bg-muted/30 animate-pulse" />
               ))
-            : data?.notes.map((note) => (
+            : notes.map((note) => (
                 <NoteCard key={note._id} note={note} trainerId={trainerId} />
               ))}
-          {data?.pagination && (
-            <Pagination meta={data.pagination} onPageChange={setPage} onLimitChange={() => {}} />
+
+          {/* ✅ Only render Pagination when data is available */}
+          {pagination && (
+            <Pagination
+              meta={pagination}
+              onPageChange={setPage}
+              onLimitChange={() => {}}
+            />
           )}
         </div>
       )}
@@ -426,7 +565,7 @@ function NoteCard({ note, trainerId }: { note: TrainingNote; trainerId: string }
           </div>
         </div>
         <p className="text-sm whitespace-pre-wrap">{note.content}</p>
-        {note.tags.length > 0 && (
+        {(note.tags?.length ?? 0) > 0 && (
           <div className="flex flex-wrap gap-1">
             {note.tags.map((tag) => (
               <Badge key={tag} variant="outline" className="text-xs">{tag}</Badge>
@@ -447,14 +586,27 @@ const noteSchema = z.object({
   visibility:      z.enum(['trainer_only', 'staff_visible', 'member_visible']).default('staff_visible'),
   durationMinutes: z.coerce.number().int().positive().optional(),
   sessionRating:   z.coerce.number().int().min(1).max(5).optional(),
-  tags:            z.string().optional(), // comma-separated in form, split on submit
+  tags:            z.string().optional(),
 });
 type NoteFormValues = z.infer<typeof noteSchema>;
 
 function TrainingNoteDialog({ trainerId, open, onOpenChange }: {
-  trainerId: string; open: boolean; onOpenChange: (v: boolean) => void;
+  trainerId: string;
+  open: boolean;
+  onOpenChange: (v: boolean) => void;
 }) {
-  const create = useCreateNote(trainerId, { onSuccess: () => onOpenChange(false) });
+  const qc = useQueryClient();
+
+  const create = usePostTrainersTrainerIdNotes({
+    mutation: {
+      onSuccess: () => {
+        qc.invalidateQueries({ queryKey: getGetTrainersTrainerIdNotesQueryKey(trainerId) });
+        reset();
+        onOpenChange(false);
+      },
+    },
+  });
+
   const { register, handleSubmit, setValue, watch, reset, formState: { errors } } = useForm<NoteFormValues>({
     resolver: zodResolver(noteSchema),
     defaultValues: { visibility: 'staff_visible' },
@@ -462,13 +614,16 @@ function TrainingNoteDialog({ trainerId, open, onOpenChange }: {
 
   function onSubmit(values: NoteFormValues) {
     create.mutate({
-      memberId:        values.memberId,
-      sessionDate:     values.sessionDate,
-      content:         values.content,
-      visibility:      values.visibility,
-      durationMinutes: values.durationMinutes,
-      sessionRating:   values.sessionRating,
-      tags:            values.tags ? values.tags.split(',').map((t) => t.trim()).filter(Boolean) : [],
+      trainerId,
+      data: {
+        memberId:        values.memberId,
+        sessionDate:     values.sessionDate,
+        content:         values.content,
+        visibility:      values.visibility,
+        durationMinutes: values.durationMinutes,
+        sessionRating:   values.sessionRating,
+        tags:            values.tags ? values.tags.split(',').map((t) => t.trim()).filter(Boolean) : [],
+      },
     });
   }
 
@@ -499,7 +654,11 @@ function TrainingNoteDialog({ trainerId, open, onOpenChange }: {
           <div className="grid grid-cols-3 gap-3">
             <div className="space-y-1.5">
               <Label>Visibility</Label>
-              <Select value={watch('visibility')} onValueChange={(v) => setValue('visibility', v as NoteFormValues['visibility'])} disabled={create.isPending}>
+              <Select
+                value={watch('visibility')}
+                onValueChange={(v) => setValue('visibility', v as NoteFormValues['visibility'])}
+                disabled={create.isPending}
+              >
                 <SelectTrigger className="text-xs"><SelectValue /></SelectTrigger>
                 <SelectContent>
                   <SelectItem value="trainer_only">Trainer Only</SelectItem>
@@ -540,11 +699,13 @@ function TrainingNoteDialog({ trainerId, open, onOpenChange }: {
 // ─── Ratings Tab ──────────────────────────────────────────────────────────────
 
 function RatingsTab({ trainerId }: { trainerId: string }) {
-  const { data: ratings, isLoading } = useTrainerRatings(trainerId);
+  const { data, isLoading } = useGetTrainersTrainerIdRatings(trainerId);
+  // API returns { success, data: [...ratings] }
+  const ratings = (data?.data ?? []) as TrainerRating[];
 
   if (isLoading) return <CardSkeleton />;
 
-  if (!ratings || ratings.length === 0) {
+  if (ratings.length === 0) {
     return (
       <EmptyState
         icon={<Star className="h-10 w-10" />}
@@ -590,7 +751,9 @@ export default function TrainerDetailPage() {
   const { can } = usePermission();
   const [editOpen, setEditOpen] = useState(false);
 
-  const { data: trainer, isLoading } = useTrainer(trainerId ?? '');
+  const { data: trainerData, isLoading } = useGetTrainersTrainerId(trainerId ?? '');
+  // API returns { success, data: {...trainer} }
+  const trainer = trainerData?.data;
 
   const STATUS_VARIANT: Record<string, 'success' | 'secondary' | 'warning'> = {
     active:   'success',
@@ -633,16 +796,13 @@ export default function TrainerDetailPage() {
           <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
             <div>
               <h1 className="text-2xl font-bold">
-                {trainer.userId.firstName} {trainer.userId.lastName}
+                {trainer.userId?.firstName} {trainer.userId?.lastName}
               </h1>
               <div className="flex items-center gap-2 mt-1 flex-wrap">
-                <Badge variant={STATUS_VARIANT[trainer.status]}>
-                  {trainer.status === 'on_leave' ? 'On Leave' : trainer.status.charAt(0).toUpperCase() + trainer.status.slice(1)}
+                <Badge variant={STATUS_VARIANT[trainer.status ?? 'inactive']}>
+                  {trainer.status === 'on_leave' ? 'On Leave' : (trainer.status?.charAt(0).toUpperCase() ?? '') + (trainer.status?.slice(1) ?? '')}
                 </Badge>
-                <span className="text-sm text-muted-foreground">{trainer.userId.email}</span>
-                {trainer.userId.phone && (
-                  <span className="text-sm text-muted-foreground">· {trainer.userId.phone}</span>
-                )}
+                <span className="text-sm text-muted-foreground">{trainer.userId?.email}</span>
               </div>
             </div>
 
@@ -680,20 +840,20 @@ export default function TrainerDetailPage() {
         </TabsList>
 
         <TabsContent value="profile" className="mt-4">
-          <ProfileTab trainerId={trainer._id} />
+          <ProfileTab trainerId={trainer._id!} />
         </TabsContent>
         <TabsContent value="assignments" className="mt-4">
-          <AssignmentsTab trainerId={trainer._id} />
+          <AssignmentsTab trainerId={trainer._id!} />
         </TabsContent>
         <TabsContent value="notes" className="mt-4">
-          <NotesTab trainerId={trainer._id} />
+          <NotesTab trainerId={trainer._id!} />
         </TabsContent>
         <TabsContent value="ratings" className="mt-4">
-          <RatingsTab trainerId={trainer._id} />
+          <RatingsTab trainerId={trainer._id!} />
         </TabsContent>
       </Tabs>
 
-      <TrainerForm open={editOpen} onOpenChange={setEditOpen} trainer={trainer} />
+      <TrainerForm open={editOpen} onOpenChange={setEditOpen} trainer={trainer as any} />
     </PageShell>
   );
 }

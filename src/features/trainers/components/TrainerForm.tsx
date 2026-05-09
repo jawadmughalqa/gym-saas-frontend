@@ -16,14 +16,15 @@ import {
 } from '@/components/ui/select';
 import { useGetBranches } from '@/api/generated/branches/branches';
 import { useCreateTrainer, useUpdateTrainer } from '../hooks/use-trainers';
+import { toast } from '@/hooks/use-toast';
+import { getErrorMessage } from '@/utils/error';
+import { api } from '@/lib/axios';
 import type { TrainerProfile, TrainerStatus } from '@/types/trainer.types';
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 
 const DAY_NAMES = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
-
 const CURRENCIES = ['USD', 'EUR', 'GBP', 'PKR', 'AED', 'SAR', 'CAD', 'AUD'];
-
 const SPECIALIZATION_SUGGESTIONS = [
   'weight loss', 'muscle building', 'cardio', 'yoga', 'pilates',
   'crossfit', 'rehabilitation', 'nutrition', 'senior fitness', 'sports performance',
@@ -32,19 +33,17 @@ const SPECIALIZATION_SUGGESTIONS = [
 // ─── Schema ───────────────────────────────────────────────────────────────────
 
 const availabilitySlotSchema = z.object({
-  day: z.number().min(0).max(6),
+  day:       z.number().min(0).max(6),
   startTime: z.string().min(1, 'Required'),
-  endTime: z.string().min(1, 'Required'),
+  endTime:   z.string().min(1, 'Required'),
 });
 
-const trainerFormSchema = z.object({
-  // create-only
-  userId: z.string().min(1, 'User ID is required').optional(),
-
-  branchIds: z.array(z.string()).min(1, 'At least one branch is required'),
-  specializations: z.string().optional(),   // comma-separated input
-  certifications: z.string().optional(),    // comma-separated input
-  bio: z.string().optional(),
+// Base schema for profile fields (shared between create and edit)
+const profileFieldsSchema = z.object({
+  branchIds:       z.array(z.string()).min(1, 'At least one branch is required'),
+  specializations: z.string().optional(),
+  certifications:  z.string().optional(),
+  bio:             z.string().optional(),
   experienceYears: z.string().optional().transform((v) =>
     v === '' || v === undefined ? undefined : Number(v),
   ).pipe(z.number().int().min(0).max(60).optional()),
@@ -54,19 +53,39 @@ const trainerFormSchema = z.object({
   hourlyRate: z.string().optional().transform((v) =>
     v === '' || v === undefined ? undefined : Number(v),
   ).pipe(z.number().min(0).optional()),
-  currency: z.string().optional(),
-  status: z.enum(['active', 'inactive', 'on_leave'] as const).optional(),
+  currency:     z.string().optional(),
+  status:       z.enum(['active', 'inactive', 'on_leave'] as const).optional(),
   availability: z.array(availabilitySlotSchema).optional(),
 });
 
-type TrainerFormValues = z.input<typeof trainerFormSchema>;
+// Create schema includes user account fields
+const createTrainerSchema = profileFieldsSchema.extend({
+  firstName: z.string().min(1, 'First name is required').max(80),
+  lastName:  z.string().min(1, 'Last name is required').max(80),
+  email:     z.string().email('Invalid email'),
+  password:  z.string().min(8, 'Password must be at least 8 characters'),
+});
+
+// Edit schema is just profile fields
+const editTrainerSchema = profileFieldsSchema;
+
+type CreateTrainerFormValues = z.input<typeof createTrainerSchema>;
+type EditTrainerFormValues   = z.input<typeof editTrainerSchema>;
+type TrainerFormValues = CreateTrainerFormValues & EditTrainerFormValues;
 
 // ─── Props ────────────────────────────────────────────────────────────────────
 
 interface TrainerFormProps {
-  open: boolean;
+  open:         boolean;
   onOpenChange: (open: boolean) => void;
-  trainer?: TrainerProfile;
+  trainer?:     TrainerProfile;
+}
+
+// ─── Helpers ─────────────────────────────────────────────────────────────────
+
+function splitTags(raw: string | undefined): string[] {
+  if (!raw) return [];
+  return raw.split(',').map((s) => s.trim()).filter(Boolean);
 }
 
 // ─── Component ────────────────────────────────────────────────────────────────
@@ -88,21 +107,24 @@ export default function TrainerForm({ open, onOpenChange, trainer }: TrainerForm
     watch,
     setValue,
     control,
-    formState: { errors },
+    formState: { errors, isSubmitting },
   } = useForm<TrainerFormValues>({
-    resolver: zodResolver(trainerFormSchema),
+    resolver: zodResolver(isEdit ? editTrainerSchema : createTrainerSchema),
     defaultValues: {
-      userId: '',
-      branchIds: [],
+      firstName:       '',
+      lastName:        '',
+      email:           '',
+      password:        '',
+      branchIds:       [],
       specializations: '',
-      certifications: '',
-      bio: '',
+      certifications:  '',
+      bio:             '',
       experienceYears: '',
-      maxClients: '',
-      hourlyRate: '',
-      currency: 'USD',
-      status: 'active',
-      availability: [],
+      maxClients:      '',
+      hourlyRate:      '',
+      currency:        'USD',
+      status:          'active',
+      availability:    [],
     },
   });
 
@@ -115,68 +137,90 @@ export default function TrainerForm({ open, onOpenChange, trainer }: TrainerForm
   useEffect(() => {
     if (open && trainer) {
       reset({
-        branchIds: trainer.branchIds ?? [],
+        branchIds:       trainer.branchIds ?? [],
         specializations: trainer.specializations?.join(', ') ?? '',
-        certifications: trainer.certifications?.join(', ') ?? '',
-        bio: trainer.bio ?? '',
+        certifications:  trainer.certifications?.join(', ') ?? '',
+        bio:             trainer.bio ?? '',
         experienceYears: trainer.experienceYears !== undefined ? String(trainer.experienceYears) : '',
-        maxClients: trainer.maxClients !== undefined ? String(trainer.maxClients) : '',
-        hourlyRate: trainer.hourlyRate !== undefined ? String(trainer.hourlyRate) : '',
-        currency: trainer.currency ?? 'USD',
-        status: trainer.status ?? 'active',
-        availability: trainer.availability ?? [],
+        maxClients:      trainer.maxClients !== undefined ? String(trainer.maxClients) : '',
+        hourlyRate:      trainer.hourlyRate !== undefined ? String(trainer.hourlyRate) : '',
+        currency:        trainer.currency ?? 'USD',
+        status:          trainer.status ?? 'active',
+        availability:    trainer.availability ?? [],
       });
     } else if (open && !trainer) {
       reset({
-        userId: '',
-        branchIds: [],
+        firstName:       '',
+        lastName:        '',
+        email:           '',
+        password:        '',
+        branchIds:       [],
         specializations: '',
-        certifications: '',
-        bio: '',
+        certifications:  '',
+        bio:             '',
         experienceYears: '',
-        maxClients: '',
-        hourlyRate: '',
-        currency: 'USD',
-        status: 'active',
-        availability: [],
+        maxClients:      '',
+        hourlyRate:      '',
+        currency:        'USD',
+        status:          'active',
+        availability:    [],
       });
     }
   }, [open, trainer, reset]);
 
-  function splitTags(raw: string | undefined): string[] {
-    if (!raw) return [];
-    return raw.split(',').map((s) => s.trim()).filter(Boolean);
-  }
-
-  function onSubmit(values: TrainerFormValues) {
+  async function onSubmit(values: TrainerFormValues) {
     const specializations = splitTags(values.specializations as string | undefined);
-    const certifications = splitTags(values.certifications as string | undefined);
+    const certifications  = splitTags(values.certifications  as string | undefined);
 
     if (isEdit) {
+      // Edit: just update the trainer profile
       updateTrainer.mutate({
-        branchIds: values.branchIds,
+        branchIds:       values.branchIds,
         specializations,
         certifications,
-        bio: values.bio || undefined,
+        bio:             values.bio || undefined,
         experienceYears: values.experienceYears as number | undefined,
-        maxClients: values.maxClients as number | undefined,
-        hourlyRate: values.hourlyRate as number | undefined,
-        currency: values.currency || undefined,
-        status: values.status as TrainerStatus | undefined,
-        availability: values.availability,
+        maxClients:      values.maxClients as number | undefined,
+        hourlyRate:      values.hourlyRate as number | undefined,
+        currency:        values.currency || undefined,
+        status:          values.status as TrainerStatus | undefined,
+        availability:    values.availability,
       });
     } else {
+      // Create: two steps
+      // Step 1 — create the User account with role: trainer
+      let userId: string;
+      try {
+        const { data: staffResponse } = await api.post('/staff', {
+          firstName: values.firstName,
+          lastName:  values.lastName,
+          email:     values.email,
+          password:  values.password,
+          role:      'trainer',
+          branchIds: values.branchIds,
+        });
+        userId = staffResponse.data.userId;
+      } catch (err) {
+        toast({
+          variant:     'destructive',
+          title:       'Failed to create trainer account',
+          description: getErrorMessage(err),
+        });
+        return;
+      }
+
+      // Step 2 — create the TrainerProfile linked to the new User
       createTrainer.mutate({
-        userId: values.userId!,
-        branchIds: values.branchIds,
+        userId,
+        branchIds:       values.branchIds,
         specializations,
         certifications,
-        bio: values.bio || undefined,
+        bio:             values.bio || undefined,
         experienceYears: values.experienceYears as number | undefined,
-        maxClients: values.maxClients as number | undefined,
-        hourlyRate: values.hourlyRate as number | undefined,
-        currency: values.currency || undefined,
-        availability: values.availability,
+        maxClients:      values.maxClients as number | undefined,
+        hourlyRate:      values.hourlyRate as number | undefined,
+        currency:        values.currency || undefined,
+        availability:    values.availability,
       });
     }
   }
@@ -192,10 +236,6 @@ export default function TrainerForm({ open, onOpenChange, trainer }: TrainerForm
     }
   }
 
-  function addAvailabilitySlot() {
-    appendSlot({ day: 1, startTime: '09:00', endTime: '17:00' });
-  }
-
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
       <SheetContent side="right" className="w-full sm:max-w-xl overflow-y-auto">
@@ -204,23 +244,75 @@ export default function TrainerForm({ open, onOpenChange, trainer }: TrainerForm
           <SheetDescription>
             {isEdit
               ? 'Update trainer profile, specializations, and availability.'
-              : 'Create a trainer profile for an existing user account.'}
+              : 'Create a login account and trainer profile for a new trainer.'}
           </SheetDescription>
         </SheetHeader>
 
         <form onSubmit={handleSubmit(onSubmit)} className="mt-6 space-y-6">
 
-          {/* User ID — create only */}
+          {/* ── Account details (create only) ──────────────────────────────── */}
           {!isEdit && (
-            <div className="space-y-1.5">
-              <Label htmlFor="userId">User ID <span className="text-destructive">*</span></Label>
-              <Input id="userId" placeholder="MongoDB ObjectId of the user" {...register('userId')} />
-              {errors.userId && <p className="text-xs text-destructive">{errors.userId.message}</p>}
-              <p className="text-xs text-muted-foreground">The user must already have an account in the system.</p>
+            <div className="space-y-4 rounded-md border p-4 bg-muted/30">
+              <p className="text-sm font-semibold">Login Account</p>
+              <p className="text-xs text-muted-foreground">
+                The trainer will use these credentials to log in. They will be required to change
+                their password on first login.
+              </p>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-1.5">
+                  <Label htmlFor="firstName">
+                    First Name <span className="text-destructive">*</span>
+                  </Label>
+                  <Input id="firstName" placeholder="John" {...register('firstName')} />
+                  {errors.firstName && (
+                    <p className="text-xs text-destructive">{errors.firstName.message}</p>
+                  )}
+                </div>
+                <div className="space-y-1.5">
+                  <Label htmlFor="lastName">
+                    Last Name <span className="text-destructive">*</span>
+                  </Label>
+                  <Input id="lastName" placeholder="Smith" {...register('lastName')} />
+                  {errors.lastName && (
+                    <p className="text-xs text-destructive">{errors.lastName.message}</p>
+                  )}
+                </div>
+              </div>
+
+              <div className="space-y-1.5">
+                <Label htmlFor="email">
+                  Email <span className="text-destructive">*</span>
+                </Label>
+                <Input
+                  id="email"
+                  type="email"
+                  placeholder="trainer@yourgym.com"
+                  {...register('email')}
+                />
+                {errors.email && (
+                  <p className="text-xs text-destructive">{errors.email.message}</p>
+                )}
+              </div>
+
+              <div className="space-y-1.5">
+                <Label htmlFor="password">
+                  Temporary Password <span className="text-destructive">*</span>
+                </Label>
+                <Input
+                  id="password"
+                  type="password"
+                  placeholder="Min 8 characters"
+                  {...register('password')}
+                />
+                {errors.password && (
+                  <p className="text-xs text-destructive">{errors.password.message}</p>
+                )}
+              </div>
             </div>
           )}
 
-          {/* Branches */}
+          {/* ── Branches ───────────────────────────────────────────────────── */}
           <div className="space-y-2">
             <Label>Branches <span className="text-destructive">*</span></Label>
             {branches.length === 0 ? (
@@ -244,10 +336,12 @@ export default function TrainerForm({ open, onOpenChange, trainer }: TrainerForm
                 ))}
               </div>
             )}
-            {errors.branchIds && <p className="text-xs text-destructive">{errors.branchIds.message}</p>}
+            {errors.branchIds && (
+              <p className="text-xs text-destructive">{errors.branchIds.message}</p>
+            )}
           </div>
 
-          {/* Specializations */}
+          {/* ── Specializations ─────────────────────────────────────────────── */}
           <div className="space-y-1.5">
             <Label htmlFor="specializations">Specializations</Label>
             <Input
@@ -260,7 +354,7 @@ export default function TrainerForm({ open, onOpenChange, trainer }: TrainerForm
             </p>
           </div>
 
-          {/* Certifications */}
+          {/* ── Certifications ──────────────────────────────────────────────── */}
           <div className="space-y-1.5">
             <Label htmlFor="certifications">Certifications</Label>
             <Input
@@ -271,7 +365,7 @@ export default function TrainerForm({ open, onOpenChange, trainer }: TrainerForm
             <p className="text-xs text-muted-foreground">Comma-separated list of certifications.</p>
           </div>
 
-          {/* Bio */}
+          {/* ── Bio ─────────────────────────────────────────────────────────── */}
           <div className="space-y-1.5">
             <Label htmlFor="bio">Bio</Label>
             <Textarea
@@ -282,7 +376,7 @@ export default function TrainerForm({ open, onOpenChange, trainer }: TrainerForm
             />
           </div>
 
-          {/* Experience + Max Clients */}
+          {/* ── Experience + Max Clients ────────────────────────────────────── */}
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-1.5">
               <Label htmlFor="experienceYears">Experience (years)</Label>
@@ -313,7 +407,7 @@ export default function TrainerForm({ open, onOpenChange, trainer }: TrainerForm
             </div>
           </div>
 
-          {/* Hourly Rate + Currency */}
+          {/* ── Hourly Rate + Currency ──────────────────────────────────────── */}
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-1.5">
               <Label htmlFor="hourlyRate">Hourly Rate</Label>
@@ -347,7 +441,7 @@ export default function TrainerForm({ open, onOpenChange, trainer }: TrainerForm
             </div>
           </div>
 
-          {/* Status — edit only */}
+          {/* ── Status (edit only) ──────────────────────────────────────────── */}
           {isEdit && (
             <div className="space-y-1.5">
               <Label>Status</Label>
@@ -367,11 +461,16 @@ export default function TrainerForm({ open, onOpenChange, trainer }: TrainerForm
             </div>
           )}
 
-          {/* Availability */}
+          {/* ── Availability ────────────────────────────────────────────────── */}
           <div className="space-y-3">
             <div className="flex items-center justify-between">
               <Label>Availability</Label>
-              <Button type="button" variant="outline" size="sm" onClick={addAvailabilitySlot}>
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={() => appendSlot({ day: 1, startTime: '09:00', endTime: '17:00' })}
+              >
                 <Plus className="mr-1.5 h-3.5 w-3.5" />
                 Add Slot
               </Button>
@@ -386,7 +485,6 @@ export default function TrainerForm({ open, onOpenChange, trainer }: TrainerForm
             <div className="space-y-2">
               {availFields.map((field, index) => (
                 <div key={field.id} className="flex items-end gap-2 rounded-md border p-3">
-                  {/* Day */}
                   <div className="flex-1 space-y-1">
                     <Label className="text-xs">Day</Label>
                     <Select
@@ -406,7 +504,6 @@ export default function TrainerForm({ open, onOpenChange, trainer }: TrainerForm
                     </Select>
                   </div>
 
-                  {/* Start */}
                   <div className="w-24 space-y-1">
                     <Label className="text-xs">Start</Label>
                     <Input
@@ -416,7 +513,6 @@ export default function TrainerForm({ open, onOpenChange, trainer }: TrainerForm
                     />
                   </div>
 
-                  {/* End */}
                   <div className="w-24 space-y-1">
                     <Label className="text-xs">End</Label>
                     <Input
@@ -426,7 +522,6 @@ export default function TrainerForm({ open, onOpenChange, trainer }: TrainerForm
                     />
                   </div>
 
-                  {/* Remove */}
                   <Button
                     type="button"
                     variant="ghost"
@@ -445,8 +540,10 @@ export default function TrainerForm({ open, onOpenChange, trainer }: TrainerForm
             <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
               Cancel
             </Button>
-            <Button type="submit" disabled={isPending}>
-              {isPending ? 'Saving…' : isEdit ? 'Save Changes' : 'Create Trainer'}
+            <Button type="submit" disabled={isPending || isSubmitting}>
+              {isPending || isSubmitting
+                ? 'Saving…'
+                : isEdit ? 'Save Changes' : 'Create Trainer'}
             </Button>
           </SheetFooter>
         </form>

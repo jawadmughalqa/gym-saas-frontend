@@ -48,17 +48,17 @@ export default function StatCard({
     : 'text-red-500';
 
   return (
-    <Card className={cn('hover:shadow-sm transition-shadow', className)}>
-      <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-        <CardTitle className="text-sm font-medium text-muted-foreground">{title}</CardTitle>
+    <Card className={cn('hover:shadow-md transition-shadow duration-200', className)}>
+      <CardHeader className="flex flex-row items-start justify-between space-y-0 pb-3">
+        <CardTitle className="text-sm font-medium text-muted-foreground leading-snug">{title}</CardTitle>
         {Icon && (
-          <div className={cn('rounded-md p-1.5 bg-primary/10', iconClassName)}>
-            <Icon className="h-4 w-4 text-primary" />
+          <div className={cn('rounded-lg p-2 bg-primary/10 text-primary shrink-0', iconClassName)}>
+            <Icon className="h-4 w-4" />
           </div>
         )}
       </CardHeader>
-      <CardContent className="space-y-1">
-        <p className="text-2xl font-bold tracking-tight">{value}</p>
+      <CardContent className="space-y-1.5">
+        <p className="text-2xl font-semibold tracking-tight">{value}</p>
         {(subtitle || hasTrend) && (
           <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
             {hasTrend && (

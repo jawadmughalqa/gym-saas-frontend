@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Outlet, useNavigate } from 'react-router-dom';
-import { Bell, Menu } from 'lucide-react';
+import { Bell, Menu, PanelLeftClose, PanelLeftOpen } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Separator } from '@/components/ui/separator';
@@ -34,28 +34,54 @@ function DesktopSidebar({ collapsed, onToggle }: { collapsed: boolean; onToggle:
   return (
     <aside
       className={cn(
-        'hidden md:flex flex-col border-r bg-card transition-all duration-300 shrink-0',
-        collapsed ? 'w-16' : 'w-60',
+        'hidden md:flex flex-col border-r border-sidebar-border bg-sidebar transition-all duration-300 ease-in-out shrink-0',
+        collapsed ? 'w-[4.5rem]' : 'w-[15.5rem]',
       )}
     >
       {/* Logo row */}
-      <div className="flex h-14 items-center border-b px-3 shrink-0">
-        {!collapsed && (
-          <span className="font-bold text-primary text-lg flex-1">GymPro</span>
+      <div
+        className={cn(
+          'flex h-14 items-center border-b border-sidebar-border shrink-0',
+          collapsed ? 'justify-center px-0' : 'px-4 gap-2',
         )}
+      >
+        {/* Logo mark */}
+        <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-primary shadow-sm">
+          <span className="text-xs font-bold text-primary-foreground">G</span>
+        </div>
+        {!collapsed && (
+          <span className="font-semibold text-[15px] tracking-tight text-sidebar-foreground flex-1">
+            GymPro
+          </span>
+        )}
+        {!collapsed && (
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={onToggle}
+            className="h-7 w-7 text-muted-foreground hover:text-foreground shrink-0"
+            aria-label="Collapse sidebar"
+          >
+            <PanelLeftClose className="h-4 w-4" />
+          </Button>
+        )}
+      </div>
+
+      {/* Expand toggle when collapsed */}
+      {collapsed && (
         <Button
           variant="ghost"
           size="icon"
           onClick={onToggle}
-          className="shrink-0"
-          aria-label={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
+          className="mx-auto mt-2 h-8 w-8 text-muted-foreground hover:text-foreground"
+          aria-label="Expand sidebar"
         >
-          <Menu className="h-4 w-4" />
+          <PanelLeftOpen className="h-4 w-4" />
         </Button>
-      </div>
+      )}
 
       {/* Scrollable nav */}
-      <ScrollArea className="flex-1">
+      <ScrollArea className="flex-1 overflow-hidden">
         <SidebarNav collapsed={collapsed} />
       </ScrollArea>
     </aside>
@@ -64,19 +90,18 @@ function DesktopSidebar({ collapsed, onToggle }: { collapsed: boolean; onToggle:
 
 // ─── Mobile sidebar (sheet drawer) ───────────────────────────────────────────
 
-function MobileSidebar({
-  open,
-  onClose,
-}: {
-  open: boolean;
-  onClose: () => void;
-}) {
+function MobileSidebar({ open, onClose }: { open: boolean; onClose: () => void }) {
   return (
     <Sheet open={open} onOpenChange={(v) => !v && onClose()}>
-      <SheetContent side="left" className="w-64 p-0">
+      <SheetContent side="left" className="w-[15.5rem] p-0 bg-sidebar border-sidebar-border">
         {/* Logo */}
-        <div className="flex h-14 items-center border-b px-4 shrink-0">
-          <span className="font-bold text-primary text-lg">GymPro</span>
+        <div className="flex h-14 items-center gap-2 border-b border-sidebar-border px-4 shrink-0">
+          <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-primary shadow-sm">
+            <span className="text-xs font-bold text-primary-foreground">G</span>
+          </div>
+          <span className="font-semibold text-[15px] tracking-tight text-sidebar-foreground">
+            GymPro
+          </span>
         </div>
         <ScrollArea className="flex-1 h-[calc(100%-3.5rem)]">
           <SidebarNav collapsed={false} onNavigate={onClose} />
@@ -88,25 +113,21 @@ function MobileSidebar({
 
 // ─── Top bar ──────────────────────────────────────────────────────────────────
 
-function TopBar({
-  onMobileMenuOpen,
-}: {
-  onMobileMenuOpen: () => void;
-}) {
+function TopBar({ onMobileMenuOpen }: { onMobileMenuOpen: () => void }) {
   const navigate = useNavigate();
   const unreadCount = useNotificationStore((s) => s.unreadCount);
 
   return (
-    <header className="flex h-14 items-center gap-3 border-b bg-card px-4 shrink-0">
+    <header className="flex h-14 items-center gap-3 border-b bg-card/80 backdrop-blur-sm px-4 shrink-0">
       {/* Mobile hamburger */}
       <Button
         variant="ghost"
         size="icon"
-        className="md:hidden"
+        className="md:hidden h-8 w-8"
         onClick={onMobileMenuOpen}
         aria-label="Open menu"
       >
-        <Menu className="h-5 w-5" />
+        <Menu className="h-4 w-4" />
       </Button>
 
       {/* Breadcrumbs */}
@@ -122,19 +143,19 @@ function TopBar({
         <Button
           variant="ghost"
           size="icon"
-          className="relative"
+          className="relative h-8 w-8"
           onClick={() => navigate('/notifications')}
           aria-label={`Notifications${unreadCount > 0 ? ` (${unreadCount} unread)` : ''}`}
         >
           <Bell className="h-4 w-4" />
           {unreadCount > 0 && (
-            <span className="absolute -right-0.5 -top-0.5 flex h-4 w-4 items-center justify-center rounded-full bg-destructive text-[10px] font-bold text-destructive-foreground pointer-events-none">
+            <span className="absolute -right-0.5 -top-0.5 flex h-[1.1rem] w-[1.1rem] items-center justify-center rounded-full bg-destructive text-[9px] font-bold text-destructive-foreground pointer-events-none ring-2 ring-background">
               {unreadCount > 9 ? '9+' : unreadCount}
             </span>
           )}
         </Button>
 
-        <Separator orientation="vertical" className="h-6 mx-1" />
+        <Separator orientation="vertical" className="h-5 mx-1 opacity-50" />
 
         {/* User menu */}
         <UserMenu />
@@ -166,7 +187,7 @@ export default function AppShell() {
         <TopBar onMobileMenuOpen={() => setMobileOpen(true)} />
 
         {/* Page content */}
-        <main className="flex-1 overflow-y-auto p-4 sm:p-6">
+        <main className="flex-1 overflow-y-auto bg-muted/30 p-4 sm:p-6 lg:p-7">
           <ErrorBoundary>
             <Outlet />
           </ErrorBoundary>

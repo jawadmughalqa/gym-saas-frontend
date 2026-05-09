@@ -10,6 +10,8 @@ import {
   Settings,
   ShieldCheck,
   Shield,
+  Percent,
+  ClipboardList,
   type LucideIcon,
 } from 'lucide-react';
 import type { UserRole } from '@/types/api.types';
@@ -23,6 +25,11 @@ export interface NavItem {
   permission?: Permission;
   /** If set, only these roles see this item */
   roles?: UserRole[];
+}
+
+export interface NavGroup {
+  label: string;
+  items: NavItem[];
 }
 
 export const NAV_ITEMS: NavItem[] = [
@@ -50,9 +57,21 @@ export const NAV_ITEMS: NavItem[] = [
     permission: 'equipment.read',
   },
   {
+    to: '/work-orders',
+    label: 'Work Orders',
+    icon: ClipboardList,
+    permission: 'equipment.read',
+  },
+  {
     to: '/billing',
     label: 'Billing',
     icon: CreditCard,
+    permission: 'invoice.read',
+  },
+  {
+    to: '/discounts',
+    label: 'Discounts',
+    icon: Percent,
     permission: 'invoice.read',
   },
   {
@@ -78,6 +97,41 @@ export const NAV_ITEMS: NavItem[] = [
     label: 'Roles',
     icon: Shield,
     permission: 'role.read',
+  },
+];
+
+/** Grouped version of NAV_ITEMS for the redesigned sidebar */
+export const NAV_GROUPS: NavGroup[] = [
+  {
+    label: 'Overview',
+    items: [
+      { to: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
+    ],
+  },
+  {
+    label: 'Manage',
+    items: [
+      { to: '/members',  label: 'Members',    icon: Users,         permission: 'member.read' },
+      { to: '/trainers', label: 'Trainers',   icon: Dumbbell,      permission: 'trainer.read' },
+      { to: '/branches', label: 'Branches',   icon: Building2,     permission: 'branch.read' },
+      { to: '/equipment',  label: 'Equipment',  icon: Package,      permission: 'equipment.read' },
+      { to: '/work-orders', label: 'Work Orders', icon: ClipboardList, permission: 'equipment.read' },
+      { to: '/billing',  label: 'Billing',    icon: CreditCard,    permission: 'invoice.read' },
+      { to: '/discounts', label: 'Discounts', icon: Percent,       permission: 'invoice.read' },
+    ],
+  },
+  {
+    label: 'Insights',
+    items: [
+      { to: '/reports', label: 'Reports', icon: BarChart3, permission: 'report.read' },
+    ],
+  },
+  {
+    label: 'System',
+    items: [
+      { to: '/notifications', label: 'Notifications', icon: Bell,    permission: 'notification.read' },
+      { to: '/roles',         label: 'Roles',          icon: Shield,  permission: 'role.read' },
+    ],
   },
 ];
 

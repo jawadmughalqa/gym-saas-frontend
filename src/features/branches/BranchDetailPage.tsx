@@ -26,11 +26,13 @@ import {
 } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import PageShell from '@/components/layout/PageShell';
-import DataTable from '@/components/shared/DataTable';
+import DataTable, { type ColumnDef } from '@/components/shared/DataTable';
 import Pagination from '@/components/shared/Pagination';
 import EmptyState from '@/components/shared/EmptyState';
 import ConfirmDialog from '@/components/shared/ConfirmDialog';
 import { useConfirm } from '@/hooks/use-confirm';
+import { toast } from '@/hooks/use-toast';
+import { getErrorMessage } from '@/utils/error';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -94,6 +96,7 @@ function AssignUserDialog({
         form.reset();
         onOpenChange(false);
       },
+      onError: (err) => toast({ variant: 'destructive', title: 'Failed to assign user', description: getErrorMessage(err) }),
     },
   });
 
@@ -167,6 +170,7 @@ export default function BranchDetailPage() {
         qc.invalidateQueries({ queryKey: getGetBranchesBranchIdUsersQueryKey(branchId!) });
         qc.invalidateQueries({ queryKey: getGetBranchesBranchIdQueryKey(branchId!) });
       },
+      onError: (err) => toast({ variant: 'destructive', title: 'Failed to remove user', description: getErrorMessage(err) }),
     },
   });
 
@@ -210,45 +214,49 @@ export default function BranchDetailPage() {
     );
   }
 
-  const userColumns = [
+  const userColumns: ColumnDef<BranchUserListResponseDataItem>[] = [
     {
       key: 'firstName',
-      label: 'Name',
-      render: (_: unknown, row: BranchUserListResponseDataItem) => (
+      header: 'Name',
+      cell: (row) => (
         <span className="font-medium">
           {row.firstName} {row.lastName}
         </span>
       ),
     },
-    { key: 'email', label: 'Email' },
+    {
+      key: 'email',
+      header: 'Email',
+      cell: (row) => <span className="text-sm">{row.email ?? '—'}</span>,
+    },
     {
       key: 'role',
-      label: 'Role',
-      render: (v: unknown) => (
+      header: 'Role',
+      cell: (row) => (
         <Badge variant="outline" className="capitalize text-xs">
-          {(v as string)?.replace('_', ' ') ?? '—'}
+          {row.role?.replace('_', ' ') ?? '—'}
         </Badge>
       ),
     },
     {
       key: 'status',
-      label: 'Status',
-      render: (v: unknown) => (
+      header: 'Status',
+      cell: (row) => (
         <Badge
-          variant={v === 'active' ? 'default' : 'secondary'}
-          className={v === 'active' ? 'bg-green-600 hover:bg-green-700' : ''}
+          variant={row.status === 'active' ? 'default' : 'secondary'}
+          className={row.status === 'active' ? 'bg-green-600 hover:bg-green-700' : ''}
         >
-          {v as string}
+          {row.status}
         </Badge>
       ),
     },
     {
       key: 'lastLoginAt',
-      label: 'Last Login',
-      render: (v: unknown) =>
-        v ? (
+      header: 'Last Login',
+      cell: (row) =>
+        row.lastLoginAt ? (
           <span className="text-sm text-muted-foreground">
-            {new Date(v as string).toLocaleDateString()}
+            {new Date(row.lastLoginAt).toLocaleDateString()}
           </span>
         ) : (
           <span className="text-muted-foreground">Never</span>
@@ -256,8 +264,8 @@ export default function BranchDetailPage() {
     },
     {
       key: '_id',
-      label: '',
-      render: (_: unknown, row: BranchUserListResponseDataItem) => (
+      header: '',
+      cell: (row) => (
         <Button
           variant="ghost"
           size="icon"
@@ -428,6 +436,7 @@ export default function BranchDetailPage() {
             <DataTable
               columns={userColumns}
               data={users}
+              keyExtractor={(row) => row._id ?? ''}
               loading={usersLoading}
             />
           )}

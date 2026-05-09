@@ -26,6 +26,8 @@ import ConfirmDialog from '@/components/shared/ConfirmDialog';
 import { EquipmentStatusBadge } from '@/components/shared/StatusBadge';
 import { useConfirm } from '@/hooks/use-confirm';
 import { usePermission } from '@/hooks/use-permission';
+import { toast } from '@/hooks/use-toast';
+import { getErrorMessage } from '@/utils/error';
 import {
   useGetEquipmentEquipmentId,
   useGetEquipmentEquipmentIdMaintenance,
@@ -130,7 +132,10 @@ function LogMaintenanceDialog({
   equipmentId: string;
 }) {
   const logMaintenance = usePostEquipmentEquipmentIdMaintenance({
-    mutation: { onSuccess: () => onOpenChange(false) },
+    mutation: {
+      onSuccess: () => onOpenChange(false),
+      onError: (err) => toast({ variant: 'destructive', title: 'Failed to log maintenance', description: getErrorMessage(err) }),
+    },
   });
 
   const { register, handleSubmit, watch, setValue, reset, formState: { errors } } = useForm<MaintenanceFormValues>({
@@ -269,7 +274,10 @@ function CreateWorkOrderDialog({
   branchId: string;
 }) {
   const createWO = usePostWorkOrders({
-    mutation: { onSuccess: () => onOpenChange(false) },
+    mutation: {
+      onSuccess: () => onOpenChange(false),
+      onError: (err) => toast({ variant: 'destructive', title: 'Failed to create work order', description: getErrorMessage(err) }),
+    },
   });
 
   const { register, handleSubmit, watch, setValue, reset, formState: { errors } } = useForm<WorkOrderFormValues>({
@@ -351,7 +359,10 @@ function ResolveWorkOrderDialog({
   workOrderId: string;
 }) {
   const resolve = usePostWorkOrdersWorkOrderIdResolve({
-    mutation: { onSuccess: () => onOpenChange(false) },
+    mutation: {
+      onSuccess: () => onOpenChange(false),
+      onError: (err) => toast({ variant: 'destructive', title: 'Failed to resolve work order', description: getErrorMessage(err) }),
+    },
   });
 
   const { register, handleSubmit, reset, formState: { errors } } = useForm<ResolveFormValues>({
@@ -409,7 +420,11 @@ export default function EquipmentDetailPage() {
   const [resolvingWO, setResolvingWO] = useState<string | null>(null);
 
   const { confirm, confirmProps } = useConfirm();
-  const cancelWO = usePostWorkOrdersWorkOrderIdCancel();
+  const cancelWO = usePostWorkOrdersWorkOrderIdCancel({
+    mutation: {
+      onError: (err) => toast({ variant: 'destructive', title: 'Failed to cancel work order', description: getErrorMessage(err) }),
+    },
+  });
 
   const { data: equipment, isLoading } = useGetEquipmentEquipmentId(equipmentId ?? '');
   const { data: maintenanceLogs } = useGetEquipmentEquipmentIdMaintenance(equipmentId ?? '', {});

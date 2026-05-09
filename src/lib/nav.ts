@@ -86,7 +86,7 @@ export const BOTTOM_NAV_ITEMS: NavItem[] = [
     to: '/settings',
     label: 'Settings',
     icon: Settings,
-    roles: ['owner', 'manager'],
+    roles: ['gym_owner', 'branch_manager'],
   },
   {
     to: '/super-admin',

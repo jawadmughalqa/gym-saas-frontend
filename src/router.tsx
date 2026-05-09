@@ -26,9 +26,12 @@ const NotificationsPage   = lazy(() => import('@/features/notifications/Notifica
 const BranchesPage        = lazy(() => import('@/features/branches/BranchesPage'));
 const BranchDetailPage    = lazy(() => import('@/features/branches/BranchDetailPage'));
 const RolesPage           = lazy(() => import('@/features/roles/RolesPage'));
+const SuperAdminPage      = lazy(() => import('@/features/super-admin/SuperAdminPage'));
+const TenantDetailPage    = lazy(() => import('@/features/super-admin/TenantDetailPage'));
+const PlansPage           = lazy(() => import('@/features/super-admin/PlansPage'));
 
 // Uncomment as each phase is built:
-// const BillingPage       = lazy(() => import('@/features/billing/BillingPage'));
+const BillingPage       = lazy(() => import('@/features/billing/InvoicesPage'));
 // const ReportsPage       = lazy(() => import('@/features/reports/ReportsPage'));
 // const BranchesPage      = lazy(() => import('@/features/branches/BranchesPage'));
 // const NotificationsPage = lazy(() => import('@/features/notifications/NotificationsPage'));
@@ -175,39 +178,39 @@ const router = createBrowserRouter([
             element: <Lazy><RolesPage /></Lazy>,
             handle: { crumb: 'Roles & Permissions' },
           },
-          // {
-          //   path: 'equipment',
-          //   handle: { crumb: 'Equipment' },
-          //   children: [
-          //     { index: true, element: <Lazy><EquipmentPage /></Lazy> },
-          //   ],
-          // },
-          // {
-          //   path: 'billing',
-          //   handle: { crumb: 'Billing' },
-          //   children: [
-          //     { index: true, element: <Lazy><BillingPage /></Lazy> },
-          //   ],
-          // },
-          // {
-          //   path: 'reports',
-          //   handle: { crumb: 'Reports' },
-          //   children: [
-          //     { index: true, element: <Lazy><ReportsPage /></Lazy> },
-          //   ],
-          // },
-          // {
-          //   path: 'branches',
-          //   handle: { crumb: 'Branches' },
-          //   children: [
-          //     { index: true, element: <Lazy><BranchesPage /></Lazy> },
-          //   ],
-          // },
-          // {
-          //   path: 'notifications',
-          //   element: <Lazy><NotificationsPage /></Lazy>,
-          //   handle: { crumb: 'Notifications' },
-          // },
+          {
+            path: 'equipment',
+            handle: { crumb: 'Equipment' },
+            children: [
+              { index: true, element: <Lazy><EquipmentPage /></Lazy> },
+            ],
+          },
+          {
+            path: 'billing',
+            handle: { crumb: 'Billing' },
+            children: [
+              { index: true, element: <Lazy><BillingPage /></Lazy> },
+            ],
+          },
+          {
+            path: 'reports',
+            handle: { crumb: 'Reports' },
+            children: [
+              { index: true, element: <Lazy><ReportsPage /></Lazy> },
+            ],
+          },
+          {
+            path: 'branches',
+            handle: { crumb: 'Branches' },
+            children: [
+              { index: true, element: <Lazy><BranchesPage /></Lazy> },
+            ],
+          },
+          {
+            path: 'notifications',
+            element: <Lazy><NotificationsPage /></Lazy>,
+            handle: { crumb: 'Notifications' },
+          },
           // {
           //   path: 'settings',
           //   handle: { crumb: 'Settings' },
@@ -216,6 +219,34 @@ const router = createBrowserRouter([
           //     { path: 'change-password', element: <Lazy><ChangePasswordPage /></Lazy>, handle: { crumb: 'Change Password' } },
           //   ],
           // },
+        ],
+      },
+    ],
+  },
+
+  // ── Super Admin (role-gated, shares AppShell) ─────────────────────────────
+  {
+    path: '/super-admin',
+    element: <ProtectedRoute allowedRoles={['super_admin']} />,
+    children: [
+      {
+        element: <AppShell />,
+        children: [
+          {
+            index: true,
+            element: <Lazy><SuperAdminPage /></Lazy>,
+            handle: { crumb: 'Super Admin' },
+          },
+          {
+            path: 'tenants/:tenantId',
+            element: <Lazy><TenantDetailPage /></Lazy>,
+            handle: { crumb: 'Tenant Detail' },
+          },
+          {
+            path: 'plans',
+            element: <Lazy><PlansPage /></Lazy>,
+            handle: { crumb: 'Plans' },
+          },
         ],
       },
     ],

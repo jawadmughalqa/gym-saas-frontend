@@ -18,13 +18,15 @@ import {
 } from '@/components/ui/select';
 import PageHeader from '@/components/layout/PageHeader';
 import PageShell from '@/components/layout/PageShell';
-import DataTable from '@/components/shared/DataTable';
+import DataTable, { type ColumnDef } from '@/components/shared/DataTable';
 import SearchInput from '@/components/shared/SearchInput';
 import Pagination from '@/components/shared/Pagination';
 import EmptyState from '@/components/shared/EmptyState';
 import ConfirmDialog from '@/components/shared/ConfirmDialog';
 import { useConfirm } from '@/hooks/use-confirm';
 import { useDebounce } from '@/hooks/use-debounce';
+import { toast } from '@/hooks/use-toast';
+import { getErrorMessage } from '@/utils/error';
 import {
   useGetBranches,
   usePatchBranchesBranchIdStatus,
@@ -73,6 +75,7 @@ export default function BranchesPage() {
   const changeStatus = usePatchBranchesBranchIdStatus({
     mutation: {
       onSuccess: () => qc.invalidateQueries({ queryKey: getGetBranchesQueryKey() }),
+      onError: (err) => toast({ variant: 'destructive', title: 'Failed to update branch status', description: getErrorMessage(err) }),
     },
   });
 
@@ -103,11 +106,11 @@ export default function BranchesPage() {
     );
   }
 
-  const columns = [
+  const columns: ColumnDef<Branch>[] = [
     {
       key: 'name',
-      label: 'Branch',
-      render: (_: unknown, row: Branch) => (
+      header: 'Branch',
+      cell: (row) => (
         <div className="flex flex-col">
           <span className="font-medium">
             {row.name}
@@ -121,8 +124,8 @@ export default function BranchesPage() {
     },
     {
       key: 'address',
-      label: 'Location',
-      render: (_: unknown, row: Branch) => {
+      header: 'Location',
+      cell: (row) => {
         const a = row.address;
         if (!a) return <span className="text-muted-foreground">—</span>;
         return (
@@ -134,23 +137,23 @@ export default function BranchesPage() {
     },
     {
       key: 'memberCount',
-      label: 'Members',
-      render: (v: unknown) => <span className="tabular-nums">{(v as number) ?? 0}</span>,
+      header: 'Members',
+      cell: (row) => <span className="tabular-nums">{row.memberCount ?? 0}</span>,
     },
     {
       key: 'trainerCount',
-      label: 'Trainers',
-      render: (v: unknown) => <span className="tabular-nums">{(v as number) ?? 0}</span>,
+      header: 'Trainers',
+      cell: (row) => <span className="tabular-nums">{row.trainerCount ?? 0}</span>,
     },
     {
       key: 'status',
-      label: 'Status',
-      render: (v: unknown) => <StatusBadge status={v as string} />,
+      header: 'Status',
+      cell: (row) => <StatusBadge status={row.status} />,
     },
     {
       key: '_id',
-      label: '',
-      render: (_: unknown, row: Branch) => (
+      header: '',
+      cell: (row) => (
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <Button variant="ghost" size="icon" className="h-7 w-7" onClick={(e) => e.stopPropagation()}>
@@ -233,9 +236,9 @@ export default function BranchesPage() {
         <DataTable
           columns={columns}
           data={branches}
+          keyExtractor={(row) => row._id ?? ''}
           loading={isLoading}
           onRowClick={(row) => navigate(`/branches/${row._id}`)}
-          rowClassName="cursor-pointer"
         />
       )}
 

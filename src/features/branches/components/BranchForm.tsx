@@ -3,6 +3,8 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { useQueryClient } from '@tanstack/react-query';
+import { toast } from '@/hooks/use-toast';
+import { getErrorMessage } from '@/utils/error';
 import {
   Sheet,
   SheetContent,
@@ -118,11 +120,17 @@ export default function BranchForm({ open, onOpenChange, branch }: BranchFormPro
   }
 
   const create = usePostBranches({
-    mutation: { onSuccess: () => { invalidate(); onOpenChange(false); } },
+    mutation: {
+      onSuccess: () => { invalidate(); onOpenChange(false); },
+      onError: (err) => toast({ variant: 'destructive', title: 'Failed to create branch', description: getErrorMessage(err) }),
+    },
   });
 
   const update = usePatchBranchesBranchId({
-    mutation: { onSuccess: () => { invalidate(); onOpenChange(false); } },
+    mutation: {
+      onSuccess: () => { invalidate(); onOpenChange(false); },
+      onError: (err) => toast({ variant: 'destructive', title: 'Failed to update branch', description: getErrorMessage(err) }),
+    },
   });
 
   function onSubmit(values: FormValues) {

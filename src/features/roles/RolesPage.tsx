@@ -33,11 +33,13 @@ import {
 } from '@/components/ui/select';
 import PageHeader from '@/components/layout/PageHeader';
 import PageShell from '@/components/layout/PageShell';
-import DataTable from '@/components/shared/DataTable';
+import DataTable, { type ColumnDef } from '@/components/shared/DataTable';
 import Pagination from '@/components/shared/Pagination';
 import EmptyState from '@/components/shared/EmptyState';
 import ConfirmDialog from '@/components/shared/ConfirmDialog';
 import { useConfirm } from '@/hooks/use-confirm';
+import { toast } from '@/hooks/use-toast';
+import { getErrorMessage } from '@/utils/error';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -87,6 +89,7 @@ function AssignRoleDialog({
         form.reset();
         onOpenChange(false);
       },
+      onError: (err) => toast({ variant: 'destructive', title: 'Failed to assign role', description: getErrorMessage(err) }),
     },
   });
 
@@ -211,6 +214,7 @@ export default function RolesPage() {
   const deleteRole = useDeleteRolesRoleId({
     mutation: {
       onSuccess: () => qc.invalidateQueries({ queryKey: getGetRolesQueryKey() }),
+      onError: (err) => toast({ variant: 'destructive', title: 'Failed to delete role', description: getErrorMessage(err) }),
     },
   });
 
@@ -234,11 +238,11 @@ export default function RolesPage() {
     );
   }
 
-  const columns = [
+  const columns: ColumnDef<Role>[] = [
     {
       key: 'name',
-      label: 'Role',
-      render: (_: unknown, row: Role) => (
+      header: 'Role',
+      cell: (row) => (
         <div className="flex items-center gap-2">
           <span className="font-medium">{row.name}</span>
           {row.isBuiltIn && (
@@ -251,18 +255,18 @@ export default function RolesPage() {
     },
     {
       key: 'description',
-      label: 'Description',
-      render: (v: unknown) => (
+      header: 'Description',
+      cell: (row) => (
         <span className="text-sm text-muted-foreground">
-          {(v as string) || '—'}
+          {row.description || '—'}
         </span>
       ),
     },
     {
       key: 'permissions',
-      label: 'Permissions',
-      render: (v: unknown) => {
-        const perms = v as string[] | undefined;
+      header: 'Permissions',
+      cell: (row) => {
+        const perms = row.permissions;
         if (!perms?.length) return <span className="text-muted-foreground">None</span>;
         return (
           <div className="flex items-center gap-1.5">
@@ -275,11 +279,11 @@ export default function RolesPage() {
     },
     {
       key: 'createdAt',
-      label: 'Created',
-      render: (v: unknown) =>
-        v ? (
+      header: 'Created',
+      cell: (row) =>
+        row.createdAt ? (
           <span className="text-sm text-muted-foreground">
-            {new Date(v as string).toLocaleDateString()}
+            {new Date(row.createdAt).toLocaleDateString()}
           </span>
         ) : (
           <span className="text-muted-foreground">—</span>
@@ -287,8 +291,8 @@ export default function RolesPage() {
     },
     {
       key: '_id',
-      label: '',
-      render: (_: unknown, row: Role) => {
+      header: '',
+      cell: (row) => {
         if (row.isBuiltIn) {
           return (
             <Button variant="ghost" size="icon" className="h-7 w-7 opacity-30" disabled title="Built-in roles cannot be edited">
@@ -358,6 +362,7 @@ export default function RolesPage() {
         <DataTable
           columns={columns}
           data={roles}
+          keyExtractor={(row) => row._id ?? ''}
           loading={isLoading}
         />
       )}

@@ -23,7 +23,7 @@ import {
 import PageHeader from '@/components/layout/PageHeader';
 import PageShell from '@/components/layout/PageShell';
 import StatCard from '@/components/shared/StatCard';
-import DataTable from '@/components/shared/DataTable';
+import DataTable, { type ColumnDef } from '@/components/shared/DataTable';
 import SearchInput from '@/components/shared/SearchInput';
 import Pagination from '@/components/shared/Pagination';
 import EmptyState from '@/components/shared/EmptyState';
@@ -116,11 +116,11 @@ export default function SuperAdminPage() {
   const tenants: Tenant[] = data?.data ?? [];
   const pagination = data?.pagination;
 
-  const columns = [
+  const columns: ColumnDef<Tenant>[] = [
     {
       key: 'businessName',
-      label: 'Tenant',
-      render: (_: unknown, row: Tenant) => (
+      header: 'Tenant',
+      cell: (row) => (
         <div className="flex flex-col">
           <span className="font-medium">{row.businessName}</span>
           <span className="text-xs text-muted-foreground">{row.contactEmail}</span>
@@ -129,26 +129,26 @@ export default function SuperAdminPage() {
     },
     {
       key: 'plan',
-      label: 'Plan',
-      render: (v: unknown) => <PlanBadge plan={v as string} />,
+      header: 'Plan',
+      cell: (row) => <PlanBadge plan={row.plan} />,
     },
     {
       key: 'status',
-      label: 'Status',
-      render: (v: unknown) => <TenantStatusBadge status={v as string} />,
+      header: 'Status',
+      cell: (row) => <TenantStatusBadge status={row.status} />,
     },
     {
       key: 'country',
-      label: 'Country',
-      render: (v: unknown) => <span className="text-sm">{(v as string) || '—'}</span>,
+      header: 'Country',
+      cell: (row) => <span className="text-sm">{row.country || '—'}</span>,
     },
     {
       key: 'trialEndsAt',
-      label: 'Trial Ends',
-      render: (v: unknown) =>
-        v ? (
+      header: 'Trial Ends',
+      cell: (row) =>
+        row.trialEndsAt ? (
           <span className="text-sm text-muted-foreground">
-            {new Date(v as string).toLocaleDateString()}
+            {new Date(row.trialEndsAt).toLocaleDateString()}
           </span>
         ) : (
           <span className="text-muted-foreground text-sm">—</span>
@@ -156,17 +156,17 @@ export default function SuperAdminPage() {
     },
     {
       key: 'createdAt',
-      label: 'Created',
-      render: (v: unknown) => (
+      header: 'Created',
+      cell: (row) => (
         <span className="text-sm text-muted-foreground">
-          {v ? new Date(v as string).toLocaleDateString() : '—'}
+          {row.createdAt ? new Date(row.createdAt).toLocaleDateString() : '—'}
         </span>
       ),
     },
     {
       key: '_id',
-      label: '',
-      render: (_: unknown, row: Tenant) => (
+      header: '',
+      cell: (row) => (
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <Button
@@ -324,9 +324,9 @@ export default function SuperAdminPage() {
         <DataTable
           columns={columns}
           data={tenants}
+          keyExtractor={(row) => row._id ?? ''}
           loading={isLoading}
           onRowClick={(row) => navigate(`/super-admin/tenants/${row._id}`)}
-          rowClassName="cursor-pointer"
         />
       )}
 

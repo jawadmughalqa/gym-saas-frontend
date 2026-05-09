@@ -19,6 +19,7 @@ import { usePermission } from '@/hooks/use-permission';
 import { useTrainers, useArchiveTrainer } from './hooks/use-trainers';
 import TrainerForm from './components/TrainerForm';
 import type { TrainerProfile, TrainerStatus } from '@/types/trainer.types';
+import { useGetTrainers } from '@/api/generated/trainers/trainers';
 
 // ─── Star rating display ──────────────────────────────────────────────────────
 
@@ -66,7 +67,7 @@ export default function TrainersPage() {
     ...(availableOnly ? { availableOnly: true } : {}),
   };
 
-  const { data, isLoading } = useTrainers(query);
+  const { data, isLoading } = useGetTrainers(query);
 
   function handleEdit(trainer: TrainerProfile) {
     setEditingTrainer(trainer);
@@ -210,7 +211,7 @@ export default function TrainersPage() {
       </div>
 
       {/* Table */}
-      {!isLoading && data?.trainers.length === 0 ? (
+      {!isLoading && data?.data?.length === 0 ? (
         <EmptyState
           icon={<Dumbbell className="h-12 w-12" />}
           title="No trainers found"
@@ -221,7 +222,7 @@ export default function TrainersPage() {
         <>
           <DataTable
             columns={columns}
-            data={data?.trainers ?? []}
+            data={data?.data ?? []}
             keyExtractor={(r) => r._id}
             loading={isLoading}
             skeletonRows={10}

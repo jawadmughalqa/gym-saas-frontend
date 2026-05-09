@@ -19,6 +19,8 @@ import { EquipmentStatusBadge } from '@/components/shared/StatusBadge';
 import { useTableState } from '@/hooks/use-table-state';
 import { useConfirm } from '@/hooks/use-confirm';
 import { usePermission } from '@/hooks/use-permission';
+import { toast } from '@/hooks/use-toast';
+import { getErrorMessage } from '@/utils/error';
 import { useGetEquipment, useDeleteEquipmentEquipmentId } from '@/api/generated/equipment/equipment';
 import type { Equipment } from '@/api/generated/schemas/equipment';
 import type { GetEquipmentStatus } from '@/api/generated/schemas/getEquipmentStatus';
@@ -78,7 +80,11 @@ export default function EquipmentPage() {
     query: { placeholderData: (prev: unknown) => prev, staleTime: 1000 * 30 },
   });
 
-  const deleteEquipment = useDeleteEquipmentEquipmentId();
+  const deleteEquipment = useDeleteEquipmentEquipmentId({
+    mutation: {
+      onError: (err) => toast({ variant: 'destructive', title: 'Failed to delete equipment', description: getErrorMessage(err) }),
+    },
+  });
   const [deletingId, setDeletingId] = useState<string | null>(null);
 
   const equipmentList = data?.data ?? [];

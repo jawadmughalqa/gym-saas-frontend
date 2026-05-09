@@ -56,7 +56,6 @@ export default function RoleForm({ open, onOpenChange, role }: RoleFormProps) {
   const { data: permissionsData } = useGetRolesPermissions({
     query: { staleTime: 1000 * 60 * 5 },
   });
-
   // permissionsData.data is { [resource]: string[] }
   const groupedPermissions = permissionsData?.data ?? {};
   const allResources = useMemo(() => Object.keys(groupedPermissions).sort(), [groupedPermissions]);

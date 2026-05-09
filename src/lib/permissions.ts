@@ -42,7 +42,7 @@ export type Permission =
  * member  = self-service only
  */
 const ROLE_PERMISSIONS: Record<Exclude<UserRole, 'super_admin'>, Permission[]> = {
-  owner: [
+  gym_owner: [
     'tenant.read', 'tenant.update',
     'branch.create', 'branch.read', 'branch.update', 'branch.delete',
     'member.create', 'member.read', 'member.update', 'member.delete',
@@ -57,7 +57,7 @@ const ROLE_PERMISSIONS: Record<Exclude<UserRole, 'super_admin'>, Permission[]> =
     'user.create', 'user.read', 'user.update', 'user.delete',
     'notification.read',
   ],
-  manager: [
+  branch_manager: [
     'branch.read', 'branch.update',
     'member.create', 'member.read', 'member.update',
     'subscription.create', 'subscription.read', 'subscription.update', 'subscription.cancel',
@@ -78,7 +78,7 @@ const ROLE_PERMISSIONS: Record<Exclude<UserRole, 'super_admin'>, Permission[]> =
     'equipment.read',
     'notification.read',
   ],
-  receptionist: [
+  staff: [
     'member.create', 'member.read', 'member.update',
     'subscription.read',
     'invoice.read',

@@ -1,5 +1,6 @@
 import { create } from 'zustand';
 import type { UserRole } from '@/types/api.types';
+import type { Permission } from '@/lib/permissions';
 
 interface AuthUser {
   userId: string;
@@ -7,6 +8,7 @@ interface AuthUser {
   role: UserRole;
   email: string;
   name: string;
+  permissions: Permission[];  // ← add this
 }
 
 interface AuthState {
@@ -31,8 +33,8 @@ export const useAuthStore = create<AuthState>((set) => ({
   setInitialised: () => set({ isInitialised: true }),
 }));
 
-// Selector helpers — stable references
 export const selectUser = (s: AuthState) => s.user;
 export const selectIsAuthenticated = (s: AuthState) => !!s.accessToken;
 export const selectRole = (s: AuthState) => s.user?.role ?? null;
 export const selectTenantId = (s: AuthState) => s.user?.tenantId ?? null;
+export const selectPermissions = (s: AuthState) => s.user?.permissions ?? [];

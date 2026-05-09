@@ -42,6 +42,7 @@ export default function InvoicesPage() {
   };
 
   const { data, isLoading } = useInvoices(query);
+  console.log("🚀 ~ InvoicesPage ~ data:", data)
 
   function handleVoid(inv: Invoice) {
     setVoidingInvoice(inv);
@@ -172,7 +173,7 @@ export default function InvoicesPage() {
       </div>
 
       {/* Table */}
-      {!isLoading && data?.invoices.length === 0 ? (
+      {!isLoading && data?.data?.length === 0 ? (
         <EmptyState
           icon={<FileText className="h-12 w-12" />}
           title="No invoices found"
@@ -185,7 +186,7 @@ export default function InvoicesPage() {
         <>
           <DataTable
             columns={columns}
-            data={data?.invoices ?? []}
+            data={data?.data ?? []}
             keyExtractor={(r) => r._id}
             loading={isLoading}
             skeletonRows={10}

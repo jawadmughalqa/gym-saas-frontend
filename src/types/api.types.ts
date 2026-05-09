@@ -22,7 +22,7 @@ export interface PaginatedResponse<T> {
 export type MembershipStatus = 'active' | 'inactive' | 'suspended' | 'frozen';
 export type EquipmentStatus = 'operational' | 'maintenance' | 'out_of_service' | 'retired';
 // Note: SubscriptionStatus, InvoiceStatus, PaymentStatus are in their feature type files
-export type UserRole = 'super_admin' | 'owner' | 'manager' | 'trainer' | 'receptionist' | 'member';
+export type UserRole = 'super_admin' | 'gym_owner' | 'branch_manager' | 'staff' | 'trainer' | 'member';
 export type NotificationType =
   | 'subscription.created'
   | 'subscription.expiring_soon'

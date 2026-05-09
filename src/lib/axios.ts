@@ -3,7 +3,7 @@ import { useAuthStore } from '@/stores/auth.store';
 
 export const api = axios.create({
   baseURL: import.meta.env.VITE_API_URL ?? '/api/v1',
-  withCredentials: true, // send httpOnly refresh-token cookie
+  withCredentials: true,
   headers: { 'Content-Type': 'application/json' },
 });
 
@@ -22,6 +22,11 @@ api.interceptors.request.use((config) => {
 let isRefreshing = false;
 let refreshQueue: Array<(token: string) => void> = [];
 
+const drainQueue = (token: string) => {
+  refreshQueue.forEach((cb) => cb(token));
+  refreshQueue = [];
+};
+
 api.interceptors.response.use(
   (response) => response,
   async (error) => {
@@ -32,7 +37,7 @@ api.interceptors.response.use(
 
       if (isRefreshing) {
         // Queue this request until refresh completes
-        return new Promise((resolve) => {
+        return new Promise((resolve, reject) => {
           refreshQueue.push((token: string) => {
             original.headers.Authorization = `Bearer ${token}`;
             resolve(api(original));
@@ -52,18 +57,19 @@ api.interceptors.response.use(
         const newToken: string = data.data.accessToken;
         useAuthStore.getState().setAccessToken(newToken);
 
-        refreshQueue.forEach((cb) => cb(newToken));
-        refreshQueue = [];
+        // ✅ Reset flag BEFORE draining so queued requests
+        // don't trigger another refresh if they also get 401
+        isRefreshing = false;
+        drainQueue(newToken);
 
         original.headers.Authorization = `Bearer ${newToken}`;
         return api(original);
       } catch (_refreshError) {
-        useAuthStore.getState().clearAuth();
+        isRefreshing = false;
         refreshQueue = [];
+        useAuthStore.getState().clearAuth();
         window.location.href = '/login';
         return Promise.reject(error);
-      } finally {
-        isRefreshing = false;
       }
     }
 

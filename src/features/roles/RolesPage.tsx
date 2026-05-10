@@ -30,7 +30,6 @@ import {
   FormLabel,
   FormMessage,
 } from "@/components/ui/form";
-import { Input } from "@/components/ui/input";
 import {
   Select,
   SelectContent,
@@ -60,11 +59,13 @@ import {
 import { useGetBranches } from "@/api/generated/branches/branches";
 import type { Role } from "@/api/generated/schemas/role";
 import RoleForm from "./components/RoleForm";
+import { UserCombobox } from "@/components/ui/UserCombobox";
 
 // ─── Assign Role Dialog ───────────────────────────────────────────────────────
 
 const assignSchema = z.object({
-  userId: z.string().min(1, "User ID is required"),
+  // userId is now set by UserCombobox — still validated as non-empty
+  userId: z.string().min(1, "Please select a user"),
   roleId: z.string().min(1, "Role is required"),
   branchId: z.string().optional(),
 });
@@ -110,7 +111,6 @@ function AssignRoleDialog({
       data: {
         userId: values.userId,
         roleId: values.roleId,
-        // only send branchId if user actually picked one
         ...(values.branchId &&
           values.branchId !== "__none__" && {
             branchId: values.branchId,
@@ -125,22 +125,35 @@ function AssignRoleDialog({
         <DialogHeader>
           <DialogTitle>Assign Role to User</DialogTitle>
         </DialogHeader>
+
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+
+            {/* ── User picker (replaces plain text input) ── */}
             <FormField
               control={form.control}
               name="userId"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>User ID *</FormLabel>
+                  <FormLabel>User *</FormLabel>
                   <FormControl>
-                    <Input placeholder="Enter user ID" {...field} />
+                    {/*
+                     * UserCombobox calls field.onChange with the selected _id.
+                     * The form value stays a plain string — no behaviour change.
+                     */}
+                    <UserCombobox
+                      value={field.value}
+                      onChange={field.onChange}
+                      disabled={assign.isPending}
+                      placeholder="Select a user…"
+                    />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
               )}
             />
 
+            {/* ── Role selector (unchanged) ── */}
             <FormField
               control={form.control}
               name="roleId"
@@ -155,7 +168,6 @@ function AssignRoleDialog({
                     </FormControl>
                     <SelectContent>
                       {roles.map((r) => (
-                        // ✅ r._id is always a non-empty MongoDB ObjectId string
                         <SelectItem key={r._id} value={r._id!}>
                           {r.name}
                           {r.isBuiltIn && (
@@ -172,6 +184,7 @@ function AssignRoleDialog({
               )}
             />
 
+            {/* ── Branch selector (unchanged) ── */}
             <FormField
               control={form.control}
               name="branchId"
@@ -179,7 +192,6 @@ function AssignRoleDialog({
                 <FormItem>
                   <FormLabel>Branch (optional)</FormLabel>
                   <Select
-                    // ✅ use '__none__' sentinel instead of '' for "no branch"
                     value={field.value ?? "__none__"}
                     onValueChange={(val) =>
                       field.onChange(val === "__none__" ? undefined : val)
@@ -191,7 +203,6 @@ function AssignRoleDialog({
                       </SelectTrigger>
                     </FormControl>
                     <SelectContent>
-                      {/* ✅ '__none__' is a real non-empty string value */}
                       <SelectItem value="__none__">All branches</SelectItem>
                       {branches.map((b) => (
                         <SelectItem key={b._id} value={b._id!}>
@@ -224,7 +235,7 @@ function AssignRoleDialog({
   );
 }
 
-// ─── RolesPage ────────────────────────────────────────────────────────────────
+// ─── RolesPage (unchanged) ────────────────────────────────────────────────────
 
 export default function RolesPage() {
   const qc = useQueryClient();

@@ -41,7 +41,9 @@ function useColumns(
       sortable: true,
       cell: (row) => (
         <div>
-          <p className="font-medium">{row.fullName}</p>
+          <p className="font-medium">
+            {row.firstName} {row.lastName}
+          </p>
           <p className="text-xs text-muted-foreground">{row.email}</p>
         </div>
       ),

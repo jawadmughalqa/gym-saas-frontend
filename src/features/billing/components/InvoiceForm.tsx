@@ -1,17 +1,40 @@
+import { useState } from 'react';
 import { useFieldArray, useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { Plus, Trash2, Loader2 } from 'lucide-react';
+import { Check, ChevronsUpDown, Loader2, Plus, Trash2, UserCircle } from 'lucide-react';
 import { Sheet, SheetContent } from '@/components/ui/sheet';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from '@/components/ui/popover';
+import {
+  Command,
+  CommandEmpty,
+  CommandGroup,
+  CommandInput,
+  CommandItem,
+  CommandList,
+} from '@/components/ui/command';
 import { Separator } from '@/components/ui/separator';
 import { Switch } from '@/components/ui/switch';
+import { cn } from '@/lib/utils';
 import { formatCurrency } from '@/utils/format';
 import { useCreateInvoice } from '../hooks/use-billing';
+import { useGetMembers } from '@/api/generated/members/members';
+import { useGetBranches } from '@/api/generated/branches/branches';
 
 // ─── Schema ───────────────────────────────────────────────────────────────────
 
@@ -24,8 +47,8 @@ const lineItemSchema = z.object({
 });
 
 const formSchema = z.object({
-  memberId:                   z.string().min(1, 'Member ID required'),
-  branchId:                   z.string().min(1, 'Branch ID required'),
+  memberId:                   z.string().min(1, 'Member is required'),
+  branchId:                   z.string().min(1, 'Branch is required'),
   currency:                   z.string().default('USD'),
   dueDate:                    z.string().optional(),
   discountCode:               z.string().optional(),
@@ -47,11 +70,128 @@ interface InvoiceFormProps {
   defaultBranchId?: string;
 }
 
-// ─── Component ────────────────────────────────────────────────────────────────
+// ─── MemberCombobox ───────────────────────────────────────────────────────────
+
+interface MemberComboboxProps {
+  value: string;
+  onChange: (id: string) => void;
+  /** Only fetch + show members belonging to this branch */
+  branchId: string;
+  disabled?: boolean;
+}
+
+function MemberCombobox({ value, onChange, branchId, disabled }: MemberComboboxProps) {
+  const [open, setOpen] = useState(false);
+
+  const { data: membersData, isLoading } = useGetMembers(
+    { limit: 100, status: 'active', branchId },
+    {
+      query: {
+        // Only run when a branch has actually been selected
+        enabled: !!branchId,
+        staleTime: 1000 * 60,
+      },
+    },
+  );
+  const members = membersData?.data ?? [];
+
+  const selected = members.find((m) => m._id === value);
+  const triggerLabel = selected
+    ? `${selected.firstName} ${selected.lastName}`
+    : !branchId
+    ? 'Select a branch first'
+    : 'Select a member…';
+
+  return (
+    <Popover open={open} onOpenChange={setOpen}>
+      <PopoverTrigger asChild>
+        <Button
+          type="button"
+          variant="outline"
+          role="combobox"
+          aria-expanded={open}
+          // Disabled when no branch selected, loading, or parent says disabled
+          disabled={disabled || !branchId}
+          className={cn(
+            'w-full justify-between font-normal',
+            !value && 'text-muted-foreground',
+          )}
+        >
+          <span className="flex items-center gap-2 truncate">
+            <UserCircle className="h-4 w-4 shrink-0 text-muted-foreground" />
+            <span className="truncate">{triggerLabel}</span>
+          </span>
+          <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+        </Button>
+      </PopoverTrigger>
+
+      <PopoverContent
+        className="w-[var(--radix-popover-trigger-width)] p-0"
+        align="start"
+      >
+        <Command
+          filter={(itemValue, search) => {
+            const m = members.find((m) => m._id === itemValue);
+            if (!m) return 0;
+            const haystack = `${m.firstName} ${m.lastName} ${m.email}`.toLowerCase();
+            return haystack.includes(search.toLowerCase()) ? 1 : 0;
+          }}
+        >
+          <CommandInput placeholder="Search by name or email…" />
+          <CommandList>
+            {isLoading && (
+              <div className="flex items-center justify-center gap-2 py-6 text-sm text-muted-foreground">
+                <Loader2 className="h-4 w-4 animate-spin" />
+                Loading members…
+              </div>
+            )}
+            {!isLoading && <CommandEmpty>No members found for this branch.</CommandEmpty>}
+            {!isLoading && members.length > 0 && (
+              <CommandGroup>
+                {members.map((m) => (
+                  <CommandItem
+                    key={m._id}
+                    value={m._id}
+                    onSelect={(id) => { onChange(id); setOpen(false); }}
+                    className="flex items-center gap-3 py-2.5"
+                  >
+                    <Check
+                      className={cn('h-4 w-4 shrink-0', value === m._id ? 'opacity-100' : 'opacity-0')}
+                    />
+                    <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-muted text-xs font-semibold uppercase text-muted-foreground">
+                      {m.firstName[0]}{m.lastName[0]}
+                    </span>
+                    <span className="flex min-w-0 flex-1 flex-col">
+                      <span className="truncate text-sm font-medium">
+                        {m.firstName} {m.lastName}
+                      </span>
+                      <span className="truncate text-xs text-muted-foreground">
+                        {m.email}
+                      </span>
+                    </span>
+                  </CommandItem>
+                ))}
+              </CommandGroup>
+            )}
+          </CommandList>
+        </Command>
+      </PopoverContent>
+    </Popover>
+  );
+}
+
+// ─── InvoiceForm ──────────────────────────────────────────────────────────────
 
 export default function InvoiceForm({ open, onOpenChange, defaultMemberId, defaultBranchId }: InvoiceFormProps) {
   const createInvoice = useCreateInvoice({ onSuccess: () => onOpenChange(false) });
   const isPending = createInvoice.isPending;
+
+  // Branches — load all active ones upfront (small list)
+  const { data: branchesData, isLoading: branchesLoading } = useGetBranches(
+    { limit: 100, status: 'active' },
+    { query: { staleTime: 1000 * 60 } },
+  );
+  const branches = branchesData?.data ?? [];
 
   const {
     register, handleSubmit, control, setValue, watch, reset,
@@ -68,20 +208,16 @@ export default function InvoiceForm({ open, onOpenChange, defaultMemberId, defau
   });
 
   const { fields, append, remove } = useFieldArray({ control, name: 'lineItems' });
-  const lineItems = watch('lineItems');
-  const currency = watch('currency');
+  const lineItems  = watch('lineItems');
+  const currency   = watch('currency');
+  const branchId   = watch('branchId');   // drives member query
+  const memberId   = watch('memberId');
 
   // Running totals
-  const subtotal = lineItems.reduce((sum, item) => {
-    const base = (Number(item.quantity) || 0) * (Number(item.unitPrice) || 0);
-    return sum + base;
-  }, 0);
-  const taxTotal = lineItems.reduce((sum, item) => {
-    const base = (Number(item.quantity) || 0) * (Number(item.unitPrice) || 0);
-    return sum + base * ((Number(item.taxRate) || 0) / 100);
-  }, 0);
+  const subtotal   = lineItems.reduce((sum, item) => sum + (Number(item.quantity) || 0) * (Number(item.unitPrice) || 0), 0);
+  const taxTotal   = lineItems.reduce((sum, item) => sum + (Number(item.quantity) || 0) * (Number(item.unitPrice) || 0) * ((Number(item.taxRate) || 0) / 100), 0);
   const discountAmt = Number(watch('invoiceLevelDiscountAmount')) || 0;
-  const total = subtotal + taxTotal - discountAmt;
+  const total      = subtotal + taxTotal - discountAmt;
 
   function onSubmit(values: FormValues) {
     createInvoice.mutate({
@@ -110,12 +246,12 @@ export default function InvoiceForm({ open, onOpenChange, defaultMemberId, defau
   }
 
   const LINE_ITEM_TYPES = [
-    { value: 'subscription',       label: 'Subscription' },
-    { value: 'personal_training',  label: 'Personal Training' },
-    { value: 'product',            label: 'Product' },
-    { value: 'late_fee',           label: 'Late Fee' },
-    { value: 'addon',              label: 'Add-on' },
-    { value: 'other',              label: 'Other' },
+    { value: 'subscription',      label: 'Subscription' },
+    { value: 'personal_training', label: 'Personal Training' },
+    { value: 'product',           label: 'Product' },
+    { value: 'late_fee',          label: 'Late Fee' },
+    { value: 'addon',             label: 'Add-on' },
+    { value: 'other',             label: 'Other' },
   ] as const;
 
   return (
@@ -129,21 +265,63 @@ export default function InvoiceForm({ open, onOpenChange, defaultMemberId, defau
 
         <form onSubmit={handleSubmit(onSubmit)} className="px-6 py-5 space-y-6">
 
-          {/* ── Basic info ── */}
+          {/* ── Invoice details ── */}
           <section className="space-y-4">
-            <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide">Invoice Details</h3>
+            <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide">
+              Invoice Details
+            </h3>
+
             <div className="grid grid-cols-2 gap-3">
+              {/* Step 1 — Branch */}
               <div className="space-y-1.5">
-                <Label htmlFor="memberId">Member ID *</Label>
-                <Input id="memberId" placeholder="Member ID" disabled={isPending} className={errors.memberId ? 'border-destructive' : ''} {...register('memberId')} />
-                {errors.memberId && <p className="text-xs text-destructive">{errors.memberId.message}</p>}
+                <Label>Branch *</Label>
+                <Select
+                  value={branchId}
+                  onValueChange={(v) => {
+                    setValue('branchId', v, { shouldValidate: true });
+                    // Clear member whenever branch changes — old selection is invalid
+                    if (memberId) setValue('memberId', '', { shouldValidate: false });
+                  }}
+                  disabled={isPending || branchesLoading}
+                >
+                  <SelectTrigger className={errors.branchId ? 'border-destructive' : ''}>
+                    <SelectValue placeholder={branchesLoading ? 'Loading…' : 'Select a branch'} />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {branches.map((b) => (
+                      <SelectItem key={b._id} value={b._id}>
+                        {b.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                {errors.branchId && (
+                  <p className="text-xs text-destructive">{errors.branchId.message}</p>
+                )}
               </div>
+
+              {/* Step 2 — Member (filtered by branch) */}
               <div className="space-y-1.5">
-                <Label htmlFor="branchId">Branch ID *</Label>
-                <Input id="branchId" placeholder="Branch ID" disabled={isPending} className={errors.branchId ? 'border-destructive' : ''} {...register('branchId')} />
-                {errors.branchId && <p className="text-xs text-destructive">{errors.branchId.message}</p>}
+                <Label>
+                  Member *{' '}
+                  {!branchId && (
+                    <span className="text-xs font-normal text-muted-foreground">
+                      — select a branch first
+                    </span>
+                  )}
+                </Label>
+                <MemberCombobox
+                  value={memberId}
+                  onChange={(id) => setValue('memberId', id, { shouldValidate: true })}
+                  branchId={branchId}
+                  disabled={isPending}
+                />
+                {errors.memberId && (
+                  <p className="text-xs text-destructive">{errors.memberId.message}</p>
+                )}
               </div>
             </div>
+
             <div className="grid grid-cols-2 gap-3">
               <div className="space-y-1.5">
                 <Label htmlFor="currency">Currency</Label>
@@ -154,6 +332,7 @@ export default function InvoiceForm({ open, onOpenChange, defaultMemberId, defau
                 <Input id="dueDate" type="date" disabled={isPending} {...register('dueDate')} />
               </div>
             </div>
+
             <div className="space-y-1.5">
               <Label htmlFor="memo">Memo</Label>
               <Textarea id="memo" placeholder="Visible on invoice…" disabled={isPending} {...register('memo')} />
@@ -162,7 +341,7 @@ export default function InvoiceForm({ open, onOpenChange, defaultMemberId, defau
 
           <Separator />
 
-          {/* ── Line items ── */}
+          {/* ── Line items (unchanged) ── */}
           <section className="space-y-3">
             <div className="flex items-center justify-between">
               <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide">Line Items</h3>
@@ -194,7 +373,6 @@ export default function InvoiceForm({ open, onOpenChange, defaultMemberId, defau
                   )}
 
                   <div className="grid grid-cols-2 gap-2 pr-8">
-                    {/* Type */}
                     <div className="space-y-1">
                       <Label className="text-xs">Type</Label>
                       <Select
@@ -202,9 +380,7 @@ export default function InvoiceForm({ open, onOpenChange, defaultMemberId, defau
                         onValueChange={(v) => setValue(`lineItems.${index}.type`, v as FormValues['lineItems'][0]['type'])}
                         disabled={isPending}
                       >
-                        <SelectTrigger className="h-8 text-xs">
-                          <SelectValue />
-                        </SelectTrigger>
+                        <SelectTrigger className="h-8 text-xs"><SelectValue /></SelectTrigger>
                         <SelectContent>
                           {LINE_ITEM_TYPES.map((t) => (
                             <SelectItem key={t.value} value={t.value}>{t.label}</SelectItem>
@@ -212,8 +388,6 @@ export default function InvoiceForm({ open, onOpenChange, defaultMemberId, defau
                         </SelectContent>
                       </Select>
                     </div>
-
-                    {/* Description */}
                     <div className="space-y-1">
                       <Label className="text-xs">Description *</Label>
                       <Input
@@ -226,28 +400,26 @@ export default function InvoiceForm({ open, onOpenChange, defaultMemberId, defau
                   </div>
 
                   <div className="grid grid-cols-3 gap-2">
-                    {/* Quantity */}
                     <div className="space-y-1">
                       <Label className="text-xs">Qty *</Label>
                       <Input type="number" min="0.01" step="0.01" className="h-8 text-xs" disabled={isPending} {...register(`lineItems.${index}.quantity`)} />
                     </div>
-                    {/* Unit price */}
                     <div className="space-y-1">
                       <Label className="text-xs">Unit Price *</Label>
                       <Input type="number" min="0" step="0.01" className="h-8 text-xs" disabled={isPending} {...register(`lineItems.${index}.unitPrice`)} />
                     </div>
-                    {/* Tax rate */}
                     <div className="space-y-1">
                       <Label className="text-xs">Tax %</Label>
                       <Input type="number" min="0" max="100" step="0.01" className="h-8 text-xs" placeholder="0" disabled={isPending} {...register(`lineItems.${index}.taxRate`)} />
                     </div>
                   </div>
 
-                  {/* Row total */}
                   <div className="text-right text-xs text-muted-foreground">
-                    Line total: <span className="font-medium text-foreground">
+                    Line total:{' '}
+                    <span className="font-medium text-foreground">
                       {formatCurrency(
-                        (Number(lineItems[index]?.quantity) || 0) * (Number(lineItems[index]?.unitPrice) || 0) *
+                        (Number(lineItems[index]?.quantity) || 0) *
+                        (Number(lineItems[index]?.unitPrice) || 0) *
                         (1 + (Number(lineItems[index]?.taxRate) || 0) / 100),
                         currency,
                       )}
@@ -260,7 +432,7 @@ export default function InvoiceForm({ open, onOpenChange, defaultMemberId, defau
 
           <Separator />
 
-          {/* ── Discounts & totals ── */}
+          {/* ── Discounts & totals (unchanged) ── */}
           <section className="space-y-3">
             <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide">Discount & Totals</h3>
             <div className="grid grid-cols-2 gap-3">
@@ -274,35 +446,30 @@ export default function InvoiceForm({ open, onOpenChange, defaultMemberId, defau
               </div>
             </div>
 
-            {/* Running total */}
             <div className="rounded-md bg-muted/30 p-3 space-y-1 text-sm">
               <div className="flex justify-between text-muted-foreground">
-                <span>Subtotal</span>
-                <span>{formatCurrency(subtotal, currency)}</span>
+                <span>Subtotal</span><span>{formatCurrency(subtotal, currency)}</span>
               </div>
               {taxTotal > 0 && (
                 <div className="flex justify-between text-muted-foreground">
-                  <span>Tax</span>
-                  <span>{formatCurrency(taxTotal, currency)}</span>
+                  <span>Tax</span><span>{formatCurrency(taxTotal, currency)}</span>
                 </div>
               )}
               {discountAmt > 0 && (
                 <div className="flex justify-between text-green-600">
-                  <span>Discount</span>
-                  <span>-{formatCurrency(discountAmt, currency)}</span>
+                  <span>Discount</span><span>-{formatCurrency(discountAmt, currency)}</span>
                 </div>
               )}
               <Separator className="my-1" />
               <div className="flex justify-between font-semibold">
-                <span>Total</span>
-                <span>{formatCurrency(total, currency)}</span>
+                <span>Total</span><span>{formatCurrency(total, currency)}</span>
               </div>
             </div>
           </section>
 
           <Separator />
 
-          {/* ── Options ── */}
+          {/* ── Options (unchanged) ── */}
           <section className="space-y-3">
             <div className="flex items-center justify-between">
               <div>
@@ -317,7 +484,7 @@ export default function InvoiceForm({ open, onOpenChange, defaultMemberId, defau
             </div>
           </section>
 
-          {/* ── Footer ── */}
+          {/* ── Footer (unchanged) ── */}
           <div className="flex gap-2 pt-2 pb-4">
             <Button type="button" variant="outline" className="flex-1" onClick={() => handleClose(false)} disabled={isPending}>
               Cancel

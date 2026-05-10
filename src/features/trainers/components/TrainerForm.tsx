@@ -1,19 +1,26 @@
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { useForm, useFieldArray } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { Plus, Trash2 } from 'lucide-react';
+import { Plus, Trash2, X, ChevronsUpDown, Check } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
-import { Checkbox } from '@/components/ui/checkbox';
+import { Badge } from '@/components/ui/badge';
 import {
   Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription, SheetFooter,
 } from '@/components/ui/sheet';
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from '@/components/ui/select';
+import {
+  Popover, PopoverContent, PopoverTrigger,
+} from '@/components/ui/popover';
+import {
+  Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList,
+} from '@/components/ui/command';
+import { cn } from '@/lib/utils';
 import { useGetBranches } from '@/api/generated/branches/branches';
 import { useCreateTrainer, useUpdateTrainer } from '../hooks/use-trainers';
 import { toast } from '@/hooks/use-toast';
@@ -38,7 +45,6 @@ const availabilitySlotSchema = z.object({
   endTime:   z.string().min(1, 'Required'),
 });
 
-// Base schema for profile fields (shared between create and edit)
 const profileFieldsSchema = z.object({
   branchIds:       z.array(z.string()).min(1, 'At least one branch is required'),
   specializations: z.string().optional(),
@@ -58,7 +64,6 @@ const profileFieldsSchema = z.object({
   availability: z.array(availabilitySlotSchema).optional(),
 });
 
-// Create schema includes user account fields
 const createTrainerSchema = profileFieldsSchema.extend({
   firstName: z.string().min(1, 'First name is required').max(80),
   lastName:  z.string().min(1, 'Last name is required').max(80),
@@ -66,7 +71,6 @@ const createTrainerSchema = profileFieldsSchema.extend({
   password:  z.string().min(8, 'Password must be at least 8 characters'),
 });
 
-// Edit schema is just profile fields
 const editTrainerSchema = profileFieldsSchema;
 
 type CreateTrainerFormValues = z.input<typeof createTrainerSchema>;
@@ -81,11 +85,130 @@ interface TrainerFormProps {
   trainer?:     TrainerProfile;
 }
 
-// ─── Helpers ─────────────────────────────────────────────────────────────────
+// ─── Helpers ──────────────────────────────────────────────────────────────────
 
 function splitTags(raw: string | undefined): string[] {
   if (!raw) return [];
   return raw.split(',').map((s) => s.trim()).filter(Boolean);
+}
+
+// ─── Branch Multi-Select Dropdown ─────────────────────────────────────────────
+
+interface BranchMultiSelectProps {
+  branches: Array<{ _id?: string; name?: string; isHeadquarters?: boolean }>;
+  selected: string[];
+  onChange: (ids: string[]) => void;
+  error?:   string;
+  disabled?: boolean;
+}
+
+function BranchMultiSelect({
+  branches,
+  selected,
+  onChange,
+  error,
+  disabled,
+}: BranchMultiSelectProps) {
+  const [open, setOpen] = useState(false);
+
+  function toggle(id: string) {
+    if (selected.includes(id)) {
+      onChange(selected.filter((s) => s !== id));
+    } else {
+      onChange([...selected, id]);
+    }
+  }
+
+  function remove(id: string) {
+    onChange(selected.filter((s) => s !== id));
+  }
+
+  const selectedBranches = branches.filter((b) => selected.includes(b._id ?? ''));
+
+  return (
+    <div className="space-y-2">
+      <Popover open={open} onOpenChange={setOpen}>
+        <PopoverTrigger asChild>
+          <Button
+            type="button"
+            variant="outline"
+            role="combobox"
+            aria-expanded={open}
+            disabled={disabled}
+            className={cn(
+              'w-full justify-between font-normal',
+              error && 'border-destructive',
+              selected.length === 0 && 'text-muted-foreground',
+            )}
+          >
+            {selected.length === 0
+              ? 'Select branches…'
+              : `${selected.length} branch${selected.length > 1 ? 'es' : ''} selected`}
+            <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+          </Button>
+        </PopoverTrigger>
+
+        <PopoverContent className="w-full p-0" align="start">
+          <Command>
+            <CommandInput placeholder="Search branches…" />
+            <CommandList>
+              <CommandEmpty>No branches found.</CommandEmpty>
+              <CommandGroup>
+                {branches.map((branch) => {
+                  const id       = branch._id ?? '';
+                  const isSelected = selected.includes(id);
+                  return (
+                    <CommandItem
+                      key={id}
+                      value={branch.name ?? id}
+                      onSelect={() => toggle(id)}
+                    >
+                      <Check
+                        className={cn(
+                          'mr-2 h-4 w-4',
+                          isSelected ? 'opacity-100' : 'opacity-0',
+                        )}
+                      />
+                      <span>{branch.name}</span>
+                      {branch.isHeadquarters && (
+                        <span className="ml-1.5 text-xs text-muted-foreground">(HQ)</span>
+                      )}
+                    </CommandItem>
+                  );
+                })}
+              </CommandGroup>
+            </CommandList>
+          </Command>
+        </PopoverContent>
+      </Popover>
+
+      {/* Selected branch tags */}
+      {selectedBranches.length > 0 && (
+        <div className="flex flex-wrap gap-1.5">
+          {selectedBranches.map((branch) => (
+            <Badge
+              key={branch._id}
+              variant="secondary"
+              className="flex items-center gap-1 pr-1"
+            >
+              <span className="text-xs">{branch.name}</span>
+              <button
+                type="button"
+                onClick={() => remove(branch._id ?? '')}
+                className="ml-0.5 rounded-full hover:bg-muted p-0.5"
+                disabled={disabled}
+              >
+                <X className="h-3 w-3" />
+                <span className="sr-only">Remove {branch.name}</span>
+              </button>
+            </Badge>
+          ))}
+        </div>
+      )}
+
+      {error && <p className="text-xs text-destructive">{error}</p>}
+    </div>
+  );
 }
 
 // ─── Component ────────────────────────────────────────────────────────────────
@@ -93,7 +216,10 @@ function splitTags(raw: string | undefined): string[] {
 export default function TrainerForm({ open, onOpenChange, trainer }: TrainerFormProps) {
   const isEdit = !!trainer;
 
-  const { data: branchesData } = useGetBranches({ limit: 100 });
+  const { data: branchesData, isLoading: branchesLoading } = useGetBranches({
+    limit: 100,
+    status: 'active',
+  });
   const branches = branchesData?.data ?? [];
 
   const createTrainer = useCreateTrainer({ onSuccess: () => onOpenChange(false) });
@@ -133,20 +259,23 @@ export default function TrainerForm({ open, onOpenChange, trainer }: TrainerForm
     name: 'availability',
   });
 
-  // Populate form when editing
+  // ── Populate form when editing ────────────────────────────────────────────
   useEffect(() => {
     if (open && trainer) {
       reset({
         branchIds:       trainer.branchIds ?? [],
         specializations: trainer.specializations?.join(', ') ?? '',
-        certifications:  trainer.certifications?.join(', ') ?? '',
+        certifications:  trainer.certifications?.join(', ')  ?? '',
         bio:             trainer.bio ?? '',
-        experienceYears: trainer.experienceYears !== undefined ? String(trainer.experienceYears) : '',
-        maxClients:      trainer.maxClients !== undefined ? String(trainer.maxClients) : '',
-        hourlyRate:      trainer.hourlyRate !== undefined ? String(trainer.hourlyRate) : '',
-        currency:        trainer.currency ?? 'USD',
-        status:          trainer.status ?? 'active',
-        availability:    trainer.availability ?? [],
+        experienceYears: trainer.experienceYears !== undefined
+          ? String(trainer.experienceYears) : '',
+        maxClients: trainer.maxClients !== undefined
+          ? String(trainer.maxClients) : '',
+        hourlyRate: trainer.hourlyRate !== undefined
+          ? String(trainer.hourlyRate) : '',
+        currency:     trainer.currency ?? 'USD',
+        status:       trainer.status   ?? 'active',
+        availability: trainer.availability ?? [],
       });
     } else if (open && !trainer) {
       reset({
@@ -168,27 +297,26 @@ export default function TrainerForm({ open, onOpenChange, trainer }: TrainerForm
     }
   }, [open, trainer, reset]);
 
+  // ── Submit ────────────────────────────────────────────────────────────────
   async function onSubmit(values: TrainerFormValues) {
     const specializations = splitTags(values.specializations as string | undefined);
     const certifications  = splitTags(values.certifications  as string | undefined);
 
     if (isEdit) {
-      // Edit: just update the trainer profile
       updateTrainer.mutate({
         branchIds:       values.branchIds,
         specializations,
         certifications,
-        bio:             values.bio || undefined,
+        bio:             values.bio       || undefined,
         experienceYears: values.experienceYears as number | undefined,
-        maxClients:      values.maxClients as number | undefined,
-        hourlyRate:      values.hourlyRate as number | undefined,
-        currency:        values.currency || undefined,
-        status:          values.status as TrainerStatus | undefined,
+        maxClients:      values.maxClients      as number | undefined,
+        hourlyRate:      values.hourlyRate      as number | undefined,
+        currency:        values.currency  || undefined,
+        status:          values.status    as TrainerStatus | undefined,
         availability:    values.availability,
       });
     } else {
-      // Create: two steps
-      // Step 1 — create the User account with role: trainer
+      // Step 1 — create User account with role: trainer
       let userId: string;
       try {
         const { data: staffResponse } = await api.post('/staff', {
@@ -209,17 +337,17 @@ export default function TrainerForm({ open, onOpenChange, trainer }: TrainerForm
         return;
       }
 
-      // Step 2 — create the TrainerProfile linked to the new User
+      // Step 2 — create TrainerProfile linked to the new User
       createTrainer.mutate({
         userId,
         branchIds:       values.branchIds,
         specializations,
         certifications,
-        bio:             values.bio || undefined,
+        bio:             values.bio       || undefined,
         experienceYears: values.experienceYears as number | undefined,
-        maxClients:      values.maxClients as number | undefined,
-        hourlyRate:      values.hourlyRate as number | undefined,
-        currency:        values.currency || undefined,
+        maxClients:      values.maxClients      as number | undefined,
+        hourlyRate:      values.hourlyRate      as number | undefined,
+        currency:        values.currency  || undefined,
         availability:    values.availability,
       });
     }
@@ -227,15 +355,7 @@ export default function TrainerForm({ open, onOpenChange, trainer }: TrainerForm
 
   const watchedBranchIds = watch('branchIds') ?? [];
 
-  function toggleBranch(id: string) {
-    const current = watchedBranchIds;
-    if (current.includes(id)) {
-      setValue('branchIds', current.filter((b) => b !== id), { shouldValidate: true });
-    } else {
-      setValue('branchIds', [...current, id], { shouldValidate: true });
-    }
-  }
-
+  // ── Render ────────────────────────────────────────────────────────────────
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
       <SheetContent side="right" className="w-full sm:max-w-xl overflow-y-auto">
@@ -250,13 +370,13 @@ export default function TrainerForm({ open, onOpenChange, trainer }: TrainerForm
 
         <form onSubmit={handleSubmit(onSubmit)} className="mt-6 space-y-6">
 
-          {/* ── Account details (create only) ──────────────────────────────── */}
+          {/* ── Account details (create only) ──────────────────────────── */}
           {!isEdit && (
             <div className="space-y-4 rounded-md border p-4 bg-muted/30">
               <p className="text-sm font-semibold">Login Account</p>
               <p className="text-xs text-muted-foreground">
-                The trainer will use these credentials to log in. They will be required to change
-                their password on first login.
+                The trainer will use these credentials to log in. They will be required
+                to change their password on first login.
               </p>
 
               <div className="grid grid-cols-2 gap-4">
@@ -312,36 +432,25 @@ export default function TrainerForm({ open, onOpenChange, trainer }: TrainerForm
             </div>
           )}
 
-          {/* ── Branches ───────────────────────────────────────────────────── */}
-          <div className="space-y-2">
-            <Label>Branches <span className="text-destructive">*</span></Label>
-            {branches.length === 0 ? (
-              <p className="text-sm text-muted-foreground">Loading branches…</p>
+          {/* ── Branches — multi-select dropdown ───────────────────────── */}
+          <div className="space-y-1.5">
+            <Label>
+              Branches <span className="text-destructive">*</span>
+            </Label>
+            {branchesLoading ? (
+              <div className="h-9 w-full animate-pulse rounded-md bg-muted" />
             ) : (
-              <div className="grid grid-cols-1 gap-2 rounded-md border p-3 sm:grid-cols-2">
-                {branches.map((branch) => (
-                  <label
-                    key={branch._id}
-                    className="flex cursor-pointer items-center gap-2 text-sm"
-                  >
-                    <Checkbox
-                      checked={watchedBranchIds.includes(branch._id ?? '')}
-                      onCheckedChange={() => toggleBranch(branch._id ?? '')}
-                    />
-                    <span>{branch.name}</span>
-                    {branch.isHeadquarters && (
-                      <span className="text-xs text-muted-foreground">(HQ)</span>
-                    )}
-                  </label>
-                ))}
-              </div>
-            )}
-            {errors.branchIds && (
-              <p className="text-xs text-destructive">{errors.branchIds.message}</p>
+              <BranchMultiSelect
+                branches={branches}
+                selected={watchedBranchIds}
+                onChange={(ids) => setValue('branchIds', ids, { shouldValidate: true })}
+                error={errors.branchIds?.message}
+                disabled={isPending}
+              />
             )}
           </div>
 
-          {/* ── Specializations ─────────────────────────────────────────────── */}
+          {/* ── Specializations ─────────────────────────────────────────── */}
           <div className="space-y-1.5">
             <Label htmlFor="specializations">Specializations</Label>
             <Input
@@ -350,11 +459,12 @@ export default function TrainerForm({ open, onOpenChange, trainer }: TrainerForm
               {...register('specializations')}
             />
             <p className="text-xs text-muted-foreground">
-              Comma-separated. Suggestions: {SPECIALIZATION_SUGGESTIONS.slice(0, 4).join(', ')}…
+              Comma-separated. Suggestions:{' '}
+              {SPECIALIZATION_SUGGESTIONS.slice(0, 4).join(', ')}…
             </p>
           </div>
 
-          {/* ── Certifications ──────────────────────────────────────────────── */}
+          {/* ── Certifications ──────────────────────────────────────────── */}
           <div className="space-y-1.5">
             <Label htmlFor="certifications">Certifications</Label>
             <Input
@@ -362,10 +472,12 @@ export default function TrainerForm({ open, onOpenChange, trainer }: TrainerForm
               placeholder="e.g. NASM-CPT, ACE, CrossFit L2"
               {...register('certifications')}
             />
-            <p className="text-xs text-muted-foreground">Comma-separated list of certifications.</p>
+            <p className="text-xs text-muted-foreground">
+              Comma-separated list of certifications.
+            </p>
           </div>
 
-          {/* ── Bio ─────────────────────────────────────────────────────────── */}
+          {/* ── Bio ─────────────────────────────────────────────────────── */}
           <div className="space-y-1.5">
             <Label htmlFor="bio">Bio</Label>
             <Textarea
@@ -376,7 +488,7 @@ export default function TrainerForm({ open, onOpenChange, trainer }: TrainerForm
             />
           </div>
 
-          {/* ── Experience + Max Clients ────────────────────────────────────── */}
+          {/* ── Experience + Max Clients ────────────────────────────────── */}
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-1.5">
               <Label htmlFor="experienceYears">Experience (years)</Label>
@@ -389,7 +501,9 @@ export default function TrainerForm({ open, onOpenChange, trainer }: TrainerForm
                 {...register('experienceYears')}
               />
               {errors.experienceYears && (
-                <p className="text-xs text-destructive">{errors.experienceYears.message}</p>
+                <p className="text-xs text-destructive">
+                  {errors.experienceYears.message}
+                </p>
               )}
             </div>
             <div className="space-y-1.5">
@@ -407,7 +521,7 @@ export default function TrainerForm({ open, onOpenChange, trainer }: TrainerForm
             </div>
           </div>
 
-          {/* ── Hourly Rate + Currency ──────────────────────────────────────── */}
+          {/* ── Hourly Rate + Currency ──────────────────────────────────── */}
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-1.5">
               <Label htmlFor="hourlyRate">Hourly Rate</Label>
@@ -441,7 +555,7 @@ export default function TrainerForm({ open, onOpenChange, trainer }: TrainerForm
             </div>
           </div>
 
-          {/* ── Status (edit only) ──────────────────────────────────────────── */}
+          {/* ── Status (edit only) ──────────────────────────────────────── */}
           {isEdit && (
             <div className="space-y-1.5">
               <Label>Status</Label>
@@ -461,7 +575,7 @@ export default function TrainerForm({ open, onOpenChange, trainer }: TrainerForm
             </div>
           )}
 
-          {/* ── Availability ────────────────────────────────────────────────── */}
+          {/* ── Availability ────────────────────────────────────────────── */}
           <div className="space-y-3">
             <div className="flex items-center justify-between">
               <Label>Availability</Label>
@@ -484,13 +598,18 @@ export default function TrainerForm({ open, onOpenChange, trainer }: TrainerForm
 
             <div className="space-y-2">
               {availFields.map((field, index) => (
-                <div key={field.id} className="flex items-end gap-2 rounded-md border p-3">
+                <div
+                  key={field.id}
+                  className="flex items-end gap-2 rounded-md border p-3"
+                >
                   <div className="flex-1 space-y-1">
                     <Label className="text-xs">Day</Label>
                     <Select
                       value={String(watch(`availability.${index}.day`) ?? 1)}
                       onValueChange={(v) =>
-                        setValue(`availability.${index}.day`, Number(v), { shouldValidate: true })
+                        setValue(`availability.${index}.day`, Number(v), {
+                          shouldValidate: true,
+                        })
                       }
                     >
                       <SelectTrigger className="h-8 text-xs">
@@ -498,7 +617,9 @@ export default function TrainerForm({ open, onOpenChange, trainer }: TrainerForm
                       </SelectTrigger>
                       <SelectContent>
                         {DAY_NAMES.map((name, i) => (
-                          <SelectItem key={i} value={String(i)}>{name}</SelectItem>
+                          <SelectItem key={i} value={String(i)}>
+                            {name}
+                          </SelectItem>
                         ))}
                       </SelectContent>
                     </Select>
@@ -537,7 +658,12 @@ export default function TrainerForm({ open, onOpenChange, trainer }: TrainerForm
           </div>
 
           <SheetFooter className="pt-2">
-            <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => onOpenChange(false)}
+              disabled={isPending}
+            >
               Cancel
             </Button>
             <Button type="submit" disabled={isPending || isSubmitting}>

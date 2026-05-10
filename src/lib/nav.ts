@@ -12,6 +12,7 @@ import {
   Shield,
   Percent,
   ClipboardList,
+  BadgePercent,
   type LucideIcon,
 } from 'lucide-react';
 import type { UserRole } from '@/types/api.types';
@@ -32,6 +33,8 @@ export interface NavGroup {
   items: NavItem[];
 }
 
+// ─── Flat list (used by simple sidebar implementations) ───────────────────────
+
 export const NAV_ITEMS: NavItem[] = [
   {
     to: '/dashboard',
@@ -51,6 +54,12 @@ export const NAV_ITEMS: NavItem[] = [
     permission: 'trainer.read',
   },
   {
+    to: '/branches',
+    label: 'Branches',
+    icon: Building2,
+    permission: 'branch.read',
+  },
+  {
     to: '/equipment',
     label: 'Equipment',
     icon: Package,
@@ -60,7 +69,13 @@ export const NAV_ITEMS: NavItem[] = [
     to: '/work-orders',
     label: 'Work Orders',
     icon: ClipboardList,
-    permission: 'equipment.read',
+    permission: 'work_order.read',
+  },
+  {
+    to: '/membership-plans',
+    label: 'Membership Plans',
+    icon: BadgePercent,
+    permission: 'plan.read',
   },
   {
     to: '/billing',
@@ -72,19 +87,13 @@ export const NAV_ITEMS: NavItem[] = [
     to: '/discounts',
     label: 'Discounts',
     icon: Percent,
-    permission: 'invoice.read',
+    permission: 'discount.read',
   },
   {
     to: '/reports',
     label: 'Reports',
     icon: BarChart3,
     permission: 'report.read',
-  },
-  {
-    to: '/branches',
-    label: 'Branches',
-    icon: Building2,
-    permission: 'branch.read',
   },
   {
     to: '/notifications',
@@ -100,40 +109,103 @@ export const NAV_ITEMS: NavItem[] = [
   },
 ];
 
-/** Grouped version of NAV_ITEMS for the redesigned sidebar */
+// ─── Grouped (used by grouped sidebar implementations) ────────────────────────
+
 export const NAV_GROUPS: NavGroup[] = [
   {
     label: 'Overview',
     items: [
-      { to: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
+      {
+        to: '/dashboard',
+        label: 'Dashboard',
+        icon: LayoutDashboard,
+      },
     ],
   },
   {
     label: 'Manage',
     items: [
-      { to: '/members',  label: 'Members',    icon: Users,         permission: 'member.read' },
-      { to: '/trainers', label: 'Trainers',   icon: Dumbbell,      permission: 'trainer.read' },
-      { to: '/branches', label: 'Branches',   icon: Building2,     permission: 'branch.read' },
-      { to: '/equipment',  label: 'Equipment',  icon: Package,      permission: 'equipment.read' },
-      { to: '/work-orders', label: 'Work Orders', icon: ClipboardList, permission: 'equipment.read' },
-      { to: '/billing',  label: 'Billing',    icon: CreditCard,    permission: 'invoice.read' },
-      { to: '/discounts', label: 'Discounts', icon: Percent,       permission: 'invoice.read' },
+      {
+        to: '/members',
+        label: 'Members',
+        icon: Users,
+        permission: 'member.read',
+      },
+      {
+        to: '/trainers',
+        label: 'Trainers',
+        icon: Dumbbell,
+        permission: 'trainer.read',
+      },
+      {
+        to: '/branches',
+        label: 'Branches',
+        icon: Building2,
+        permission: 'branch.read',
+      },
+      {
+        to: '/equipment',
+        label: 'Equipment',
+        icon: Package,
+        permission: 'equipment.read',
+      },
+      {
+        to: '/work-orders',
+        label: 'Work Orders',
+        icon: ClipboardList,
+        permission: 'work_order.read',
+      },
+      {
+        to: '/membership-plans',
+        label: 'Membership Plans',
+        icon: BadgePercent,
+        permission: 'plan.read',
+      },
+      {
+        to: '/billing',
+        label: 'Billing',
+        icon: CreditCard,
+        permission: 'invoice.read',
+      },
+      {
+        to: '/discounts',
+        label: 'Discounts',
+        icon: Percent,
+        permission: 'discount.read',
+      },
     ],
   },
   {
     label: 'Insights',
     items: [
-      { to: '/reports', label: 'Reports', icon: BarChart3, permission: 'report.read' },
+      {
+        to: '/reports',
+        label: 'Reports',
+        icon: BarChart3,
+        permission: 'report.read',
+      },
     ],
   },
   {
     label: 'System',
     items: [
-      { to: '/notifications', label: 'Notifications', icon: Bell,    permission: 'notification.read' },
-      { to: '/roles',         label: 'Roles',          icon: Shield,  permission: 'role.read' },
+      {
+        to: '/notifications',
+        label: 'Notifications',
+        icon: Bell,
+        permission: 'notification.read',
+      },
+      {
+        to: '/roles',
+        label: 'Roles',
+        icon: Shield,
+        permission: 'role.read',
+      },
     ],
   },
 ];
+
+// ─── Bottom nav (settings, super admin) ──────────────────────────────────────
 
 export const BOTTOM_NAV_ITEMS: NavItem[] = [
   {

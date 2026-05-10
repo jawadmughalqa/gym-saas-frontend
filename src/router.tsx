@@ -1,41 +1,35 @@
-import { lazy, Suspense } from 'react';
-import { createBrowserRouter, Navigate } from 'react-router-dom';
-import { Loader2 } from 'lucide-react';
-import AppShell from '@/components/layout/AppShell';
-import ProtectedRoute from '@/components/shared/ProtectedRoute';
-import NotFoundPage from '@/components/shared/NotFoundPage';
-import UnauthorizedPage from '@/components/shared/UnauthorizedPage';
-import LoginPage from '@/features/auth/LoginPage';
-import DashboardPage from '@/features/dashboard/DashboardPage';
+import { lazy, Suspense } from "react";
+import { createBrowserRouter, Navigate } from "react-router-dom";
+import { Loader2 } from "lucide-react";
+import AppShell from "@/components/layout/AppShell";
+import ProtectedRoute from "@/components/shared/ProtectedRoute";
+import NotFoundPage from "@/components/shared/NotFoundPage";
+import UnauthorizedPage from "@/components/shared/UnauthorizedPage";
+import LoginPage from "@/features/auth/LoginPage";
+import DashboardPage from "@/features/dashboard/DashboardPage";
 
-// ─── Lazy pages ────────────────────────────────────────────────────────────────
+// ─── Lazy pages ───────────────────────────────────────────────────────────────
 
-const ChangePasswordPage  = lazy(() => import('@/features/auth/ChangePasswordPage'));
-const MembersPage         = lazy(() => import('@/features/members/MembersPage'));
-const MemberDetailPage    = lazy(() => import('@/features/members/MemberDetailPage'));
-const InvoicesPage        = lazy(() => import('@/features/billing/InvoicesPage'));
-const InvoiceDetailPage   = lazy(() => import('@/features/billing/InvoiceDetailPage'));
-const DiscountsPage       = lazy(() => import('@/features/billing/DiscountsPage'));
-const TrainersPage        = lazy(() => import('@/features/trainers/TrainersPage'));
-const TrainerDetailPage   = lazy(() => import('@/features/trainers/TrainerDetailPage'));
-const EquipmentPage       = lazy(() => import('@/features/equipment/EquipmentPage'));
-const EquipmentDetailPage = lazy(() => import('@/features/equipment/EquipmentDetailPage'));
-const WorkOrdersPage      = lazy(() => import('@/features/equipment/WorkOrdersPage'));
-const ReportsPage         = lazy(() => import('@/features/reports/ReportsPage'));
-const NotificationsPage   = lazy(() => import('@/features/notifications/NotificationsPage'));
-const BranchesPage        = lazy(() => import('@/features/branches/BranchesPage'));
-const BranchDetailPage    = lazy(() => import('@/features/branches/BranchDetailPage'));
-const RolesPage           = lazy(() => import('@/features/roles/RolesPage'));
-const SuperAdminPage      = lazy(() => import('@/features/super-admin/SuperAdminPage'));
-const TenantDetailPage    = lazy(() => import('@/features/super-admin/TenantDetailPage'));
-const PlansPage           = lazy(() => import('@/features/super-admin/PlansPage'));
-
-// Uncomment as each phase is built:
-const BillingPage       = lazy(() => import('@/features/billing/InvoicesPage'));
-// const ReportsPage       = lazy(() => import('@/features/reports/ReportsPage'));
-// const BranchesPage      = lazy(() => import('@/features/branches/BranchesPage'));
-// const NotificationsPage = lazy(() => import('@/features/notifications/NotificationsPage'));
-// const SettingsPage      = lazy(() => import('@/features/settings/SettingsPage'));
+const ChangePasswordPage  = lazy(() => import("@/features/auth/ChangePasswordPage"));
+const MembersPage         = lazy(() => import("@/features/members/MembersPage"));
+const MemberDetailPage    = lazy(() => import("@/features/members/MemberDetailPage"));
+const InvoicesPage        = lazy(() => import("@/features/billing/InvoicesPage"));
+const InvoiceDetailPage   = lazy(() => import("@/features/billing/InvoiceDetailPage"));
+const DiscountsPage       = lazy(() => import("@/features/billing/DiscountsPage"));
+const TrainersPage        = lazy(() => import("@/features/trainers/TrainersPage"));
+const TrainerDetailPage   = lazy(() => import("@/features/trainers/TrainerDetailPage"));
+const EquipmentPage       = lazy(() => import("@/features/equipment/EquipmentPage"));
+const EquipmentDetailPage = lazy(() => import("@/features/equipment/EquipmentDetailPage"));
+const WorkOrdersPage      = lazy(() => import("@/features/equipment/WorkOrdersPage"));
+const ReportsPage         = lazy(() => import("@/features/reports/ReportsPage"));
+const NotificationsPage   = lazy(() => import("@/features/notifications/NotificationsPage"));
+const BranchesPage        = lazy(() => import("@/features/branches/BranchesPage"));
+const BranchDetailPage    = lazy(() => import("@/features/branches/BranchDetailPage"));
+const RolesPage           = lazy(() => import("@/features/roles/RolesPage"));
+const SuperAdminPage      = lazy(() => import("@/features/super-admin/SuperAdminPage"));
+const TenantDetailPage    = lazy(() => import("@/features/super-admin/TenantDetailPage"));
+const PlansPage           = lazy(() => import("@/features/super-admin/PlansPage"));
+const MembershipPlansPage = lazy(() => import("@/features/membership-plans/MembershipPlansPage"));
 
 // ─── Suspense wrapper ─────────────────────────────────────────────────────────
 
@@ -57,168 +51,154 @@ const router = createBrowserRouter([
 
   // ── Public ────────────────────────────────────────────────────────────────
   {
-    path: '/login',
+    path: "/login",
     element: <LoginPage />,
   },
 
   // ── Protected shell ───────────────────────────────────────────────────────
   {
-    path: '/',
+    path: "/",
     element: <ProtectedRoute />,
     children: [
       {
         element: <AppShell />,
         children: [
+
           // Root redirect
           { index: true, element: <Navigate to="/dashboard" replace /> },
 
           // Dashboard
           {
-            path: 'dashboard',
+            path: "dashboard",
             element: <DashboardPage />,
-            handle: { crumb: 'Dashboard' },
+            handle: { crumb: "Dashboard" },
           },
 
-          // ── Auth self-service ──────────────────────────────────────────
+          // ── Auth self-service ────────────────────────────────────────
           {
-            path: 'settings',
-            handle: { crumb: 'Settings' },
+            path: "settings",
+            handle: { crumb: "Settings" },
             children: [
               {
-                path: 'change-password',
+                path: "change-password",
                 element: <Lazy><ChangePasswordPage /></Lazy>,
-                handle: { crumb: 'Change Password' },
+                handle: { crumb: "Change Password" },
               },
             ],
           },
 
-          // ── Feature routes ────────────────────────────────────────────
+          // ── Members ──────────────────────────────────────────────────
           {
-            path: 'members',
-            handle: { crumb: 'Members' },
+            path: "members",
+            handle: { crumb: "Members" },
             children: [
               { index: true, element: <Lazy><MembersPage /></Lazy> },
               {
-                path: ':memberId',
+                path: ":memberId",
                 element: <Lazy><MemberDetailPage /></Lazy>,
-                handle: { crumb: 'Member Detail' },
+                handle: { crumb: "Member Detail" },
               },
             ],
           },
+
+          // ── Membership Plans ─────────────────────────────────────────
           {
-            path: 'billing',
-            handle: { crumb: 'Billing' },
+            path: "membership-plans",
+            element: <Lazy><MembershipPlansPage /></Lazy>,
+            handle: { crumb: "Membership Plans" },
+          },
+
+          // ── Billing ───────────────────────────────────────────────────
+          {
+            path: "billing",
+            handle: { crumb: "Billing" },
             children: [
               { index: true, element: <Lazy><InvoicesPage /></Lazy> },
               {
-                path: ':invoiceId',
+                path: ":invoiceId",
                 element: <Lazy><InvoiceDetailPage /></Lazy>,
-                handle: { crumb: 'Invoice' },
+                handle: { crumb: "Invoice" },
               },
             ],
           },
+
+          // ── Discounts ────────────────────────────────────────────────
           {
-            path: 'discounts',
+            path: "discounts",
             element: <Lazy><DiscountsPage /></Lazy>,
-            handle: { crumb: 'Discounts' },
+            handle: { crumb: "Discounts" },
           },
+
+          // ── Trainers ─────────────────────────────────────────────────
           {
-            path: 'trainers',
-            handle: { crumb: 'Trainers' },
+            path: "trainers",
+            handle: { crumb: "Trainers" },
             children: [
               { index: true, element: <Lazy><TrainersPage /></Lazy> },
               {
-                path: ':trainerId',
+                path: ":trainerId",
                 element: <Lazy><TrainerDetailPage /></Lazy>,
-                handle: { crumb: 'Trainer Detail' },
+                handle: { crumb: "Trainer Detail" },
               },
             ],
           },
+
+          // ── Equipment ────────────────────────────────────────────────
           {
-            path: 'equipment',
-            handle: { crumb: 'Equipment' },
+            path: "equipment",
+            handle: { crumb: "Equipment" },
             children: [
               { index: true, element: <Lazy><EquipmentPage /></Lazy> },
               {
-                path: ':equipmentId',
+                path: ":equipmentId",
                 element: <Lazy><EquipmentDetailPage /></Lazy>,
-                handle: { crumb: 'Equipment Detail' },
+                handle: { crumb: "Equipment Detail" },
               },
             ],
           },
+
+          // ── Work Orders ───────────────────────────────────────────────
           {
-            path: 'work-orders',
+            path: "work-orders",
             element: <Lazy><WorkOrdersPage /></Lazy>,
-            handle: { crumb: 'Work Orders' },
+            handle: { crumb: "Work Orders" },
           },
+
+          // ── Reports ───────────────────────────────────────────────────
           {
-            path: 'reports',
+            path: "reports",
             element: <Lazy><ReportsPage /></Lazy>,
-            handle: { crumb: 'Reports' },
+            handle: { crumb: "Reports" },
           },
+
+          // ── Notifications ─────────────────────────────────────────────
           {
-            path: 'notifications',
+            path: "notifications",
             element: <Lazy><NotificationsPage /></Lazy>,
-            handle: { crumb: 'Notifications' },
+            handle: { crumb: "Notifications" },
           },
+
+          // ── Branches ─────────────────────────────────────────────────
           {
-            path: 'branches',
-            handle: { crumb: 'Branches' },
+            path: "branches",
+            handle: { crumb: "Branches" },
             children: [
               { index: true, element: <Lazy><BranchesPage /></Lazy> },
               {
-                path: ':branchId',
+                path: ":branchId",
                 element: <Lazy><BranchDetailPage /></Lazy>,
-                handle: { crumb: 'Branch Detail' },
+                handle: { crumb: "Branch Detail" },
               },
             ],
           },
+
+          // ── Roles ─────────────────────────────────────────────────────
           {
-            path: 'roles',
+            path: "roles",
             element: <Lazy><RolesPage /></Lazy>,
-            handle: { crumb: 'Roles & Permissions' },
+            handle: { crumb: "Roles & Permissions" },
           },
-          {
-            path: 'equipment',
-            handle: { crumb: 'Equipment' },
-            children: [
-              { index: true, element: <Lazy><EquipmentPage /></Lazy> },
-            ],
-          },
-          {
-            path: 'billing',
-            handle: { crumb: 'Billing' },
-            children: [
-              { index: true, element: <Lazy><BillingPage /></Lazy> },
-            ],
-          },
-          {
-            path: 'reports',
-            handle: { crumb: 'Reports' },
-            children: [
-              { index: true, element: <Lazy><ReportsPage /></Lazy> },
-            ],
-          },
-          {
-            path: 'branches',
-            handle: { crumb: 'Branches' },
-            children: [
-              { index: true, element: <Lazy><BranchesPage /></Lazy> },
-            ],
-          },
-          {
-            path: 'notifications',
-            element: <Lazy><NotificationsPage /></Lazy>,
-            handle: { crumb: 'Notifications' },
-          },
-          // {
-          //   path: 'settings',
-          //   handle: { crumb: 'Settings' },
-          //   children: [
-          //     { index: true, element: <Lazy><SettingsPage /></Lazy> },
-          //     { path: 'change-password', element: <Lazy><ChangePasswordPage /></Lazy>, handle: { crumb: 'Change Password' } },
-          //   ],
-          // },
+
         ],
       },
     ],
@@ -226,8 +206,8 @@ const router = createBrowserRouter([
 
   // ── Super Admin (role-gated, shares AppShell) ─────────────────────────────
   {
-    path: '/super-admin',
-    element: <ProtectedRoute allowedRoles={['super_admin']} />,
+    path: "/super-admin",
+    element: <ProtectedRoute allowedRoles={["super_admin"]} />,
     children: [
       {
         element: <AppShell />,
@@ -235,17 +215,17 @@ const router = createBrowserRouter([
           {
             index: true,
             element: <Lazy><SuperAdminPage /></Lazy>,
-            handle: { crumb: 'Super Admin' },
+            handle: { crumb: "Super Admin" },
           },
           {
-            path: 'tenants/:tenantId',
+            path: "tenants/:tenantId",
             element: <Lazy><TenantDetailPage /></Lazy>,
-            handle: { crumb: 'Tenant Detail' },
+            handle: { crumb: "Tenant Detail" },
           },
           {
-            path: 'plans',
+            path: "plans",
             element: <Lazy><PlansPage /></Lazy>,
-            handle: { crumb: 'Plans' },
+            handle: { crumb: "Plans" },
           },
         ],
       },
@@ -253,8 +233,8 @@ const router = createBrowserRouter([
   },
 
   // ── Error pages ───────────────────────────────────────────────────────────
-  { path: '/unauthorized', element: <UnauthorizedPage /> },
-  { path: '*', element: <NotFoundPage /> },
+  { path: "/unauthorized", element: <UnauthorizedPage /> },
+  { path: "*",             element: <NotFoundPage /> },
 ]);
 
 export default router;

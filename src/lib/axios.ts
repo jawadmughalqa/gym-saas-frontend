@@ -19,59 +19,59 @@ api.interceptors.request.use((config) => {
 
 // ─── Response interceptor — silent 401 refresh ────────────────────────────────
 
-let isRefreshing = false;
-let refreshQueue: Array<(token: string) => void> = [];
+// let isRefreshing = false;
+// let refreshQueue: Array<(token: string) => void> = [];
 
-const drainQueue = (token: string) => {
-  refreshQueue.forEach((cb) => cb(token));
-  refreshQueue = [];
-};
+// const drainQueue = (token: string) => {
+//   refreshQueue.forEach((cb) => cb(token));
+//   refreshQueue = [];
+// };
 
 api.interceptors.response.use(
   (response) => response,
   async (error) => {
-    const original = error.config;
+    // const original = error.config;
 
-    if (error.response?.status === 401 && !original._retry) {
-      original._retry = true;
+    // if (error.response?.status === 401 && !original._retry) {
+    //   original._retry = true;
 
-      if (isRefreshing) {
-        // Queue this request until refresh completes
-        return new Promise((resolve, reject) => {
-          refreshQueue.push((token: string) => {
-            original.headers.Authorization = `Bearer ${token}`;
-            resolve(api(original));
-          });
-        });
-      }
+    //   if (isRefreshing) {
+    //     // Queue this request until refresh completes
+    //     return new Promise((resolve, reject) => {
+    //       refreshQueue.push((token: string) => {
+    //         original.headers.Authorization = `Bearer ${token}`;
+    //         resolve(api(original));
+    //       });
+    //     });
+    //   }
 
-      isRefreshing = true;
+    //   isRefreshing = true;
 
-      try {
-        const { data } = await axios.post(
-          `${import.meta.env.VITE_API_URL ?? '/api/v1'}/auth/refresh`,
-          {},
-          { withCredentials: true },
-        );
+    //   try {
+    //     const { data } = await axios.post(
+    //       `${import.meta.env.VITE_API_URL ?? '/api/v1'}/auth/refresh`,
+    //       {},
+    //       { withCredentials: true },
+    //     );
 
-        const newToken: string = data.data.accessToken;
-        useAuthStore.getState().setAccessToken(newToken);
+    //     const newToken: string = data.data.accessToken;
+    //     useAuthStore.getState().setAccessToken(newToken);
 
-        // ✅ Reset flag BEFORE draining so queued requests
-        // don't trigger another refresh if they also get 401
-        isRefreshing = false;
-        drainQueue(newToken);
+    //     // ✅ Reset flag BEFORE draining so queued requests
+    //     // don't trigger another refresh if they also get 401
+    //     isRefreshing = false;
+    //     drainQueue(newToken);
 
-        original.headers.Authorization = `Bearer ${newToken}`;
-        return api(original);
-      } catch (_refreshError) {
-        isRefreshing = false;
-        refreshQueue = [];
-        useAuthStore.getState().clearAuth();
-        window.location.href = '/login';
-        return Promise.reject(error);
-      }
-    }
+    //     original.headers.Authorization = `Bearer ${newToken}`;
+    //     return api(original);
+    //   } catch (_refreshError) {
+    //     isRefreshing = false;
+    //     refreshQueue = [];
+    //     useAuthStore.getState().clearAuth();
+    //     window.location.href = '/login';
+    //     return Promise.reject(error);
+    //   }
+    // }
 
     return Promise.reject(error);
   },

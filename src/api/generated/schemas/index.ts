@@ -288,6 +288,7 @@ export * from './postInstalmentsPlanIdCancelBody';
 export * from './postMembersMemberIdSubscriptionsSubscriptionIdCancelBody';
 export * from './postStaffBody';
 export * from './postStaffBodyRole';
+export * from './postTrainersWithUserBody';
 export * from './postWorkOrdersWorkOrderIdCancelBody';
 export * from './postWorkOrdersWorkOrderIdCommentsBody';
 export * from './recordInstalmentPaymentRequest';

@@ -39,6 +39,7 @@ import type {
   GetTrainersTrainerIdAssignmentsParams,
   GetTrainersTrainerIdNotesParams,
   NotFoundResponse,
+  PostTrainersWithUserBody,
   SuccessResponse,
   TrainerListResponse,
   TrainerProfileResponse,
@@ -59,6 +60,72 @@ import type { ErrorType , BodyType } from '../../../lib/orval-mutator';
 
 
 /**
+ * Creates both a User account (role: trainer) AND a TrainerProfile in one atomic transaction.
+This eliminates the need for separate /staff calls from frontend.
+
+ * @summary Create trainer with user account (composite)
+ */
+export const postTrainersWithUser = (
+    postTrainersWithUserBody: BodyType<PostTrainersWithUserBody>,
+ signal?: AbortSignal
+) => {
+
+
+      return orvalMutator<TrainerProfileResponse>(
+      {url: `/trainers/with-user`, method: 'POST',
+      headers: {'Content-Type': 'application/json', },
+      data: postTrainersWithUserBody, signal
+    },
+      );
+    }
+
+
+
+export const getPostTrainersWithUserMutationOptions = <TError = ErrorType<BadRequestResponse | ConflictResponse>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof postTrainersWithUser>>, TError,{data: BodyType<PostTrainersWithUserBody>}, TContext>, }
+): UseMutationOptions<Awaited<ReturnType<typeof postTrainersWithUser>>, TError,{data: BodyType<PostTrainersWithUserBody>}, TContext> => {
+
+const mutationKey = ['postTrainersWithUser'];
+const {mutation: mutationOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof postTrainersWithUser>>, {data: BodyType<PostTrainersWithUserBody>}> = (props) => {
+          const {data} = props ?? {};
+
+          return  postTrainersWithUser(data,)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type PostTrainersWithUserMutationResult = NonNullable<Awaited<ReturnType<typeof postTrainersWithUser>>>
+    export type PostTrainersWithUserMutationBody = BodyType<PostTrainersWithUserBody>
+    export type PostTrainersWithUserMutationError = ErrorType<BadRequestResponse | ConflictResponse>
+
+    /**
+ * @summary Create trainer with user account (composite)
+ */
+export const usePostTrainersWithUser = <TError = ErrorType<BadRequestResponse | ConflictResponse>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof postTrainersWithUser>>, TError,{data: BodyType<PostTrainersWithUserBody>}, TContext>, }
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof postTrainersWithUser>>,
+        TError,
+        {data: BodyType<PostTrainersWithUserBody>},
+        TContext
+      > => {
+      return useMutation(getPostTrainersWithUserMutationOptions(options), queryClient);
+    }
+    /**
  * Paginated list of trainers for the tenant. Supports filtering by branch, status, specialization, and availability.
  * @summary List trainer profiles
  */

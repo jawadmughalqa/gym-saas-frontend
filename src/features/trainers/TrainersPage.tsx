@@ -1,25 +1,36 @@
-import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { UserPlus, Dumbbell, Star } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Switch } from '@/components/ui/switch';
-import { Label } from '@/components/ui/label';
-import PageHeader from '@/components/layout/PageHeader';
-import PageShell from '@/components/layout/PageShell';
-import DataTable, { type ColumnDef } from '@/components/shared/DataTable';
-import SearchInput from '@/components/shared/SearchInput';
-import Pagination from '@/components/shared/Pagination';
-import EmptyState from '@/components/shared/EmptyState';
-import ConfirmDialog from '@/components/shared/ConfirmDialog';
-import { useTableState } from '@/hooks/use-table-state';
-import { useConfirm } from '@/hooks/use-confirm';
-import { usePermission } from '@/hooks/use-permission';
-import { useTrainers, useArchiveTrainer } from './hooks/use-trainers';
-import TrainerForm from './components/TrainerForm';
-import type { TrainerProfile, TrainerStatus } from '@/types/trainer.types';
-import { useGetTrainers } from '@/api/generated/trainers/trainers';
+import { useState } from "react";
+import { useNavigate } from "react-router-dom";
+import { UserPlus, Dumbbell, Star } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Switch } from "@/components/ui/switch";
+import { Label } from "@/components/ui/label";
+import PageHeader from "@/components/layout/PageHeader";
+import PageShell from "@/components/layout/PageShell";
+import DataTable, { type ColumnDef } from "@/components/shared/DataTable";
+import SearchInput from "@/components/shared/SearchInput";
+import Pagination from "@/components/shared/Pagination";
+import EmptyState from "@/components/shared/EmptyState";
+import ConfirmDialog from "@/components/shared/ConfirmDialog";
+import { useTableState } from "@/hooks/use-table-state";
+import { useConfirm } from "@/hooks/use-confirm";
+import { usePermission } from "@/hooks/use-permission";
+import TrainerForm from "./components/TrainerForm";
+import type { TrainerProfile, TrainerStatus } from "@/types/trainer.types";
+import {
+  useGetTrainers,
+  useDeleteTrainersTrainerId,
+  getGetTrainersQueryKey,
+} from "@/api/generated/trainers/trainers";
+import { toast } from "@/hooks/use-toast";
+import { useQueryClient } from "@tanstack/react-query";
 
 // ─── Star rating display ──────────────────────────────────────────────────────
 
@@ -27,23 +38,30 @@ function StarRating({ avg, count }: { avg: number; count: number }) {
   return (
     <div className="flex items-center gap-1">
       <Star className="h-3.5 w-3.5 fill-yellow-400 text-yellow-400" />
-      <span className="text-sm font-medium">{avg > 0 ? avg.toFixed(1) : '—'}</span>
-      {count > 0 && <span className="text-xs text-muted-foreground">({count})</span>}
+      <span className="text-sm font-medium">
+        {avg > 0 ? avg.toFixed(1) : "—"}
+      </span>
+      {count > 0 && (
+        <span className="text-xs text-muted-foreground">({count})</span>
+      )}
     </div>
   );
 }
 
 // ─── Status badge ─────────────────────────────────────────────────────────────
 
-const STATUS_VARIANT: Record<TrainerStatus, 'success' | 'secondary' | 'warning'> = {
-  active:   'success',
-  inactive: 'secondary',
-  on_leave: 'warning',
+const STATUS_VARIANT: Record<
+  TrainerStatus,
+  "success" | "secondary" | "warning"
+> = {
+  active: "success",
+  inactive: "secondary",
+  on_leave: "warning",
 };
 const STATUS_LABEL: Record<TrainerStatus, string> = {
-  active:   'Active',
-  inactive: 'Inactive',
-  on_leave: 'On Leave',
+  active: "Active",
+  inactive: "Inactive",
+  on_leave: "On Leave",
 };
 
 // ─── TrainersPage ─────────────────────────────────────────────────────────────
@@ -52,22 +70,40 @@ export default function TrainersPage() {
   const navigate = useNavigate();
   const { can } = usePermission();
   const table = useTableState({ defaultLimit: 20 });
+  const { confirm, confirmProps } = useConfirm(); // ← ADD THIS LINE
 
-  const [statusFilter, setStatusFilter] = useState<TrainerStatus | 'all'>('all');
+  const [statusFilter, setStatusFilter] = useState<TrainerStatus | "all">(
+    "all",
+  );
   const [availableOnly, setAvailableOnly] = useState(false);
   const [formOpen, setFormOpen] = useState(false);
-  const [editingTrainer, setEditingTrainer] = useState<TrainerProfile | undefined>();
-
-  const { confirm, confirmProps } = useConfirm();
-  const archive = useArchiveTrainer();
+  const [editingTrainer, setEditingTrainer] = useState<
+    TrainerProfile | undefined
+  >();
 
   const query = {
     ...table.queryParams,
-    ...(statusFilter !== 'all' ? { status: statusFilter } : {}),
+    ...(statusFilter !== "all" ? { status: statusFilter } : {}),
     ...(availableOnly ? { availableOnly: true } : {}),
   };
-
   const { data, isLoading } = useGetTrainers(query);
+  const queryClient = useQueryClient();
+  const archive = useDeleteTrainersTrainerId({
+    mutation: {
+      onSuccess: () => {
+        // Invalidate the trainers list query
+        queryClient.invalidateQueries({ queryKey: getGetTrainersQueryKey() });
+        toast({ title: "Trainer archived successfully" });
+      },
+      onError: (err: any) => {
+        toast({
+          variant: "destructive",
+          title: "Failed to archive trainer",
+          description: err?.response?.data?.message || err?.message,
+        });
+      },
+    },
+  });
 
   function handleEdit(trainer: TrainerProfile) {
     setEditingTrainer(trainer);
@@ -81,40 +117,49 @@ export default function TrainersPage() {
 
   const columns: ColumnDef<TrainerProfile>[] = [
     {
-      key: 'userId',
-      header: 'Trainer',
+      key: "userId",
+      header: "Trainer",
       sortable: true,
       cell: (row) => (
         <div>
-          <p className="font-medium">{row.userId.firstName} {row.userId.lastName}</p>
+          <p className="font-medium">
+            {row.userId.firstName} {row.userId.lastName}
+          </p>
           <p className="text-xs text-muted-foreground">{row.userId.email}</p>
         </div>
       ),
     },
     {
-      key: 'specializations',
-      header: 'Specializations',
+      key: "specializations",
+      header: "Specializations",
       hideOnMobile: true,
-      cell: (row) => row.specializations.length > 0 ? (
-        <div className="flex flex-wrap gap-1">
-          {row.specializations.slice(0, 3).map((s) => (
-            <Badge key={s} variant="outline" className="text-xs capitalize">{s}</Badge>
-          ))}
-          {row.specializations.length > 3 && (
-            <Badge variant="outline" className="text-xs">+{row.specializations.length - 3}</Badge>
-          )}
-        </div>
-      ) : <span className="text-muted-foreground text-sm">—</span>,
+      cell: (row) =>
+        row.specializations.length > 0 ? (
+          <div className="flex flex-wrap gap-1">
+            {row.specializations.slice(0, 3).map((s) => (
+              <Badge key={s} variant="outline" className="text-xs capitalize">
+                {s}
+              </Badge>
+            ))}
+            {row.specializations.length > 3 && (
+              <Badge variant="outline" className="text-xs">
+                +{row.specializations.length - 3}
+              </Badge>
+            )}
+          </div>
+        ) : (
+          <span className="text-muted-foreground text-sm">—</span>
+        ),
     },
     {
-      key: 'ratingAvg',
-      header: 'Rating',
+      key: "ratingAvg",
+      header: "Rating",
       sortable: true,
       cell: (row) => <StarRating avg={row.ratingAvg} count={row.ratingCount} />,
     },
     {
-      key: 'currentClientCount',
-      header: 'Clients',
+      key: "currentClientCount",
+      header: "Clients",
       sortable: true,
       hideOnMobile: true,
       cell: (row) => (
@@ -125,33 +170,49 @@ export default function TrainersPage() {
       ),
     },
     {
-      key: 'status',
-      header: 'Status',
+      key: "status",
+      header: "Status",
       sortable: true,
       cell: (row) => (
-        <Badge variant={STATUS_VARIANT[row.status]}>{STATUS_LABEL[row.status]}</Badge>
+        <Badge variant={STATUS_VARIANT[row.status]}>
+          {STATUS_LABEL[row.status]}
+        </Badge>
       ),
     },
     {
-      key: 'actions',
-      header: '',
-      width: 'w-28',
+      key: "actions",
+      header: "",
+      width: "w-28",
       cell: (row) => (
         <div className="flex items-center gap-1 justify-end">
-          {can('trainer.update') && (
-            <Button variant="ghost" size="sm" onClick={(e) => { e.stopPropagation(); handleEdit(row); }}>
+          {can("trainer.update") && (
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={(e) => {
+                e.stopPropagation();
+                handleEdit(row);
+              }}
+            >
               Edit
             </Button>
           )}
-          {can('trainer.update') && (
+          {can("trainer.update") && (
             <Button
-              variant="ghost" size="sm"
+              variant="ghost"
+              size="sm"
               className="text-destructive hover:text-destructive"
               onClick={(e) => {
                 e.stopPropagation();
                 confirm(
-                  { title: `Archive ${row.userId.firstName} ${row.userId.lastName}?`, description: 'This will end all active assignments and archive the trainer profile.', variant: 'destructive', confirmLabel: 'Archive' },
-                  () => archive.mutate(row._id),
+                  {
+                    title: `Archive ${row.userId.firstName} ${row.userId.lastName}?`,
+                    description:
+                      "This will end all active assignments and archive the trainer profile.",
+                    variant: "destructive",
+                    confirmLabel: "Archive",
+                  },
+                  () => archive.mutate({ trainerId: row._id }),
                 );
               }}
             >
@@ -169,7 +230,7 @@ export default function TrainersPage() {
         title="Trainers"
         subtitle="Manage trainer profiles and member assignments"
         actions={
-          can('trainer.create') && (
+          can("trainer.create") && (
             <Button onClick={handleAdd}>
               <UserPlus className="mr-2 h-4 w-4" />
               Add Trainer
@@ -188,7 +249,10 @@ export default function TrainersPage() {
         />
         <Select
           value={statusFilter}
-          onValueChange={(v) => { setStatusFilter(v as TrainerStatus | 'all'); table.setPage(1); }}
+          onValueChange={(v) => {
+            setStatusFilter(v as TrainerStatus | "all");
+            table.setPage(1);
+          }}
         >
           <SelectTrigger className="w-36">
             <SelectValue placeholder="All statuses" />
@@ -204,9 +268,14 @@ export default function TrainersPage() {
           <Switch
             id="availableOnly"
             checked={availableOnly}
-            onCheckedChange={(v) => { setAvailableOnly(v); table.setPage(1); }}
+            onCheckedChange={(v) => {
+              setAvailableOnly(v);
+              table.setPage(1);
+            }}
           />
-          <Label htmlFor="availableOnly" className="text-sm cursor-pointer">Available only</Label>
+          <Label htmlFor="availableOnly" className="text-sm cursor-pointer">
+            Available only
+          </Label>
         </div>
       </div>
 
@@ -215,8 +284,16 @@ export default function TrainersPage() {
         <EmptyState
           icon={<Dumbbell className="h-12 w-12" />}
           title="No trainers found"
-          description={table.search ? 'Try adjusting your search or filters.' : 'Add your first trainer to get started.'}
-          action={can('trainer.create') ? { label: 'Add Trainer', onClick: handleAdd } : undefined}
+          description={
+            table.search
+              ? "Try adjusting your search or filters."
+              : "Add your first trainer to get started."
+          }
+          action={
+            can("trainer.create")
+              ? { label: "Add Trainer", onClick: handleAdd }
+              : undefined
+          }
         />
       ) : (
         <>
@@ -240,8 +317,21 @@ export default function TrainersPage() {
         </>
       )}
 
-      <TrainerForm open={formOpen} onOpenChange={setFormOpen} trainer={editingTrainer} />
-      <ConfirmDialog {...confirmProps} loading={archive.isPending} />
+      <TrainerForm
+        open={formOpen}
+        onOpenChange={setFormOpen}
+        trainer={editingTrainer}
+      />
+      <ConfirmDialog
+        open={confirmProps.open}
+        onOpenChange={confirmProps.onOpenChange}
+        onConfirm={confirmProps.onConfirm}
+        title={confirmProps.title}
+        description={confirmProps.description}
+        confirmLabel={confirmProps.confirmLabel}
+        variant={confirmProps.variant}
+        loading={archive.isPending}
+      />
     </PageShell>
   );
 }

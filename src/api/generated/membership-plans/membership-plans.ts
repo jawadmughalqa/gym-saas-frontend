@@ -25,11 +25,16 @@ import type {
 } from '@tanstack/react-query';
 
 import type {
+  BadRequestResponse,
   ConflictResponse,
   CreateMembershipPlanRequest,
+  ForbiddenResponse,
   GetMembershipPlansParams,
   MembershipPlanListResponse,
-  MembershipPlanResponse
+  MembershipPlanResponse,
+  NotFoundResponse,
+  UnauthorizedResponse,
+  UpdateMembershipPlanRequest
 } from '../schemas';
 
 import { orvalMutator } from '../../../lib/orval-mutator';
@@ -65,7 +70,7 @@ export const getGetMembershipPlansQueryKey = (params?: GetMembershipPlansParams,
     }
 
 
-export const getGetMembershipPlansQueryOptions = <TData = Awaited<ReturnType<typeof getMembershipPlans>>, TError = ErrorType<unknown>>(params?: GetMembershipPlansParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getMembershipPlans>>, TError, TData>>, }
+export const getGetMembershipPlansQueryOptions = <TData = Awaited<ReturnType<typeof getMembershipPlans>>, TError = ErrorType<UnauthorizedResponse | ForbiddenResponse>>(params?: GetMembershipPlansParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getMembershipPlans>>, TError, TData>>, }
 ) => {
 
 const {query: queryOptions} = options ?? {};
@@ -84,10 +89,10 @@ const {query: queryOptions} = options ?? {};
 }
 
 export type GetMembershipPlansQueryResult = NonNullable<Awaited<ReturnType<typeof getMembershipPlans>>>
-export type GetMembershipPlansQueryError = ErrorType<unknown>
+export type GetMembershipPlansQueryError = ErrorType<UnauthorizedResponse | ForbiddenResponse>
 
 
-export function useGetMembershipPlans<TData = Awaited<ReturnType<typeof getMembershipPlans>>, TError = ErrorType<unknown>>(
+export function useGetMembershipPlans<TData = Awaited<ReturnType<typeof getMembershipPlans>>, TError = ErrorType<UnauthorizedResponse | ForbiddenResponse>>(
  params: undefined |  GetMembershipPlansParams, options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof getMembershipPlans>>, TError, TData>> & Pick<
         DefinedInitialDataOptions<
           Awaited<ReturnType<typeof getMembershipPlans>>,
@@ -97,7 +102,7 @@ export function useGetMembershipPlans<TData = Awaited<ReturnType<typeof getMembe
       >, }
  , queryClient?: QueryClient
   ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
-export function useGetMembershipPlans<TData = Awaited<ReturnType<typeof getMembershipPlans>>, TError = ErrorType<unknown>>(
+export function useGetMembershipPlans<TData = Awaited<ReturnType<typeof getMembershipPlans>>, TError = ErrorType<UnauthorizedResponse | ForbiddenResponse>>(
  params?: GetMembershipPlansParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getMembershipPlans>>, TError, TData>> & Pick<
         UndefinedInitialDataOptions<
           Awaited<ReturnType<typeof getMembershipPlans>>,
@@ -107,7 +112,7 @@ export function useGetMembershipPlans<TData = Awaited<ReturnType<typeof getMembe
       >, }
  , queryClient?: QueryClient
   ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
-export function useGetMembershipPlans<TData = Awaited<ReturnType<typeof getMembershipPlans>>, TError = ErrorType<unknown>>(
+export function useGetMembershipPlans<TData = Awaited<ReturnType<typeof getMembershipPlans>>, TError = ErrorType<UnauthorizedResponse | ForbiddenResponse>>(
  params?: GetMembershipPlansParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getMembershipPlans>>, TError, TData>>, }
  , queryClient?: QueryClient
   ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
@@ -115,7 +120,7 @@ export function useGetMembershipPlans<TData = Awaited<ReturnType<typeof getMembe
  * @summary List membership plans
  */
 
-export function useGetMembershipPlans<TData = Awaited<ReturnType<typeof getMembershipPlans>>, TError = ErrorType<unknown>>(
+export function useGetMembershipPlans<TData = Awaited<ReturnType<typeof getMembershipPlans>>, TError = ErrorType<UnauthorizedResponse | ForbiddenResponse>>(
  params?: GetMembershipPlansParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getMembershipPlans>>, TError, TData>>, }
  , queryClient?: QueryClient
  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
@@ -151,7 +156,7 @@ export const postMembershipPlans = (
 
 
 
-export const getPostMembershipPlansMutationOptions = <TError = ErrorType<ConflictResponse>,
+export const getPostMembershipPlansMutationOptions = <TError = ErrorType<BadRequestResponse | UnauthorizedResponse | ForbiddenResponse | ConflictResponse>,
     TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof postMembershipPlans>>, TError,{data: BodyType<CreateMembershipPlanRequest>}, TContext>, }
 ): UseMutationOptions<Awaited<ReturnType<typeof postMembershipPlans>>, TError,{data: BodyType<CreateMembershipPlanRequest>}, TContext> => {
 
@@ -180,12 +185,12 @@ const {mutation: mutationOptions} = options ?
 
     export type PostMembershipPlansMutationResult = NonNullable<Awaited<ReturnType<typeof postMembershipPlans>>>
     export type PostMembershipPlansMutationBody = BodyType<CreateMembershipPlanRequest>
-    export type PostMembershipPlansMutationError = ErrorType<ConflictResponse>
+    export type PostMembershipPlansMutationError = ErrorType<BadRequestResponse | UnauthorizedResponse | ForbiddenResponse | ConflictResponse>
 
     /**
  * @summary Create a membership plan
  */
-export const usePostMembershipPlans = <TError = ErrorType<ConflictResponse>,
+export const usePostMembershipPlans = <TError = ErrorType<BadRequestResponse | UnauthorizedResponse | ForbiddenResponse | ConflictResponse>,
     TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof postMembershipPlans>>, TError,{data: BodyType<CreateMembershipPlanRequest>}, TContext>, }
  , queryClient?: QueryClient): UseMutationResult<
         Awaited<ReturnType<typeof postMembershipPlans>>,
@@ -204,7 +209,7 @@ export const getMembershipPlansPlanId = (
 ) => {
 
 
-      return orvalMutator<void>(
+      return orvalMutator<MembershipPlanResponse>(
       {url: `/membership-plans/${planId}`, method: 'GET', signal
     },
       );
@@ -220,7 +225,7 @@ export const getGetMembershipPlansPlanIdQueryKey = (planId: string,) => {
     }
 
 
-export const getGetMembershipPlansPlanIdQueryOptions = <TData = Awaited<ReturnType<typeof getMembershipPlansPlanId>>, TError = ErrorType<unknown>>(planId: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getMembershipPlansPlanId>>, TError, TData>>, }
+export const getGetMembershipPlansPlanIdQueryOptions = <TData = Awaited<ReturnType<typeof getMembershipPlansPlanId>>, TError = ErrorType<UnauthorizedResponse | ForbiddenResponse | NotFoundResponse>>(planId: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getMembershipPlansPlanId>>, TError, TData>>, }
 ) => {
 
 const {query: queryOptions} = options ?? {};
@@ -239,10 +244,10 @@ const {query: queryOptions} = options ?? {};
 }
 
 export type GetMembershipPlansPlanIdQueryResult = NonNullable<Awaited<ReturnType<typeof getMembershipPlansPlanId>>>
-export type GetMembershipPlansPlanIdQueryError = ErrorType<unknown>
+export type GetMembershipPlansPlanIdQueryError = ErrorType<UnauthorizedResponse | ForbiddenResponse | NotFoundResponse>
 
 
-export function useGetMembershipPlansPlanId<TData = Awaited<ReturnType<typeof getMembershipPlansPlanId>>, TError = ErrorType<unknown>>(
+export function useGetMembershipPlansPlanId<TData = Awaited<ReturnType<typeof getMembershipPlansPlanId>>, TError = ErrorType<UnauthorizedResponse | ForbiddenResponse | NotFoundResponse>>(
  planId: string, options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof getMembershipPlansPlanId>>, TError, TData>> & Pick<
         DefinedInitialDataOptions<
           Awaited<ReturnType<typeof getMembershipPlansPlanId>>,
@@ -252,7 +257,7 @@ export function useGetMembershipPlansPlanId<TData = Awaited<ReturnType<typeof ge
       >, }
  , queryClient?: QueryClient
   ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
-export function useGetMembershipPlansPlanId<TData = Awaited<ReturnType<typeof getMembershipPlansPlanId>>, TError = ErrorType<unknown>>(
+export function useGetMembershipPlansPlanId<TData = Awaited<ReturnType<typeof getMembershipPlansPlanId>>, TError = ErrorType<UnauthorizedResponse | ForbiddenResponse | NotFoundResponse>>(
  planId: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getMembershipPlansPlanId>>, TError, TData>> & Pick<
         UndefinedInitialDataOptions<
           Awaited<ReturnType<typeof getMembershipPlansPlanId>>,
@@ -262,7 +267,7 @@ export function useGetMembershipPlansPlanId<TData = Awaited<ReturnType<typeof ge
       >, }
  , queryClient?: QueryClient
   ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
-export function useGetMembershipPlansPlanId<TData = Awaited<ReturnType<typeof getMembershipPlansPlanId>>, TError = ErrorType<unknown>>(
+export function useGetMembershipPlansPlanId<TData = Awaited<ReturnType<typeof getMembershipPlansPlanId>>, TError = ErrorType<UnauthorizedResponse | ForbiddenResponse | NotFoundResponse>>(
  planId: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getMembershipPlansPlanId>>, TError, TData>>, }
  , queryClient?: QueryClient
   ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
@@ -270,7 +275,7 @@ export function useGetMembershipPlansPlanId<TData = Awaited<ReturnType<typeof ge
  * @summary Get a single plan
  */
 
-export function useGetMembershipPlansPlanId<TData = Awaited<ReturnType<typeof getMembershipPlansPlanId>>, TError = ErrorType<unknown>>(
+export function useGetMembershipPlansPlanId<TData = Awaited<ReturnType<typeof getMembershipPlansPlanId>>, TError = ErrorType<UnauthorizedResponse | ForbiddenResponse | NotFoundResponse>>(
  planId: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getMembershipPlansPlanId>>, TError, TData>>, }
  , queryClient?: QueryClient
  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
@@ -288,29 +293,29 @@ export function useGetMembershipPlansPlanId<TData = Awaited<ReturnType<typeof ge
 
 
 /**
- * Updates plan details. Does not affect existing subscriptions (plan snapshot is preserved).
+ * Updates plan details. All fields are optional. Does not affect existing subscriptions (plan snapshot is preserved).
  * @summary Update a membership plan
  */
 export const patchMembershipPlansPlanId = (
     planId: string,
-    createMembershipPlanRequest: BodyType<CreateMembershipPlanRequest>,
+    updateMembershipPlanRequest: BodyType<UpdateMembershipPlanRequest>,
  signal?: AbortSignal
 ) => {
 
 
-      return orvalMutator<void>(
+      return orvalMutator<MembershipPlanResponse>(
       {url: `/membership-plans/${planId}`, method: 'PATCH',
       headers: {'Content-Type': 'application/json', },
-      data: createMembershipPlanRequest, signal
+      data: updateMembershipPlanRequest, signal
     },
       );
     }
 
 
 
-export const getPatchMembershipPlansPlanIdMutationOptions = <TError = ErrorType<unknown>,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof patchMembershipPlansPlanId>>, TError,{planId: string;data: BodyType<CreateMembershipPlanRequest>}, TContext>, }
-): UseMutationOptions<Awaited<ReturnType<typeof patchMembershipPlansPlanId>>, TError,{planId: string;data: BodyType<CreateMembershipPlanRequest>}, TContext> => {
+export const getPatchMembershipPlansPlanIdMutationOptions = <TError = ErrorType<BadRequestResponse | UnauthorizedResponse | ForbiddenResponse | NotFoundResponse>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof patchMembershipPlansPlanId>>, TError,{planId: string;data: BodyType<UpdateMembershipPlanRequest>}, TContext>, }
+): UseMutationOptions<Awaited<ReturnType<typeof patchMembershipPlansPlanId>>, TError,{planId: string;data: BodyType<UpdateMembershipPlanRequest>}, TContext> => {
 
 const mutationKey = ['patchMembershipPlansPlanId'];
 const {mutation: mutationOptions} = options ?
@@ -322,7 +327,7 @@ const {mutation: mutationOptions} = options ?
 
 
 
-      const mutationFn: MutationFunction<Awaited<ReturnType<typeof patchMembershipPlansPlanId>>, {planId: string;data: BodyType<CreateMembershipPlanRequest>}> = (props) => {
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof patchMembershipPlansPlanId>>, {planId: string;data: BodyType<UpdateMembershipPlanRequest>}> = (props) => {
           const {planId,data} = props ?? {};
 
           return  patchMembershipPlansPlanId(planId,data,)
@@ -336,24 +341,24 @@ const {mutation: mutationOptions} = options ?
   return  { mutationFn, ...mutationOptions }}
 
     export type PatchMembershipPlansPlanIdMutationResult = NonNullable<Awaited<ReturnType<typeof patchMembershipPlansPlanId>>>
-    export type PatchMembershipPlansPlanIdMutationBody = BodyType<CreateMembershipPlanRequest>
-    export type PatchMembershipPlansPlanIdMutationError = ErrorType<unknown>
+    export type PatchMembershipPlansPlanIdMutationBody = BodyType<UpdateMembershipPlanRequest>
+    export type PatchMembershipPlansPlanIdMutationError = ErrorType<BadRequestResponse | UnauthorizedResponse | ForbiddenResponse | NotFoundResponse>
 
     /**
  * @summary Update a membership plan
  */
-export const usePatchMembershipPlansPlanId = <TError = ErrorType<unknown>,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof patchMembershipPlansPlanId>>, TError,{planId: string;data: BodyType<CreateMembershipPlanRequest>}, TContext>, }
+export const usePatchMembershipPlansPlanId = <TError = ErrorType<BadRequestResponse | UnauthorizedResponse | ForbiddenResponse | NotFoundResponse>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof patchMembershipPlansPlanId>>, TError,{planId: string;data: BodyType<UpdateMembershipPlanRequest>}, TContext>, }
  , queryClient?: QueryClient): UseMutationResult<
         Awaited<ReturnType<typeof patchMembershipPlansPlanId>>,
         TError,
-        {planId: string;data: BodyType<CreateMembershipPlanRequest>},
+        {planId: string;data: BodyType<UpdateMembershipPlanRequest>},
         TContext
       > => {
       return useMutation(getPatchMembershipPlansPlanIdMutationOptions(options), queryClient);
     }
     /**
- * Soft-archives the plan. Will fail if active subscriptions reference it.
+ * Soft-archives the plan. Will fail if active, frozen, or pending-payment subscriptions reference it.
  * @summary Archive a membership plan
  */
 export const deleteMembershipPlansPlanId = (
@@ -362,7 +367,7 @@ export const deleteMembershipPlansPlanId = (
 ) => {
 
 
-      return orvalMutator<void>(
+      return orvalMutator<MembershipPlanResponse>(
       {url: `/membership-plans/${planId}`, method: 'DELETE', signal
     },
       );
@@ -370,7 +375,7 @@ export const deleteMembershipPlansPlanId = (
 
 
 
-export const getDeleteMembershipPlansPlanIdMutationOptions = <TError = ErrorType<unknown>,
+export const getDeleteMembershipPlansPlanIdMutationOptions = <TError = ErrorType<BadRequestResponse | UnauthorizedResponse | ForbiddenResponse | NotFoundResponse>,
     TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof deleteMembershipPlansPlanId>>, TError,{planId: string}, TContext>, }
 ): UseMutationOptions<Awaited<ReturnType<typeof deleteMembershipPlansPlanId>>, TError,{planId: string}, TContext> => {
 
@@ -399,12 +404,12 @@ const {mutation: mutationOptions} = options ?
 
     export type DeleteMembershipPlansPlanIdMutationResult = NonNullable<Awaited<ReturnType<typeof deleteMembershipPlansPlanId>>>
 
-    export type DeleteMembershipPlansPlanIdMutationError = ErrorType<unknown>
+    export type DeleteMembershipPlansPlanIdMutationError = ErrorType<BadRequestResponse | UnauthorizedResponse | ForbiddenResponse | NotFoundResponse>
 
     /**
  * @summary Archive a membership plan
  */
-export const useDeleteMembershipPlansPlanId = <TError = ErrorType<unknown>,
+export const useDeleteMembershipPlansPlanId = <TError = ErrorType<BadRequestResponse | UnauthorizedResponse | ForbiddenResponse | NotFoundResponse>,
     TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof deleteMembershipPlansPlanId>>, TError,{planId: string}, TContext>, }
  , queryClient?: QueryClient): UseMutationResult<
         Awaited<ReturnType<typeof deleteMembershipPlansPlanId>>,

@@ -106,7 +106,13 @@ export type Permission =
 
   // ── Reports ───────────────────────────────────────────────────────────────
   | 'report.read'
-  | 'report.export';
+  | 'report.export'
+
+  // ── Expenses ──────────────────────────────────────────────────────────────
+  | 'expense.create'
+  | 'expense.read'
+  | 'expense.update'
+  | 'expense.delete';
 
 // ─── Role → Permission map ────────────────────────────────────────────────────
 
@@ -147,6 +153,8 @@ const ROLE_PERMISSIONS: Record<Exclude<UserRole, 'super_admin'>, Permission[]> =
     'report.read', 'report.export',
     // Membership plans
     'plan.read', 'plan.create', 'plan.update', 'plan.archive',
+    // Expenses — full access
+    'expense.create', 'expense.read', 'expense.update', 'expense.delete',
   ],
 
   branch_manager: [
@@ -184,6 +192,8 @@ const ROLE_PERMISSIONS: Record<Exclude<UserRole, 'super_admin'>, Permission[]> =
     'report.read', 'report.export',
     // Membership plans — read only for branch managers
     'plan.read',
+    // Expenses — create, read, update (no delete)
+    'expense.create', 'expense.read', 'expense.update',
   ],
 
   staff: [
@@ -211,6 +221,8 @@ const ROLE_PERMISSIONS: Record<Exclude<UserRole, 'super_admin'>, Permission[]> =
     'notification.read',
     // Membership plans — read only for staff
     'plan.read',
+    // Expenses — read only for staff
+    'expense.read',
   ],
 
   trainer: [

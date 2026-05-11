@@ -29,7 +29,9 @@ const RolesPage           = lazy(() => import("@/features/roles/RolesPage"));
 const SuperAdminPage      = lazy(() => import("@/features/super-admin/SuperAdminPage"));
 const TenantDetailPage    = lazy(() => import("@/features/super-admin/TenantDetailPage"));
 const PlansPage           = lazy(() => import("@/features/super-admin/PlansPage"));
-const MembershipPlansPage = lazy(() => import("@/features/membership-plans/MembershipPlansPage"));
+const MembershipPlansPage   = lazy(() => import("@/features/membership-plans/MembershipPlansPage"));
+const ExpensesPage          = lazy(() => import("@/features/expenses/ExpensesPage"));
+const ExpenseAnalyticsPage  = lazy(() => import("@/features/expenses/ExpenseAnalyticsPage"));
 
 // ─── Suspense wrapper ─────────────────────────────────────────────────────────
 
@@ -127,6 +129,18 @@ const router = createBrowserRouter([
             path: "discounts",
             element: <Lazy><DiscountsPage /></Lazy>,
             handle: { crumb: "Discounts" },
+          },
+
+          // ── Expenses ─────────────────────────────────────────────────
+          {
+            path: "expenses",
+            element: <Lazy><ExpensesPage /></Lazy>,
+            handle: { crumb: "Expenses" },
+          },
+          {
+            path: "expense-analytics",
+            element: <Lazy><ExpenseAnalyticsPage /></Lazy>,
+            handle: { crumb: "Expense Analytics" },
           },
 
           // ── Trainers ─────────────────────────────────────────────────

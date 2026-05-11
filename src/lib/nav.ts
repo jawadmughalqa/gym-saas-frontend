@@ -13,6 +13,8 @@ import {
   Percent,
   ClipboardList,
   BadgePercent,
+  Receipt,
+  TrendingDown,
   type LucideIcon,
 } from 'lucide-react';
 import type { UserRole } from '@/types/api.types';
@@ -88,6 +90,18 @@ export const NAV_ITEMS: NavItem[] = [
     label: 'Discounts',
     icon: Percent,
     permission: 'discount.read',
+  },
+  {
+    to: '/expenses',
+    label: 'Expenses',
+    icon: Receipt,
+    permission: 'expense.read',
+  },
+  {
+    to: '/expense-analytics',
+    label: 'Expense Analytics',
+    icon: TrendingDown,
+    permission: 'expense.read',
   },
   {
     to: '/reports',
@@ -173,6 +187,12 @@ export const NAV_GROUPS: NavGroup[] = [
         icon: Percent,
         permission: 'discount.read',
       },
+      {
+        to: '/expenses',
+        label: 'Expenses',
+        icon: Receipt,
+        permission: 'expense.read',
+      },
     ],
   },
   {
@@ -183,6 +203,12 @@ export const NAV_GROUPS: NavGroup[] = [
         label: 'Reports',
         icon: BarChart3,
         permission: 'report.read',
+      },
+      {
+        to: '/expense-analytics',
+        label: 'Expense Analytics',
+        icon: TrendingDown,
+        permission: 'expense.read',
       },
     ],
   },

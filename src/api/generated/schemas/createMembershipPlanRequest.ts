@@ -16,6 +16,10 @@ export interface CreateMembershipPlanRequest {
   durationDays?: number;
   /** @minimum 0 */
   basePrice: number;
+  /**
+     * @minLength 3
+     * @maxLength 3
+     */
   currency?: string;
   branchPricingOverrides?: CreateMembershipPlanRequestBranchPricingOverridesItem[];
   features?: string[];

@@ -26,6 +26,7 @@ import type {
 
 import type {
   BadRequestResponse,
+  ChangeMemberStatusRequest,
   CheckInListResponse,
   ConflictResponse,
   CreateMeasurementRequest,
@@ -35,6 +36,7 @@ import type {
   ForbiddenResponse,
   FreezeSubscriptionRequest,
   GetMembersMemberIdCheckinsParams,
+  GetMembersMemberIdTrainerAssignments200,
   GetMembersParams,
   MeasurementListResponse,
   MemberDetailResponse,
@@ -216,6 +218,76 @@ export const usePostMembers = <TError = ErrorType<BadRequestResponse | Unauthori
         TContext
       > => {
       return useMutation(getPostMembersMutationOptions(options), queryClient);
+    }
+    /**
+ * Changes member status with appropriate business logic:
+- **active**: Reactivates member. If previously frozen, extends subscription by actual freeze days.
+- **suspended**: Blocks gym access. Billing continues. Subscriptions preserved.
+- **frozen**: Pauses gym access and billing. Subscription expiry extends when unfrozen.
+- **inactive**: Deactivates member. Cancels all subscriptions.
+
+ * @summary Change member status
+ */
+export const patchMembersMemberIdStatus = (
+    memberId: string,
+    changeMemberStatusRequest: BodyType<ChangeMemberStatusRequest>,
+ signal?: AbortSignal
+) => {
+
+
+      return orvalMutator<MemberResponse>(
+      {url: `/members/${memberId}/status`, method: 'PATCH',
+      headers: {'Content-Type': 'application/json', },
+      data: changeMemberStatusRequest, signal
+    },
+      );
+    }
+
+
+
+export const getPatchMembersMemberIdStatusMutationOptions = <TError = ErrorType<BadRequestResponse | NotFoundResponse>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof patchMembersMemberIdStatus>>, TError,{memberId: string;data: BodyType<ChangeMemberStatusRequest>}, TContext>, }
+): UseMutationOptions<Awaited<ReturnType<typeof patchMembersMemberIdStatus>>, TError,{memberId: string;data: BodyType<ChangeMemberStatusRequest>}, TContext> => {
+
+const mutationKey = ['patchMembersMemberIdStatus'];
+const {mutation: mutationOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof patchMembersMemberIdStatus>>, {memberId: string;data: BodyType<ChangeMemberStatusRequest>}> = (props) => {
+          const {memberId,data} = props ?? {};
+
+          return  patchMembersMemberIdStatus(memberId,data,)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type PatchMembersMemberIdStatusMutationResult = NonNullable<Awaited<ReturnType<typeof patchMembersMemberIdStatus>>>
+    export type PatchMembersMemberIdStatusMutationBody = BodyType<ChangeMemberStatusRequest>
+    export type PatchMembersMemberIdStatusMutationError = ErrorType<BadRequestResponse | NotFoundResponse>
+
+    /**
+ * @summary Change member status
+ */
+export const usePatchMembersMemberIdStatus = <TError = ErrorType<BadRequestResponse | NotFoundResponse>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof patchMembersMemberIdStatus>>, TError,{memberId: string;data: BodyType<ChangeMemberStatusRequest>}, TContext>, }
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof patchMembersMemberIdStatus>>,
+        TError,
+        {memberId: string;data: BodyType<ChangeMemberStatusRequest>},
+        TContext
+      > => {
+      return useMutation(getPatchMembersMemberIdStatusMutationOptions(options), queryClient);
     }
     /**
  * Returns member details with active subscription and last 5 check-ins.
@@ -1220,6 +1292,102 @@ export function useGetMembersMemberIdWorkouts<TData = Awaited<ReturnType<typeof 
  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
 
   const queryOptions = getGetMembersMemberIdWorkoutsQueryOptions(memberId,options)
+
+  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+
+
+
+
+
+/**
+ * Returns the full trainer assignment history for a member, newest first.
+Includes current active assignment (if any) and all past ended assignments.
+Each assignment is populated with trainer name and specializations.
+
+ * @summary Get trainer assignment history for a member
+ */
+export const getMembersMemberIdTrainerAssignments = (
+    memberId: string,
+ signal?: AbortSignal
+) => {
+
+
+      return orvalMutator<GetMembersMemberIdTrainerAssignments200>(
+      {url: `/members/${memberId}/trainer-assignments`, method: 'GET', signal
+    },
+      );
+    }
+
+
+
+
+export const getGetMembersMemberIdTrainerAssignmentsQueryKey = (memberId: string,) => {
+    return [
+    `/members/${memberId}/trainer-assignments`
+    ] as const;
+    }
+
+
+export const getGetMembersMemberIdTrainerAssignmentsQueryOptions = <TData = Awaited<ReturnType<typeof getMembersMemberIdTrainerAssignments>>, TError = ErrorType<UnauthorizedResponse | ForbiddenResponse | NotFoundResponse>>(memberId: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getMembersMemberIdTrainerAssignments>>, TError, TData>>, }
+) => {
+
+const {query: queryOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetMembersMemberIdTrainerAssignmentsQueryKey(memberId);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getMembersMemberIdTrainerAssignments>>> = ({ signal }) => getMembersMemberIdTrainerAssignments(memberId, signal);
+
+
+
+
+
+   return  { queryKey, queryFn, enabled: !!(memberId), ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getMembersMemberIdTrainerAssignments>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
+}
+
+export type GetMembersMemberIdTrainerAssignmentsQueryResult = NonNullable<Awaited<ReturnType<typeof getMembersMemberIdTrainerAssignments>>>
+export type GetMembersMemberIdTrainerAssignmentsQueryError = ErrorType<UnauthorizedResponse | ForbiddenResponse | NotFoundResponse>
+
+
+export function useGetMembersMemberIdTrainerAssignments<TData = Awaited<ReturnType<typeof getMembersMemberIdTrainerAssignments>>, TError = ErrorType<UnauthorizedResponse | ForbiddenResponse | NotFoundResponse>>(
+ memberId: string, options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof getMembersMemberIdTrainerAssignments>>, TError, TData>> & Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getMembersMemberIdTrainerAssignments>>,
+          TError,
+          Awaited<ReturnType<typeof getMembersMemberIdTrainerAssignments>>
+        > , 'initialData'
+      >, }
+ , queryClient?: QueryClient
+  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetMembersMemberIdTrainerAssignments<TData = Awaited<ReturnType<typeof getMembersMemberIdTrainerAssignments>>, TError = ErrorType<UnauthorizedResponse | ForbiddenResponse | NotFoundResponse>>(
+ memberId: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getMembersMemberIdTrainerAssignments>>, TError, TData>> & Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getMembersMemberIdTrainerAssignments>>,
+          TError,
+          Awaited<ReturnType<typeof getMembersMemberIdTrainerAssignments>>
+        > , 'initialData'
+      >, }
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetMembersMemberIdTrainerAssignments<TData = Awaited<ReturnType<typeof getMembersMemberIdTrainerAssignments>>, TError = ErrorType<UnauthorizedResponse | ForbiddenResponse | NotFoundResponse>>(
+ memberId: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getMembersMemberIdTrainerAssignments>>, TError, TData>>, }
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+/**
+ * @summary Get trainer assignment history for a member
+ */
+
+export function useGetMembersMemberIdTrainerAssignments<TData = Awaited<ReturnType<typeof getMembersMemberIdTrainerAssignments>>, TError = ErrorType<UnauthorizedResponse | ForbiddenResponse | NotFoundResponse>>(
+ memberId: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getMembersMemberIdTrainerAssignments>>, TError, TData>>, }
+ , queryClient?: QueryClient
+ ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+
+  const queryOptions = getGetMembersMemberIdTrainerAssignmentsQueryOptions(memberId,options)
 
   const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
 

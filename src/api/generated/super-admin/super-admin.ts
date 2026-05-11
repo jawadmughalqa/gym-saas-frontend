@@ -35,13 +35,13 @@ import type {
   GetSuperTenantsParams,
   GetSuperTenantsTenantIdInvoicesParams,
   ImpersonateResponse,
-  InvoiceListResponse,
-  InvoiceResponse,
   MarkInvoicePaidRequest,
   NotFoundResponse,
   PlanListResponse,
   PlanResponse,
   PlatformDashboardResponse,
+  SaasInvoiceListResponse,
+  SaasInvoiceResponse,
   TenantDetailResponse,
   TenantListResponse,
   UnauthorizedResponse,
@@ -678,7 +678,7 @@ export const getSuperTenantsTenantIdInvoices = (
 ) => {
 
 
-      return orvalMutator<InvoiceListResponse>(
+      return orvalMutator<SaasInvoiceListResponse>(
       {url: `/super/tenants/${tenantId}/invoices`, method: 'GET',
         params, signal
     },
@@ -780,7 +780,7 @@ export const postSuperTenantsTenantIdInvoicesInvoiceIdPay = (
 ) => {
 
 
-      return orvalMutator<InvoiceResponse>(
+      return orvalMutator<SaasInvoiceResponse>(
       {url: `/super/tenants/${tenantId}/invoices/${invoiceId}/pay`, method: 'POST',
       headers: {'Content-Type': 'application/json', },
       data: markInvoicePaidRequest, signal

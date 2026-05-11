@@ -5,10 +5,10 @@
  * REST API for the SaaS Gym Management System. Built with Node.js, Express, MongoDB, and TypeScript.
  * OpenAPI spec version: 1.0.0
  */
-import type { SuccessResponseData } from './successResponseData';
+import type { SuccessResponseDataProperty } from './successResponseDataProperty';
 
 export interface SuccessResponse {
   success: boolean;
   message?: string;
-  data?: SuccessResponseData;
+  data?: SuccessResponseDataProperty;
 }

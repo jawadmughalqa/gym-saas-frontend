@@ -8,8 +8,10 @@
     "build": "tsc -b && vite build",
     "lint": "eslint .",
     "preview": "vite preview",
+    "type-check": "tsc --noEmit",
     "api:gen": "orval --config orval.config.ts",
-    "type-check": "tsc --noEmit"
+    "api:gen:check": "orval --config orval.config.ts && tsc --noEmit",
+    "api:gen:file": "orval --config orval.config.ts"
   },
   "dependencies": {
     "@fontsource-variable/geist": "^5.2.8",

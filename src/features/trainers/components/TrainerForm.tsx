@@ -31,7 +31,10 @@ import type { TrainerProfile, TrainerStatus } from '@/types/trainer.types';
 // ─── Constants ────────────────────────────────────────────────────────────────
 
 const DAY_NAMES = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
-const CURRENCIES = ['USD', 'EUR', 'GBP', 'PKR', 'AED', 'SAR', 'CAD', 'AUD'];
+
+// PKR first — this is a Pakistani gym product
+const CURRENCIES = ['PKR', 'USD', 'AED', 'SAR', 'EUR', 'GBP'];
+
 const SPECIALIZATION_SUGGESTIONS = [
   'weight loss', 'muscle building', 'cardio', 'yoga', 'pilates',
   'crossfit', 'rehabilitation', 'nutrition', 'senior fitness', 'sports performance',
@@ -56,7 +59,8 @@ const profileFieldsSchema = z.object({
   maxClients: z.string().optional().transform((v) =>
     v === '' || v === undefined ? undefined : Number(v),
   ).pipe(z.number().int().min(1).max(500).optional()),
-  hourlyRate: z.string().optional().transform((v) =>
+  // monthlyRate replaces hourlyRate — Pakistani gyms pay trainers monthly
+  monthlyRate: z.string().optional().transform((v) =>
     v === '' || v === undefined ? undefined : Number(v),
   ).pipe(z.number().min(0).optional()),
   currency:     z.string().optional(),
@@ -155,7 +159,7 @@ function BranchMultiSelect({
               <CommandEmpty>No branches found.</CommandEmpty>
               <CommandGroup>
                 {branches.map((branch) => {
-                  const id       = branch._id ?? '';
+                  const id         = branch._id ?? '';
                   const isSelected = selected.includes(id);
                   return (
                     <CommandItem
@@ -247,8 +251,8 @@ export default function TrainerForm({ open, onOpenChange, trainer }: TrainerForm
       bio:             '',
       experienceYears: '',
       maxClients:      '',
-      hourlyRate:      '',
-      currency:        'USD',
+      monthlyRate:     '',
+      currency:        'PKR',   // ← default PKR
       status:          'active',
       availability:    [],
     },
@@ -271,9 +275,9 @@ export default function TrainerForm({ open, onOpenChange, trainer }: TrainerForm
           ? String(trainer.experienceYears) : '',
         maxClients: trainer.maxClients !== undefined
           ? String(trainer.maxClients) : '',
-        hourlyRate: trainer.hourlyRate !== undefined
-          ? String(trainer.hourlyRate) : '',
-        currency:     trainer.currency ?? 'USD',
+        monthlyRate: (trainer as any).monthlyRate !== undefined
+          ? String((trainer as any).monthlyRate) : '',
+        currency:     trainer.currency ?? 'PKR',
         status:       trainer.status   ?? 'active',
         availability: trainer.availability ?? [],
       });
@@ -289,8 +293,8 @@ export default function TrainerForm({ open, onOpenChange, trainer }: TrainerForm
         bio:             '',
         experienceYears: '',
         maxClients:      '',
-        hourlyRate:      '',
-        currency:        'USD',
+        monthlyRate:     '',
+        currency:        'PKR',
         status:          'active',
         availability:    [],
       });
@@ -307,12 +311,12 @@ export default function TrainerForm({ open, onOpenChange, trainer }: TrainerForm
         branchIds:       values.branchIds,
         specializations,
         certifications,
-        bio:             values.bio       || undefined,
+        bio:             values.bio            || undefined,
         experienceYears: values.experienceYears as number | undefined,
         maxClients:      values.maxClients      as number | undefined,
-        hourlyRate:      values.hourlyRate      as number | undefined,
-        currency:        values.currency  || undefined,
-        status:          values.status    as TrainerStatus | undefined,
+        hourlyRate:      values.monthlyRate     as number | undefined, // field name on API is still hourlyRate
+        currency:        values.currency        || undefined,
+        status:          values.status          as TrainerStatus | undefined,
         availability:    values.availability,
       });
     } else {
@@ -343,11 +347,11 @@ export default function TrainerForm({ open, onOpenChange, trainer }: TrainerForm
         branchIds:       values.branchIds,
         specializations,
         certifications,
-        bio:             values.bio       || undefined,
+        bio:             values.bio            || undefined,
         experienceYears: values.experienceYears as number | undefined,
         maxClients:      values.maxClients      as number | undefined,
-        hourlyRate:      values.hourlyRate      as number | undefined,
-        currency:        values.currency  || undefined,
+        hourlyRate:      values.monthlyRate     as number | undefined, // field name on API is still hourlyRate
+        currency:        values.currency        || undefined,
         availability:    values.availability,
       });
     }
@@ -384,7 +388,7 @@ export default function TrainerForm({ open, onOpenChange, trainer }: TrainerForm
                   <Label htmlFor="firstName">
                     First Name <span className="text-destructive">*</span>
                   </Label>
-                  <Input id="firstName" placeholder="John" {...register('firstName')} />
+                  <Input id="firstName" placeholder="Ahmed" {...register('firstName')} />
                   {errors.firstName && (
                     <p className="text-xs text-destructive">{errors.firstName.message}</p>
                   )}
@@ -393,7 +397,7 @@ export default function TrainerForm({ open, onOpenChange, trainer }: TrainerForm
                   <Label htmlFor="lastName">
                     Last Name <span className="text-destructive">*</span>
                   </Label>
-                  <Input id="lastName" placeholder="Smith" {...register('lastName')} />
+                  <Input id="lastName" placeholder="Khan" {...register('lastName')} />
                   {errors.lastName && (
                     <p className="text-xs text-destructive">{errors.lastName.message}</p>
                   )}
@@ -432,7 +436,7 @@ export default function TrainerForm({ open, onOpenChange, trainer }: TrainerForm
             </div>
           )}
 
-          {/* ── Branches — multi-select dropdown ───────────────────────── */}
+          {/* ── Branches ────────────────────────────────────────────────── */}
           <div className="space-y-1.5">
             <Label>
               Branches <span className="text-destructive">*</span>
@@ -521,30 +525,30 @@ export default function TrainerForm({ open, onOpenChange, trainer }: TrainerForm
             </div>
           </div>
 
-          {/* ── Hourly Rate + Currency ──────────────────────────────────── */}
+          {/* ── Monthly Rate + Currency ─────────────────────────────────── */}
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-1.5">
-              <Label htmlFor="hourlyRate">Hourly Rate</Label>
+              <Label htmlFor="monthlyRate">Monthly Rate</Label>
               <Input
-                id="hourlyRate"
+                id="monthlyRate"
                 type="number"
                 min={0}
-                step="0.01"
-                placeholder="50.00"
-                {...register('hourlyRate')}
+                step="1"
+                placeholder="e.g. 35000"
+                {...register('monthlyRate')}
               />
-              {errors.hourlyRate && (
-                <p className="text-xs text-destructive">{errors.hourlyRate.message}</p>
+              {errors.monthlyRate && (
+                <p className="text-xs text-destructive">{errors.monthlyRate.message}</p>
               )}
             </div>
             <div className="space-y-1.5">
               <Label>Currency</Label>
               <Select
-                value={watch('currency') ?? 'USD'}
+                value={watch('currency') ?? 'PKR'}
                 onValueChange={(v) => setValue('currency', v)}
               >
                 <SelectTrigger>
-                  <SelectValue placeholder="USD" />
+                  <SelectValue placeholder="PKR" />
                 </SelectTrigger>
                 <SelectContent>
                   {CURRENCIES.map((c) => (

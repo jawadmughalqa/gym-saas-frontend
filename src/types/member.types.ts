@@ -15,9 +15,9 @@ export type CheckInMethod = 'qr' | 'rfid' | 'manual' | 'app';
 // ─── Sub-objects ──────────────────────────────────────────────────────────────
 
 export interface EmergencyContact {
-  name: string;
+  name:         string;
   relationship: string;
-  phone: string;
+  phone:        string;
 }
 
 export interface HealthQuestionnaire {
@@ -41,6 +41,15 @@ export interface PlanSnapshot {
   durationDays?:    number;
 }
 
+// ─── Active plan summary — attached by listMembers API ────────────────────────
+
+export interface MemberActivePlan {
+  planName:        string | null;
+  nextRenewalDate: string | null;
+  pricingType:     'plan' | 'custom';
+  status:          string;
+}
+
 // ─── Member ───────────────────────────────────────────────────────────────────
 
 export interface Member {
@@ -49,22 +58,22 @@ export interface Member {
   branchId: string;
   userId?:  string;
 
-  firstName:      string;
-  lastName:       string;
-  fullName:       string;
-  email:          string;
-  phone:          string;
-  dateOfBirth?:   string;
-  gender?:        Gender;
+  firstName:        string;
+  lastName:         string;
+  fullName:         string;
+  email:            string;
+  phone:            string;
+  dateOfBirth?:     string;
+  gender?:          Gender;
   profilePhotoUrl?: string;
 
   govId?:     string;
   govIdType?: GovIdType;
 
-  emergencyContact?:   EmergencyContact;
+  emergencyContact?:    EmergencyContact;
   healthQuestionnaire?: HealthQuestionnaire;
 
-  consentMarketing:     boolean;
+  consentMarketing:      boolean;
   consentDataProcessing: boolean;
   waiver?: WaiverMetadata;
 
@@ -75,6 +84,9 @@ export interface Member {
   archivedAt?: string;
   createdAt:   string;
   updatedAt:   string;
+
+  // Attached by the listMembers API — null if no active subscription
+  activePlan?: MemberActivePlan | null;
 }
 
 export interface MemberListResponse {
@@ -90,22 +102,22 @@ export interface BranchPricingOverride {
 }
 
 export interface MembershipPlan {
-  _id:             string;
-  tenantId:        string;
-  name:            string;
-  description?:    string;
+  _id:              string;
+  tenantId:         string;
+  name:             string;
+  description?:     string;
   billingFrequency: BillingFrequency;
-  durationDays?:   number;
-  basePrice:       number;
-  currency:        string;
+  durationDays?:    number;
+  basePrice:        number;
+  currency:         string;
   branchPricingOverrides?: BranchPricingOverride[];
-  features?:       string[];
-  maxFreezes:      number;
+  features?:        string[];
+  maxFreezes:       number;
   freezeDurationDays: number;
-  isActive:        boolean;
-  isArchived:      boolean;
-  createdAt:       string;
-  updatedAt:       string;
+  isActive:         boolean;
+  isArchived:       boolean;
+  createdAt:        string;
+  updatedAt:        string;
 }
 
 // ─── Subscription ─────────────────────────────────────────────────────────────
@@ -116,27 +128,22 @@ export interface Subscription {
   memberId: string;
   branchId: string;
 
-  // Pricing type
   pricingType: SubscriptionPricingType;
 
-  // Plan-based (only when pricingType === 'plan')
   planId?:       string;
   planSnapshot?: PlanSnapshot;
 
-  // Custom pricing (only when pricingType === 'custom')
   customLabel?:            string;
   customPrice?:            number;
   customBillingFrequency?: BillingFrequency;
 
-  // Shared pricing
   currency:       string;
   discountAmount: number;
   finalPrice:     number;
 
-  // Lifecycle
-  status:          SubscriptionStatus;
-  startDate:       string;
-  endDate?:        string;
+  status:           SubscriptionStatus;
+  startDate:        string;
+  endDate?:         string;
   nextRenewalDate?: string;
 
   freezeHistory?: Array<{
@@ -183,15 +190,15 @@ export interface BodyMeasurements {
 }
 
 export interface Measurement {
-  _id:            string;
-  memberId:       string;
-  date:           string;
-  weightKg?:      number;
-  heightCm?:      number;
+  _id:             string;
+  memberId:        string;
+  date:            string;
+  weightKg?:       number;
+  heightCm?:       number;
   bodyFatPercent?: number;
-  measurements?:  BodyMeasurements;
-  notes?:         string;
-  createdAt:      string;
+  measurements?:   BodyMeasurements;
+  notes?:          string;
+  createdAt:       string;
 }
 
 // ─── Request DTOs ─────────────────────────────────────────────────────────────
@@ -215,11 +222,11 @@ export interface CreateMemberDto {
 }
 
 export interface UpdateMemberDto {
-  firstName?:      string;
-  lastName?:       string;
-  phone?:          string;
-  dateOfBirth?:    string;
-  gender?:         Gender;
+  firstName?:       string;
+  lastName?:        string;
+  phone?:           string;
+  dateOfBirth?:     string;
+  gender?:          Gender;
   profilePhotoUrl?: string;
   emergencyContact?:    EmergencyContact;
   healthQuestionnaire?: HealthQuestionnaire;
@@ -238,16 +245,16 @@ export interface ListMembersQuery {
   sortDir?: 'asc' | 'desc';
 }
 
-// ── Subscription DTOs ──────────────────────────────────────────────────────────
+// ─── Subscription DTOs ────────────────────────────────────────────────────────
 
 export interface CreatePlanSubscriptionDto {
-  pricingType:       'plan';
-  planId:            string;
-  branchId:          string;
-  discountAmount?:   number;
-  startDate?:        string;
-  addOns?:           string[];
-  notes?:            string;
+  pricingType:        'plan';
+  planId:             string;
+  branchId:           string;
+  discountAmount?:    number;
+  startDate?:         string;
+  addOns?:            string[];
+  notes?:             string;
   autoCreateInvoice?: boolean;
 }
 
@@ -279,10 +286,10 @@ export interface CancelSubscriptionDto {
 }
 
 export interface CreateMeasurementDto {
-  date?:          string;
-  weightKg?:      number;
-  heightCm?:      number;
+  date?:           string;
+  weightKg?:       number;
+  heightCm?:       number;
   bodyFatPercent?: number;
-  measurements?:  BodyMeasurements;
-  notes?:         string;
+  measurements?:   BodyMeasurements;
+  notes?:          string;
 }

@@ -33,6 +33,7 @@ import {
   getGetMembersMemberIdQueryKey,
   usePostMembersMemberIdSubscriptions,
 } from '@/api/generated/members/members';
+import { usePostTrainersTrainerIdAssignments } from '@/api/generated/trainers/trainers';
 import { useGetBranches }  from '@/api/generated/branches/branches';
 import { useQueryClient }  from '@tanstack/react-query';
 import { useToast }        from '@/hooks/use-toast';
@@ -43,6 +44,7 @@ import { PersonalInfoSection }      from './PersonalInfoSection';
 import { EmergencyContactSection }  from './EmergencyContactSection';
 import { ConsentSection }           from './ConsentSection';
 import { AssignMembershipSection }  from './AssignMembershipSection';
+import { AssignTrainerSection }     from './AssignTrainerSection';
 
 // ─── Props ────────────────────────────────────────────────────────────────────
 
@@ -69,11 +71,13 @@ export default function MemberForm({
   const createMutation       = usePostMembers();
   const updateMutation       = usePatchMembersMemberId();
   const subscriptionMutation = usePostMembersMemberIdSubscriptions();
+  const trainerAssignMutation = usePostTrainersTrainerIdAssignments();
 
   const isPending =
     createMutation.isPending ||
     updateMutation.isPending ||
-    subscriptionMutation.isPending;
+    subscriptionMutation.isPending ||
+    trainerAssignMutation.isPending;
 
   // ── Branches ──────────────────────────────────────────────────────────────
   const { data: branchesData, isLoading: branchesLoading } = useGetBranches(
@@ -241,6 +245,28 @@ export default function MemberForm({
       });
     }
 
+    // ── Optional trainer assignment ────────────────────────────────────────
+    const t = values.trainer;
+    if (t?.enabled && t.trainerId) {
+      try {
+        await trainerAssignMutation.mutateAsync({
+          trainerId: t.trainerId,
+          data: {
+            memberId:                newMemberId,
+            branchId:                values.branchId,
+            goal:                    t.goal           || undefined,
+            sessionFrequencyPerWeek: t.sessionFrequencyPerWeek || undefined,
+          },
+        });
+      } catch {
+        toast({
+          variant:     'destructive',
+          title:       'Trainer assignment failed',
+          description: 'Member was created. You can assign a trainer from the member profile page.',
+        });
+      }
+    }
+
     onOpenChange(false);
   }
 
@@ -294,7 +320,7 @@ export default function MemberForm({
             isPending={isPending}
           />
 
-          {/* Membership assignment — create only */}
+          {/* Membership & trainer assignment — create only */}
           {!isEdit && (
             <>
               <Separator />
@@ -302,6 +328,12 @@ export default function MemberForm({
                 control={control}
                 errors={errors}
                 isPending={isPending}
+              />
+              <AssignTrainerSection
+                control={control}
+                errors={errors}
+                isPending={isPending}
+                branchId={watch('branchId') || undefined}
               />
             </>
           )}

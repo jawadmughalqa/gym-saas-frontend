@@ -14,7 +14,7 @@
  */
 
 import { useState } from "react";
-import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useQueryClient } from "@tanstack/react-query";
 import {
   User,
   Plus,
@@ -33,13 +33,13 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Separator } from "@/components/ui/separator";
 import { useToast } from "@/hooks/use-toast";
-import { api } from "@/lib/axios";
 import { formatDate } from "@/utils/format";
 import { usePermission } from "@/hooks/use-permission";
 
 import AssignTrainerDialog from "./AssignTrainerDialog";
 import { EndTrainerDialog } from "./EndTrainerDialog";
 import { EditAssignmentDialog } from "./EditAssignmentDialog";
+import { useGetMembersMemberIdTrainerAssignments } from "@/api/generated/members/members";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -168,16 +168,10 @@ export function TrainerTab({ memberId, branchId }: TrainerTabProps) {
   // ── Fetch assignments ─────────────────────────────────────────────────────
   const queryKey = ["member-trainer-assignments", memberId];
 
-  const { data, isLoading } = useQuery({
-    queryKey,
-    queryFn: async () => {
-      const res = await api.get(`/members/${memberId}/trainer-assignments`);
-      return res.data.data as TrainerAssignment[];
-    },
-    enabled: !!memberId,
-  });
+  const { data: response, isLoading } =
+    useGetMembersMemberIdTrainerAssignments(memberId);
+  const assignments = (response?.data ?? []) as TrainerAssignment[];
 
-  const assignments = data ?? [];
   const current = assignments.find((a) => a.status === "active") ?? null;
   const history = assignments.filter((a) => a.status === "ended");
 

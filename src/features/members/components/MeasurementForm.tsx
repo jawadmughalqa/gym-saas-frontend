@@ -8,7 +8,12 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Separator } from '@/components/ui/separator';
-import { useLogMeasurement } from '../hooks/use-members';
+import { useQueryClient } from '@tanstack/react-query';
+import { toast } from '@/hooks/use-toast';
+import {
+  usePostMembersMemberIdMeasurements,
+  getGetMembersMemberIdMeasurementsQueryKey,
+} from '@/api/generated/members/members';
 
 // ─── Schema ───────────────────────────────────────────────────────────────────
 
@@ -45,7 +50,27 @@ interface MeasurementFormProps {
 // ─── Component ────────────────────────────────────────────────────────────────
 
 export default function MeasurementForm({ open, onOpenChange, memberId }: MeasurementFormProps) {
-  const logMeasurement = useLogMeasurement(memberId, { onSuccess: () => onOpenChange(false) });
+  const queryClient = useQueryClient();
+
+  const logMeasurement = usePostMembersMemberIdMeasurements({
+    mutation: {
+      onSuccess: () => {
+        queryClient.invalidateQueries({
+          queryKey: getGetMembersMemberIdMeasurementsQueryKey(memberId),
+        });
+        toast({ title: 'Measurement recorded successfully' });
+        onOpenChange(false);
+      },
+      onError: (err: any) => {
+        toast({
+          variant: 'destructive',
+          title: 'Failed to record measurement',
+          description: err?.response?.data?.message || err?.message,
+        });
+      },
+    },
+  });
+
   const isPending = logMeasurement.isPending;
 
   const { register, handleSubmit, reset, formState: { errors } } = useForm<FormValues>({
@@ -54,19 +79,22 @@ export default function MeasurementForm({ open, onOpenChange, memberId }: Measur
 
   function onSubmit(values: FormValues) {
     logMeasurement.mutate({
-      date:           values.date || undefined,
-      weightKg:       values.weightKg,
-      heightCm:       values.heightCm,
-      bodyFatPercent: values.bodyFatPercent,
-      measurements: {
-        chest: values.chest,
-        waist: values.waist,
-        hips:  values.hips,
-        thigh: values.thigh,
-        bicep: values.bicep,
-        neck:  values.neck,
+      memberId,
+      data: {
+        date: values.date || undefined,
+        weightKg: values.weightKg,
+        heightCm: values.heightCm,
+        bodyFatPercent: values.bodyFatPercent,
+        measurements: {
+          chest: values.chest,
+          waist: values.waist,
+          hips: values.hips,
+          thigh: values.thigh,
+          bicep: values.bicep,
+          neck: values.neck,
+        },
+        notes: values.notes || undefined,
       },
-      notes: values.notes || undefined,
     });
   }
 
@@ -106,8 +134,6 @@ export default function MeasurementForm({ open, onOpenChange, memberId }: Measur
         </DialogHeader>
 
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
-
-          {/* Date */}
           <div className="space-y-1.5">
             <Label htmlFor="measureDate">Date</Label>
             <Input id="measureDate" type="date" disabled={isPending} {...register('date')} />
@@ -116,7 +142,6 @@ export default function MeasurementForm({ open, onOpenChange, memberId }: Measur
 
           <Separator />
 
-          {/* Body stats */}
           <div>
             <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground mb-3">Body Stats</p>
             <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
@@ -128,7 +153,6 @@ export default function MeasurementForm({ open, onOpenChange, memberId }: Measur
 
           <Separator />
 
-          {/* Circumferences */}
           <div>
             <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground mb-3">Circumferences (cm)</p>
             <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
@@ -143,7 +167,6 @@ export default function MeasurementForm({ open, onOpenChange, memberId }: Measur
 
           <Separator />
 
-          {/* Notes */}
           <div className="space-y-1.5">
             <Label htmlFor="measureNotes">Notes</Label>
             <Textarea

@@ -1,29 +1,20 @@
-/**
- * EditAssignmentDialog
- *
- * Edits charge / goal / sessions / notes on the active assignment.
- * Does NOT change the trainer — use AssignTrainerDialog for that.
- *
- * PATCH /trainers/:trainerId/assignments/:assignmentId
- */
-
-import { useEffect, useState } from 'react';
-import { useForm }     from 'react-hook-form';
+import { useEffect } from 'react';
+import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { z }           from 'zod';
+import { z } from 'zod';
 import {
   Dialog, DialogContent, DialogHeader,
   DialogTitle, DialogDescription, DialogFooter,
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
-import { Input }  from '@/components/ui/input';
-import { Label }  from '@/components/ui/label';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 import {
   Select, SelectContent, SelectItem,
   SelectTrigger, SelectValue,
 } from '@/components/ui/select';
-import { useToast } from '@/hooks/use-toast';
-import { api }      from '@/lib/axios';
+import { toast } from '@/hooks/use-toast';
+import { usePatchTrainersTrainerIdAssignmentsAssignmentId } from '@/api/generated/trainers/trainers';
 import type { TrainerAssignment } from './TrainerTab';
 
 // ─── Schema ───────────────────────────────────────────────────────────────────
@@ -50,9 +41,6 @@ interface Props {
 // ─── Component ────────────────────────────────────────────────────────────────
 
 export function EditAssignmentDialog({ open, onOpenChange, assignment, onSuccess }: Props) {
-  const { toast }      = useToast();
-  const [loading, setLoading] = useState(false);
-
   const {
     register,
     handleSubmit,
@@ -71,7 +59,26 @@ export function EditAssignmentDialog({ open, onOpenChange, assignment, onSuccess
     },
   });
 
-  // Re-populate when the assignment changes (e.g. after a save)
+  const updateMutation = usePatchTrainersTrainerIdAssignmentsAssignmentId({
+    mutation: {
+      onSuccess: () => {
+        toast({
+          title: 'Assignment updated',
+          description: 'Trainer assignment details have been saved.',
+        });
+        onOpenChange(false);
+        onSuccess();
+      },
+      onError: (err: any) => {
+        toast({
+          variant: 'destructive',
+          title: 'Failed to update',
+          description: err?.response?.data?.message ?? 'Something went wrong.',
+        });
+      },
+    },
+  });
+
   useEffect(() => {
     if (open) {
       reset({
@@ -89,38 +96,22 @@ export function EditAssignmentDialog({ open, onOpenChange, assignment, onSuccess
     onOpenChange(open);
   }
 
-  async function onSubmit(values: FormValues) {
-    setLoading(true);
-    try {
-      const trainerId    = typeof assignment.trainerId === 'string'
-        ? assignment.trainerId
-        : assignment.trainerId._id;
-      const assignmentId = assignment._id;
+  function onSubmit(values: FormValues) {
+    const trainerId = typeof assignment.trainerId === 'string'
+      ? assignment.trainerId
+      : assignment.trainerId._id;
 
-      await api.patch(`/trainers/${trainerId}/assignments/${assignmentId}`, {
-        monthlyCharge:           values.monthlyCharge  || undefined,
-        currency:                values.currency,
-        goal:                    values.goal           || undefined,
+    updateMutation.mutate({
+      trainerId,
+      assignmentId: assignment._id,
+      data: {
+        monthlyCharge: values.monthlyCharge || undefined,
+        currency: values.currency,
+        goal: values.goal || undefined,
         sessionFrequencyPerWeek: values.sessionFrequencyPerWeek || undefined,
-        notes:                   values.notes          || undefined,
-      });
-
-      toast({
-        title:       'Assignment updated',
-        description: 'Trainer assignment details have been saved.',
-      });
-
-      onOpenChange(false);
-      onSuccess();
-    } catch (err: any) {
-      toast({
-        variant:     'destructive',
-        title:       'Failed to update',
-        description: err?.response?.data?.message ?? 'Something went wrong.',
-      });
-    } finally {
-      setLoading(false);
-    }
+        notes: values.notes || undefined,
+      },
+    });
   }
 
   return (
@@ -135,8 +126,6 @@ export function EditAssignmentDialog({ open, onOpenChange, assignment, onSuccess
         </DialogHeader>
 
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-4 mt-2">
-
-          {/* PT Charge */}
           <div className="grid grid-cols-2 gap-3">
             <div className="space-y-1.5">
               <Label htmlFor="monthlyCharge">PT Charge / Month</Label>
@@ -146,7 +135,7 @@ export function EditAssignmentDialog({ open, onOpenChange, assignment, onSuccess
                 min={0}
                 step="1"
                 placeholder="e.g. 5000"
-                disabled={loading}
+                disabled={updateMutation.isPending}
                 {...register('monthlyCharge')}
               />
               {errors.monthlyCharge && (
@@ -158,7 +147,7 @@ export function EditAssignmentDialog({ open, onOpenChange, assignment, onSuccess
               <Select
                 value={watch('currency') ?? 'PKR'}
                 onValueChange={(v) => setValue('currency', v)}
-                disabled={loading}
+                disabled={updateMutation.isPending}
               >
                 <SelectTrigger>
                   <SelectValue />
@@ -172,7 +161,6 @@ export function EditAssignmentDialog({ open, onOpenChange, assignment, onSuccess
             </div>
           </div>
 
-          {/* Sessions per week */}
           <div className="space-y-1.5">
             <Label>Sessions per Week</Label>
             <Select
@@ -180,7 +168,7 @@ export function EditAssignmentDialog({ open, onOpenChange, assignment, onSuccess
               onValueChange={(v) =>
                 setValue('sessionFrequencyPerWeek', v ? Number(v) : undefined)
               }
-              disabled={loading}
+              disabled={updateMutation.isPending}
             >
               <SelectTrigger>
                 <SelectValue placeholder="Select frequency" />
@@ -195,24 +183,22 @@ export function EditAssignmentDialog({ open, onOpenChange, assignment, onSuccess
             </Select>
           </div>
 
-          {/* Goal */}
           <div className="space-y-1.5">
             <Label htmlFor="goal">Goal</Label>
             <Input
               id="goal"
               placeholder="e.g. Weight loss, Muscle gain, Rehabilitation"
-              disabled={loading}
+              disabled={updateMutation.isPending}
               {...register('goal')}
             />
           </div>
 
-          {/* Notes */}
           <div className="space-y-1.5">
             <Label htmlFor="notes">Notes</Label>
             <Input
               id="notes"
               placeholder="Any additional notes"
-              disabled={loading}
+              disabled={updateMutation.isPending}
               {...register('notes')}
             />
           </div>
@@ -222,12 +208,12 @@ export function EditAssignmentDialog({ open, onOpenChange, assignment, onSuccess
               type="button"
               variant="outline"
               onClick={() => handleClose(false)}
-              disabled={loading}
+              disabled={updateMutation.isPending}
             >
               Cancel
             </Button>
-            <Button type="submit" disabled={loading}>
-              {loading ? 'Saving…' : 'Save Changes'}
+            <Button type="submit" disabled={updateMutation.isPending}>
+              {updateMutation.isPending ? 'Saving…' : 'Save Changes'}
             </Button>
           </DialogFooter>
         </form>

@@ -1,15 +1,3 @@
-/**
- * AssignTrainerSection
- *
- * Collapsible section shown during member CREATION only.
- * Lets staff optionally pick a trainer and set a goal + sessions/week.
- *
- * On submit the parent fires:
- *   POST /trainers/:trainerId/assignments  { memberId, branchId, goal, sessionFrequencyPerWeek }
- *
- * This component only manages form state — the API call lives in MemberForm/index.tsx.
- */
-
 import { useState } from "react";
 import { useController, type Control, type FieldErrors } from "react-hook-form";
 import { ChevronDown, ChevronUp, Plus, User } from "lucide-react";
@@ -22,29 +10,48 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { toast } from "@/hooks/use-toast";
 import { useGetTrainers } from "@/api/generated/trainers/trainers";
+import { usePostTrainersTrainerIdAssignments } from "@/api/generated/trainers/trainers";
 import type { MemberFormValues } from "../MemberForm/types";
+import type { TrainerAssignment } from "./TrainerTab";
+import {
+  Button,
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui";
 
 // ─── Props ────────────────────────────────────────────────────────────────────
 
 interface Props {
-  control: Control<MemberFormValues>;
-  errors: FieldErrors<MemberFormValues>;
-  isPending: boolean;
-  branchId?: string; // filter trainers by selected branch
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  memberId: string;
+  branchId: string;
+  currentAssignment: TrainerAssignment | null;
+  onSuccess: () => void;
 }
 
 // ─── Component ────────────────────────────────────────────────────────────────
 
 export default function AssignTrainerDialog({
-  control,
-  errors,
-  isPending,
+  open,
+  onOpenChange,
+  memberId,
   branchId,
+  currentAssignment,
+  onSuccess,
 }: Props) {
   const [expanded, setExpanded] = useState(false);
+  const [selectedTrainerId, setSelectedTrainerId] = useState<string>("");
+  const [goal, setGoal] = useState("");
+  const [sessionsPerWeek, setSessionsPerWeek] = useState<number | undefined>();
 
-  // ── Fetch trainers only when section is opened ────────────────────────────
+  // ── Fetch trainers ─────────────────────────────────────────────────────────
   const { data: trainersData, isLoading: loadingTrainers } = useGetTrainers(
     {
       status: "active",
@@ -52,93 +59,102 @@ export default function AssignTrainerDialog({
       ...(branchId ? { branchId } : {}),
       limit: 100,
     },
-    { query: { enabled: expanded } },
+    { query: { enabled: open } },
   );
   const trainers = trainersData?.data ?? [];
 
-  // ── Controlled fields ─────────────────────────────────────────────────────
-  const { field: enabledField } = useController({
-    control,
-    name: "trainer.enabled",
-  });
-  const { field: trainerField } = useController({
-    control,
-    name: "trainer.trainerId",
-  });
-  const { field: goalField } = useController({ control, name: "trainer.goal" });
-  const { field: sessionsField } = useController({
-    control,
-    name: "trainer.sessionFrequencyPerWeek",
+  // ── Mutation ───────────────────────────────────────────────────────────────
+  const assignMutation = usePostTrainersTrainerIdAssignments({
+    mutation: {
+      onSuccess: () => {
+        toast({
+          title: "Trainer assigned",
+          description: selectedTrainer
+            ? `${selectedTrainer.name} has been assigned as the personal trainer.`
+            : "Trainer assigned successfully.",
+        });
+        resetForm();
+        onOpenChange(false);
+        onSuccess();
+      },
+      onError: (err: any) => {
+        toast({
+          variant: "destructive",
+          title: "Failed to assign trainer",
+          description: err?.response?.data?.message || "Something went wrong.",
+        });
+      },
+    },
   });
 
-  // ── Toggle ────────────────────────────────────────────────────────────────
-  function handleToggle() {
-    const next = !expanded;
-    setExpanded(next);
-    enabledField.onChange(next);
-    if (!next) {
-      trainerField.onChange("");
-      goalField.onChange("");
-      sessionsField.onChange(undefined);
-    }
-  }
-
-  // ── Selected trainer display name ─────────────────────────────────────────
-  const selectedTrainer = trainers.find((t) => t._id === trainerField.value);
-  const trainerName = selectedTrainer
+  // ── Helpers ────────────────────────────────────────────────────────────────
+  const selectedTrainer = trainers.find((t) => t._id === selectedTrainerId);
+  const selectedTrainerName = selectedTrainer
     ? `${(selectedTrainer as any).userId?.firstName ?? ""} ${(selectedTrainer as any).userId?.lastName ?? ""}`.trim()
     : null;
 
-  return (
-    <section className="space-y-3">
-      {/* ── Toggle button ──────────────────────────────────────────────────── */}
-      <button
-        type="button"
-        onClick={handleToggle}
-        className={`w-full flex items-center justify-between rounded-lg border px-4 py-3 text-left transition-colors ${
-          expanded
-            ? "border-primary bg-primary/5 text-primary"
-            : "border-dashed border-muted-foreground/40 text-muted-foreground hover:border-primary/50 hover:text-foreground"
-        }`}
-      >
-        <div className="flex items-center gap-2">
-          {!expanded && <Plus className="h-4 w-4" />}
-          <div>
-            <p className="text-sm font-medium">
-              {expanded ? "Assign Trainer" : "Assign Trainer (optional)"}
-            </p>
-            {!expanded && (
-              <p className="text-xs opacity-70">
-                Assign a personal trainer during registration
-              </p>
-            )}
-          </div>
-        </div>
-        {expanded ? (
-          <ChevronUp className="h-4 w-4 shrink-0" />
-        ) : (
-          <ChevronDown className="h-4 w-4 shrink-0" />
-        )}
-      </button>
+  function resetForm() {
+    setSelectedTrainerId("");
+    setGoal("");
+    setSessionsPerWeek(undefined);
+    setExpanded(false);
+  }
 
-      {/* ── Expanded content ───────────────────────────────────────────────── */}
-      {expanded && (
-        <div className="rounded-lg border p-4 space-y-4">
+  function handleToggle() {
+    if (!expanded && currentAssignment) {
+      // If there's an existing assignment, warn that it will be replaced
+      const confirmReplace = window.confirm(
+        "This member already has an active trainer. Assigning a new trainer will end the current assignment. Continue?",
+      );
+      if (!confirmReplace) return;
+    }
+    setExpanded(!expanded);
+  }
+
+  function handleSubmit() {
+    if (!selectedTrainerId) {
+      toast({
+        variant: "destructive",
+        title: "Validation error",
+        description: "Please select a trainer.",
+      });
+      return;
+    }
+
+    assignMutation.mutate({
+      trainerId: selectedTrainerId,
+      data: {
+        memberId,
+        branchId,
+        goal: goal || undefined,
+        sessionFrequencyPerWeek: sessionsPerWeek,
+      },
+    });
+  }
+
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="sm:max-w-md">
+        <DialogHeader>
+          <DialogTitle>Assign Trainer</DialogTitle>
+          <DialogDescription>
+            Select a personal trainer for this member. If a trainer is already
+            assigned, they will be replaced.
+          </DialogDescription>
+        </DialogHeader>
+
+        <div className="space-y-4">
           {/* Trainer selector */}
           <div className="space-y-1.5">
             <Label>
               Trainer <span className="text-destructive">*</span>
             </Label>
             <Select
-              value={trainerField.value as string}
-              onValueChange={(v) => trainerField.onChange(v)}
-              disabled={isPending || loadingTrainers}
+              value={selectedTrainerId}
+              onValueChange={setSelectedTrainerId}
+              disabled={assignMutation.isPending || loadingTrainers}
             >
-              <SelectTrigger
-                className={
-                  errors.trainer?.trainerId ? "border-destructive" : ""
-                }
-              >
+              <SelectTrigger>
                 <SelectValue
                   placeholder={
                     loadingTrainers
@@ -181,15 +197,10 @@ export default function AssignTrainerDialog({
                 })}
               </SelectContent>
             </Select>
-            {errors.trainer?.trainerId && (
-              <p className="text-xs text-destructive">
-                {errors.trainer.trainerId.message}
-              </p>
-            )}
           </div>
 
           {/* Show rest of fields only after trainer is selected */}
-          {trainerField?.value && (
+          {selectedTrainerId && (
             <>
               {/* Goal */}
               <div className="space-y-1.5">
@@ -197,9 +208,9 @@ export default function AssignTrainerDialog({
                 <Input
                   id="trainerGoal"
                   placeholder="e.g. Weight loss, Muscle gain, Rehabilitation"
-                  disabled={isPending}
-                  value={goalField.value as string}
-                  onChange={(e) => goalField.onChange(e.target.value)}
+                  disabled={assignMutation.isPending}
+                  value={goal}
+                  onChange={(e) => setGoal(e.target.value)}
                 />
                 <p className="text-xs text-muted-foreground">
                   What does the member want to achieve with this trainer?
@@ -210,11 +221,11 @@ export default function AssignTrainerDialog({
               <div className="space-y-1.5">
                 <Label htmlFor="sessionsPerWeek">Sessions per Week</Label>
                 <Select
-                  value={String(sessionsField.value ?? "")}
+                  value={String(sessionsPerWeek ?? "")}
                   onValueChange={(v) =>
-                    sessionsField.onChange(v ? Number(v) : undefined)
+                    setSessionsPerWeek(v ? Number(v) : undefined)
                   }
-                  disabled={isPending}
+                  disabled={assignMutation.isPending}
                 >
                   <SelectTrigger>
                     <SelectValue placeholder="Select frequency" />
@@ -234,17 +245,35 @@ export default function AssignTrainerDialog({
                 <User className="h-4 w-4 text-primary shrink-0" />
                 <div>
                   <p className="text-sm font-medium text-primary">
-                    {trainerName}
+                    {selectedTrainerName}
                   </p>
                   <p className="text-xs text-muted-foreground">
-                    Will be assigned after member is created
+                    Will be assigned immediately
                   </p>
                 </div>
               </div>
             </>
           )}
         </div>
-      )}
-    </section>
+
+        <DialogFooter>
+          <Button
+            type="button"
+            variant="outline"
+            onClick={() => onOpenChange(false)}
+            disabled={assignMutation.isPending}
+          >
+            Cancel
+          </Button>
+          <Button
+            type="button"
+            onClick={handleSubmit}
+            disabled={assignMutation.isPending || !selectedTrainerId}
+          >
+            {assignMutation.isPending ? "Assigning…" : "Assign Trainer"}
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
   );
 }

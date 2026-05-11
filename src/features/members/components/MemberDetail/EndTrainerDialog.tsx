@@ -1,26 +1,17 @@
-/**
- * EndTrainerDialog
- *
- * Confirms removal of the current trainer assignment.
- * Optionally collects an end reason.
- *
- * PATCH /trainers/:trainerId/assignments/:assignmentId/end
- */
-
-import { useState }    from 'react';
-import { useForm }     from 'react-hook-form';
-import { z }           from 'zod';
+import { useState } from 'react';
+import { useForm } from 'react-hook-form';
+import { z } from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { UserMinus }   from 'lucide-react';
+import { UserMinus } from 'lucide-react';
 import {
   Dialog, DialogContent, DialogHeader,
   DialogTitle, DialogDescription, DialogFooter,
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
-import { Label }  from '@/components/ui/label';
-import { Input }  from '@/components/ui/input';
-import { useToast } from '@/hooks/use-toast';
-import { api }      from '@/lib/axios';
+import { Label } from '@/components/ui/label';
+import { Input } from '@/components/ui/input';
+import { toast } from '@/hooks/use-toast';
+import { usePostTrainersTrainerIdAssignmentsAssignmentIdEnd } from '@/api/generated/trainers/trainers';
 import type { TrainerAssignment } from './TrainerTab';
 
 // ─── Schema ───────────────────────────────────────────────────────────────────
@@ -51,12 +42,30 @@ function trainerName(a: TrainerAssignment): string {
 // ─── Component ────────────────────────────────────────────────────────────────
 
 export function EndTrainerDialog({ open, onOpenChange, assignment, onSuccess }: Props) {
-  const { toast }      = useToast();
-  const [loading, setLoading] = useState(false);
-
   const { register, handleSubmit, reset } = useForm<FormValues>({
     resolver: zodResolver(schema),
     defaultValues: { endReason: '' },
+  });
+
+  const endMutation = usePostTrainersTrainerIdAssignmentsAssignmentIdEnd({
+    mutation: {
+      onSuccess: () => {
+        toast({
+          title: 'Trainer removed',
+          description: `Assignment with ${trainerName(assignment)} has been ended.`,
+        });
+        reset();
+        onOpenChange(false);
+        onSuccess();
+      },
+      onError: (err: any) => {
+        toast({
+          variant: 'destructive',
+          title: 'Failed to remove trainer',
+          description: err?.response?.data?.message ?? 'Something went wrong.',
+        });
+      },
+    },
   });
 
   function handleClose(open: boolean) {
@@ -64,34 +73,16 @@ export function EndTrainerDialog({ open, onOpenChange, assignment, onSuccess }: 
     onOpenChange(open);
   }
 
-  async function onSubmit(values: FormValues) {
-    setLoading(true);
-    try {
-      const trainerId    = assignment.trainerId._id;
-      const assignmentId = assignment._id;
+  function onSubmit(values: FormValues) {
+    const trainerId = typeof assignment.trainerId === 'string'
+      ? assignment.trainerId
+      : assignment.trainerId._id;
 
-      await api.patch(
-        `/trainers/${trainerId}/assignments/${assignmentId}/end`,
-        { endReason: values.endReason || undefined },
-      );
-
-      toast({
-        title:       'Trainer removed',
-        description: `Assignment with ${trainerName(assignment)} has been ended.`,
-      });
-
-      reset();
-      onOpenChange(false);
-      onSuccess();
-    } catch (err: any) {
-      toast({
-        variant:     'destructive',
-        title:       'Failed to remove trainer',
-        description: err?.response?.data?.message ?? 'Something went wrong.',
-      });
-    } finally {
-      setLoading(false);
-    }
+    endMutation.mutate({
+      trainerId,
+      assignmentId: assignment._id,
+      data: { reason: values.endReason || undefined },
+    });
   }
 
   return (
@@ -116,7 +107,7 @@ export function EndTrainerDialog({ open, onOpenChange, assignment, onSuccess }: 
             <Input
               id="endReason"
               placeholder="e.g. Member requested change, Trainer left…"
-              disabled={loading}
+              disabled={endMutation.isPending}
               {...register('endReason')}
             />
           </div>
@@ -126,16 +117,16 @@ export function EndTrainerDialog({ open, onOpenChange, assignment, onSuccess }: 
               type="button"
               variant="outline"
               onClick={() => handleClose(false)}
-              disabled={loading}
+              disabled={endMutation.isPending}
             >
               Cancel
             </Button>
             <Button
               type="submit"
               variant="destructive"
-              disabled={loading}
+              disabled={endMutation.isPending}
             >
-              {loading ? 'Removing…' : 'Remove Trainer'}
+              {endMutation.isPending ? 'Removing…' : 'Remove Trainer'}
             </Button>
           </DialogFooter>
         </form>

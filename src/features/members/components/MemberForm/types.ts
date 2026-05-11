@@ -54,7 +54,7 @@ export const memberFormSchema = z.object({
     enabled:   false,
     trainerId: '',
     goal:      '',
-    sessionFrequencyPerWeek: undefined,
+    sessionFrequencyPerWeek: 1,
   }),
 });
 

@@ -1,38 +1,45 @@
-import { useState }       from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useState } from "react";
+import { useParams, useNavigate } from "react-router-dom";
 import {
-  ArrowLeft, User, CreditCard,
-  Clock, Activity, Edit, AlertCircle,
-} from 'lucide-react';
-import { Button }    from '@/components/ui/button';
-import { Separator } from '@/components/ui/separator';
-import { Skeleton }  from '@/components/ui/skeleton';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import PageShell from '@/components/layout/PageShell';
-import { MembershipStatusBadge } from '@/components/shared/StatusBadge';
-import { usePermission } from '@/hooks/use-permission';
-import { formatDate }    from '@/utils/format';
-import { useGetMembersMemberId } from '@/api/generated/members/members';
+  ArrowLeft,
+  User,
+  CreditCard,
+  Clock,
+  Activity,
+  Edit,
+  AlertCircle,
+  Dumbbell,
+} from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Separator } from "@/components/ui/separator";
+import { Skeleton } from "@/components/ui/skeleton";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import PageShell from "@/components/layout/PageShell";
+import { MembershipStatusBadge } from "@/components/shared/StatusBadge";
+import { usePermission } from "@/hooks/use-permission";
+import { formatDate } from "@/utils/format";
+import { useGetMembersMemberId } from "@/api/generated/members/members";
 
 // ─── Tab components ───────────────────────────────────────────────────────────
-import { ProfileTab }       from './components/MemberDetail/ProfileTab';
-import { SubscriptionsTab } from './components/MemberDetail/SubscriptionsTab';
-import { CheckInsTab }      from './components/MemberDetail/CheckInsTab';
-import { MeasurementsTab }  from './components/MemberDetail/MeasurementsTab';
-import MemberForm           from './components/MemberForm';
-
+import { ProfileTab } from "./components/MemberDetail/ProfileTab";
+import { SubscriptionsTab } from "./components/MemberDetail/SubscriptionsTab";
+import { CheckInsTab } from "./components/MemberDetail/CheckInsTab";
+import { MeasurementsTab } from "./components/MemberDetail/MeasurementsTab";
+import MemberForm from "./components/MemberForm";
+import { TrainerTab } from "./components/MemberDetail/TrainerTab";
 // ─── Component ────────────────────────────────────────────────────────────────
 
 export default function MemberDetailPage() {
   const { memberId } = useParams<{ memberId: string }>();
-  const navigate     = useNavigate();
-  const { can }      = usePermission();
+  const navigate = useNavigate();
+  const { can } = usePermission();
   const [editOpen, setEditOpen] = useState(false);
 
-  const { data: response, isLoading } = useGetMembersMemberId(memberId ?? '');
-  const member           = response?.data;
+  const { data: response, isLoading } = useGetMembersMemberId(memberId ?? "");
+  const member = response?.data;
   const activeSubscription =
-    (member as { activeSubscription?: unknown } | undefined)?.activeSubscription ?? null;
+    (member as { activeSubscription?: unknown } | undefined)
+      ?.activeSubscription ?? null;
 
   // ── Loading skeleton ──────────────────────────────────────────────────────
   if (isLoading) {
@@ -54,7 +61,7 @@ export default function MemberDetailPage() {
         <div className="flex flex-col items-center justify-center py-20 gap-4 text-center">
           <AlertCircle className="h-12 w-12 text-muted-foreground" />
           <h2 className="text-xl font-semibold">Member not found</h2>
-          <Button variant="outline" onClick={() => navigate('/members')}>
+          <Button variant="outline" onClick={() => navigate("/members")}>
             <ArrowLeft className="mr-2 h-4 w-4" />
             Back to Members
           </Button>
@@ -63,7 +70,7 @@ export default function MemberDetailPage() {
     );
   }
 
-  const fullName = `${member.firstName ?? ''} ${member.lastName ?? ''}`.trim();
+  const fullName = `${member.firstName ?? ""} ${member.lastName ?? ""}`.trim();
 
   return (
     <PageShell>
@@ -73,7 +80,7 @@ export default function MemberDetailPage() {
           variant="ghost"
           size="icon"
           className="-ml-2 mt-0.5"
-          onClick={() => navigate('/members')}
+          onClick={() => navigate("/members")}
         >
           <ArrowLeft className="h-4 w-4" />
         </Button>
@@ -83,24 +90,32 @@ export default function MemberDetailPage() {
             <div>
               <h1 className="text-2xl font-bold truncate">{fullName}</h1>
               <div className="flex items-center gap-2 mt-1 flex-wrap">
-                <MembershipStatusBadge status={member.status ?? 'active'} />
+                <MembershipStatusBadge status={member.status ?? "active"} />
                 {activeSubscription && (
                   <span className="text-xs text-muted-foreground">
-                    {(activeSubscription as { planSnapshot?: { name?: string } })
-                      .planSnapshot?.name ??
-                      (activeSubscription as { customLabel?: string }).customLabel ??
-                      'Active Plan'}
-                    {' · expires '}
+                    {(
+                      activeSubscription as { planSnapshot?: { name?: string } }
+                    ).planSnapshot?.name ??
+                      (activeSubscription as { customLabel?: string })
+                        .customLabel ??
+                      "Active Plan"}
+                    {" · expires "}
                     {(activeSubscription as { endDate?: string }).endDate
-                      ? formatDate((activeSubscription as { endDate: string }).endDate)
-                      : 'ongoing'}
+                      ? formatDate(
+                          (activeSubscription as { endDate: string }).endDate,
+                        )
+                      : "ongoing"}
                   </span>
                 )}
               </div>
             </div>
 
-            {can('member.update') && (
-              <Button variant="outline" size="sm" onClick={() => setEditOpen(true)}>
+            {can("member.update") && (
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setEditOpen(true)}
+              >
                 <Edit className="mr-2 h-4 w-4" />
                 Edit Profile
               </Button>
@@ -118,37 +133,53 @@ export default function MemberDetailPage() {
             <User className="h-4 w-4" />
             <span className="hidden sm:inline">Profile</span>
           </TabsTrigger>
-          <TabsTrigger value="subscriptions" className="flex items-center gap-1.5">
+          <TabsTrigger
+            value="subscriptions"
+            className="flex items-center gap-1.5"
+          >
             <CreditCard className="h-4 w-4" />
             <span className="hidden sm:inline">Subscriptions</span>
+          </TabsTrigger>
+          <TabsTrigger value="trainer" className="flex items-center gap-1.5">
+            <Dumbbell className="h-4 w-4" />
+            <span className="hidden sm:inline">Trainer</span>
           </TabsTrigger>
           <TabsTrigger value="checkins" className="flex items-center gap-1.5">
             <Clock className="h-4 w-4" />
             <span className="hidden sm:inline">Check-ins</span>
           </TabsTrigger>
-          <TabsTrigger value="measurements" className="flex items-center gap-1.5">
+          <TabsTrigger
+            value="measurements"
+            className="flex items-center gap-1.5"
+          >
             <Activity className="h-4 w-4" />
             <span className="hidden sm:inline">Measurements</span>
           </TabsTrigger>
         </TabsList>
 
         <TabsContent value="profile" className="mt-4">
-          <ProfileTab memberId={member._id ?? ''} />
+          <ProfileTab memberId={member._id ?? ""} />
         </TabsContent>
 
         <TabsContent value="subscriptions" className="mt-4">
           <SubscriptionsTab
-            memberId={member._id ?? ''}
-            branchId={member.branchId ?? ''}
+            memberId={member._id ?? ""}
+            branchId={member.branchId ?? ""}
           />
         </TabsContent>
 
+        <TabsContent value="trainer" className="mt-4">
+          <TrainerTab
+            memberId={member._id ?? ""}
+            branchId={member.branchId ?? ""}
+          />
+        </TabsContent>
         <TabsContent value="checkins" className="mt-4">
-          <CheckInsTab memberId={member._id ?? ''} />
+          <CheckInsTab memberId={member._id ?? ""} />
         </TabsContent>
 
         <TabsContent value="measurements" className="mt-4">
-          <MeasurementsTab memberId={member._id ?? ''} />
+          <MeasurementsTab memberId={member._id ?? ""} />
         </TabsContent>
       </Tabs>
 
@@ -156,7 +187,7 @@ export default function MemberDetailPage() {
       <MemberForm
         open={editOpen}
         onOpenChange={setEditOpen}
-        member={member as Parameters<typeof MemberForm>[0]['member']}
+        member={member as Parameters<typeof MemberForm>[0]["member"]}
       />
     </PageShell>
   );

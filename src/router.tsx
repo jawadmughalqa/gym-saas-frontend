@@ -12,7 +12,7 @@ import DashboardPage from "@/features/dashboard/DashboardPage";
 
 const ChangePasswordPage  = lazy(() => import("@/features/auth/ChangePasswordPage"));
 const MembersPage         = lazy(() => import("@/features/members/MembersPage"));
-const MemberDetailPage    = lazy(() => import("@/features/members/MemberDetailPage_old"));
+const MemberDetailPage    = lazy(() => import("@/features/members/MemberDetailPage"));
 const InvoicesPage        = lazy(() => import("@/features/billing/InvoicesPage"));
 const InvoiceDetailPage   = lazy(() => import("@/features/billing/InvoiceDetailPage"));
 const DiscountsPage       = lazy(() => import("@/features/billing/DiscountsPage"));

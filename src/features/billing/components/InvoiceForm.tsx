@@ -1,8 +1,8 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useFieldArray, useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { Check, ChevronsUpDown, Loader2, Plus, Trash2, UserCircle } from 'lucide-react';
+import { Check, ChevronsUpDown, Loader2, Plus, Trash2, UserCircle, Tag } from 'lucide-react';
 import { Sheet, SheetContent } from '@/components/ui/sheet';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -35,6 +35,8 @@ import { formatCurrency } from '@/utils/format';
 import { useCreateInvoice } from '../hooks/use-billing';
 import { useGetMembers } from '@/api/generated/members/members';
 import { useGetBranches } from '@/api/generated/branches/branches';
+import { usePostDiscountsValidate } from '@/api/generated/discounts/discounts';
+import type { ValidateDiscountResponse } from '@/api/generated/discounts/discounts';
 
 // ─── Schema ───────────────────────────────────────────────────────────────────
 
@@ -180,11 +182,26 @@ function MemberCombobox({ value, onChange, branchId, disabled }: MemberComboboxP
   );
 }
 
+// ─── DiscountValidation ───────────────────────────────────────────────────────
+
+interface DiscountValidationResult {
+  isValid: boolean;
+  discountAmount?: number;
+  finalAmount?: number;
+  message?: string;
+  discountData?: ValidateDiscountResponse;
+}
+
 // ─── InvoiceForm ──────────────────────────────────────────────────────────────
 
 export default function InvoiceForm({ open, onOpenChange, defaultMemberId, defaultBranchId }: InvoiceFormProps) {
   const createInvoice = useCreateInvoice({ onSuccess: () => onOpenChange(false) });
-  const isPending = createInvoice.isPending;
+  const validateDiscountMutation = usePostDiscountsValidate();
+  const isPending = createInvoice.isPending || validateDiscountMutation.isPending;
+
+  // Discount validation state
+  const [discountValidation, setDiscountValidation] = useState<DiscountValidationResult | null>(null);
+  const [validatingDiscount, setValidatingDiscount] = useState(false);
 
   // Branches — load all active ones upfront (small list)
   const { data: branchesData, isLoading: branchesLoading } = useGetBranches(
@@ -212,21 +229,106 @@ export default function InvoiceForm({ open, onOpenChange, defaultMemberId, defau
   const currency   = watch('currency');
   const branchId   = watch('branchId');   // drives member query
   const memberId   = watch('memberId');
+  const discountCode = watch('discountCode');
+  const manualDiscountAmt = Number(watch('invoiceLevelDiscountAmount')) || 0;
 
-  // Running totals
+  // Calculate subtotal and tax
   const subtotal   = lineItems.reduce((sum, item) => sum + (Number(item.quantity) || 0) * (Number(item.unitPrice) || 0), 0);
   const taxTotal   = lineItems.reduce((sum, item) => sum + (Number(item.quantity) || 0) * (Number(item.unitPrice) || 0) * ((Number(item.taxRate) || 0) / 100), 0);
-  const discountAmt = Number(watch('invoiceLevelDiscountAmount')) || 0;
-  const total      = subtotal + taxTotal - discountAmt;
+  
+  // Determine which discount to apply (validated discount OR manual discount)
+  const effectiveDiscountAmount = discountValidation?.isValid && discountValidation.discountAmount 
+    ? discountValidation.discountAmount 
+    : manualDiscountAmt;
+  
+  const total = subtotal + taxTotal - effectiveDiscountAmount;
+
+  // Validate discount code when it changes
+  useEffect(() => {
+    async function validateDiscount() {
+      if (!discountCode || discountCode.trim() === '') {
+        setDiscountValidation(null);
+        return;
+      }
+
+      if (subtotal <= 0) {
+        setDiscountValidation({
+          isValid: false,
+          message: 'Add line items before applying discount',
+        });
+        return;
+      }
+
+      setValidatingDiscount(true);
+      try {
+        const result = await validateDiscountMutation.mutateAsync({
+          data: {
+            code: discountCode,
+            amount: subtotal,
+          },
+        });
+
+        // Check if discount is valid
+        if (result.isValid) {
+          setDiscountValidation({
+            isValid: true,
+            discountAmount: result.discountedAmount,
+            finalAmount: result.finalAmount,
+            message: `Discount applied! You save ${formatCurrency(subtotal - result.finalAmount, currency)}`,
+            discountData: result,
+          });
+          
+          // Clear manual discount if a code is applied
+          if (manualDiscountAmt > 0) {
+            setValue('invoiceLevelDiscountAmount', 0);
+          }
+        } else {
+          setDiscountValidation({
+            isValid: false,
+            message: result.message || 'Invalid or expired discount code',
+          });
+        }
+      } catch (error) {
+        console.error('Discount validation error:', error);
+        setDiscountValidation({
+          isValid: false,
+          message: 'Failed to validate discount code',
+        });
+      } finally {
+        setValidatingDiscount(false);
+      }
+    }
+
+    // Debounce validation to avoid too many requests
+    const timeoutId = setTimeout(() => {
+      validateDiscount();
+    }, 500);
+
+    return () => clearTimeout(timeoutId);
+  }, [discountCode, subtotal, currency]);
+
+  // When manual discount is changed, clear validated discount
+  const handleManualDiscountChange = (value: number) => {
+    if (discountValidation?.isValid) {
+      setDiscountValidation(null);
+      setValue('discountCode', '');
+    }
+    setValue('invoiceLevelDiscountAmount', value);
+  };
 
   function onSubmit(values: FormValues) {
+    // Use validated discount amount if available
+    const finalDiscountAmount = discountValidation?.isValid && discountValidation.discountAmount
+      ? discountValidation.discountAmount
+      : values.invoiceLevelDiscountAmount;
+
     createInvoice.mutate({
       memberId:   values.memberId,
       branchId:   values.branchId,
       currency:   values.currency,
       dueDate:    values.dueDate || undefined,
-      discountCode: values.discountCode || undefined,
-      invoiceLevelDiscountAmount: values.invoiceLevelDiscountAmount,
+      discountCode: discountValidation?.isValid ? values.discountCode : undefined,
+      invoiceLevelDiscountAmount: finalDiscountAmount,
       memo:       values.memo || undefined,
       notes:      values.notes || undefined,
       issueImmediately: values.issueImmediately,
@@ -241,7 +343,10 @@ export default function InvoiceForm({ open, onOpenChange, defaultMemberId, defau
   }
 
   function handleClose(val: boolean) {
-    if (!val) reset();
+    if (!val) {
+      reset();
+      setDiscountValidation(null);
+    }
     onOpenChange(val);
   }
 
@@ -341,7 +446,7 @@ export default function InvoiceForm({ open, onOpenChange, defaultMemberId, defau
 
           <Separator />
 
-          {/* ── Line items (unchanged) ── */}
+          {/* ── Line items ── */}
           <section className="space-y-3">
             <div className="flex items-center justify-between">
               <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide">Line Items</h3>
@@ -432,44 +537,132 @@ export default function InvoiceForm({ open, onOpenChange, defaultMemberId, defau
 
           <Separator />
 
-          {/* ── Discounts & totals (unchanged) ── */}
+          {/* ── Discounts & totals ── */}
           <section className="space-y-3">
             <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide">Discount & Totals</h3>
-            <div className="grid grid-cols-2 gap-3">
-              <div className="space-y-1.5">
-                <Label htmlFor="discountCode">Discount Code</Label>
-                <Input id="discountCode" placeholder="e.g. SUMMER25" disabled={isPending} {...register('discountCode')} />
+            
+            {/* Discount Code Input with Validation Status */}
+            <div className="space-y-1.5">
+              <Label htmlFor="discountCode">Discount Code</Label>
+              <div className="relative">
+                <Input
+                  id="discountCode"
+                  placeholder="Enter discount code (e.g., SUMMER25)"
+                  disabled={isPending || validatingDiscount || manualDiscountAmt > 0}
+                  className={cn(
+                    discountValidation?.isValid && "border-green-500 pr-20",
+                    discountValidation?.isValid === false && "border-destructive pr-20"
+                  )}
+                  {...register('discountCode')}
+                />
+                {validatingDiscount && (
+                  <div className="absolute right-3 top-1/2 -translate-y-1/2">
+                    <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
+                  </div>
+                )}
+                {discountValidation?.isValid && !validatingDiscount && (
+                  <div className="absolute right-3 top-1/2 -translate-y-1/2">
+                    <Check className="h-4 w-4 text-green-500" />
+                  </div>
+                )}
               </div>
-              <div className="space-y-1.5">
-                <Label htmlFor="invoiceLevelDiscountAmount">Invoice Discount ({currency})</Label>
-                <Input id="invoiceLevelDiscountAmount" type="number" min="0" step="0.01" placeholder="0.00" disabled={isPending} {...register('invoiceLevelDiscountAmount')} />
-              </div>
+              
+              {/* Discount validation message */}
+              {discountValidation && (
+                <p className={cn(
+                  "text-xs",
+                  discountValidation.isValid ? "text-green-600" : "text-destructive"
+                )}>
+                  {discountValidation.message}
+                </p>
+              )}
+              
+              {/* Show discount details if valid */}
+              {discountValidation?.isValid && discountValidation.discountData && (
+                <div className="mt-2 p-2 bg-green-50 dark:bg-green-950/20 rounded-md text-xs space-y-1">
+                  <p className="text-green-700 dark:text-green-400 font-medium">
+                    ✨ Discount Applied!
+                  </p>
+                  <div className="flex justify-between text-green-600 dark:text-green-500">
+                    <span>Original amount:</span>
+                    <span>{formatCurrency(subtotal, currency)}</span>
+                  </div>
+                  <div className="flex justify-between text-green-600 dark:text-green-500">
+                    <span>Discount:</span>
+                    <span>-{formatCurrency(subtotal - (discountValidation.discountData.finalAmount || 0), currency)}</span>
+                  </div>
+                  <div className="flex justify-between font-semibold text-green-700 dark:text-green-400">
+                    <span>Final after discount:</span>
+                    <span>{formatCurrency(discountValidation.discountData.finalAmount || 0, currency)}</span>
+                  </div>
+                </div>
+              )}
             </div>
 
+            {/* Manual Discount - Disabled when code is applied */}
+            <div className="space-y-1.5">
+              <Label htmlFor="invoiceLevelDiscountAmount">
+                Manual Discount ({currency})
+                {discountValidation?.isValid && (
+                  <span className="text-xs text-muted-foreground ml-2">
+                    (Disabled - discount code already applied)
+                  </span>
+                )}
+              </Label>
+              <Input
+                id="invoiceLevelDiscountAmount"
+                type="number"
+                min="0"
+                step="0.01"
+                placeholder="0.00"
+                disabled={isPending || discountValidation?.isValid}
+                value={manualDiscountAmt}
+                onChange={(e) => handleManualDiscountChange(Number(e.target.value))}
+              />
+            </div>
+
+            {/* Totals Display */}
             <div className="rounded-md bg-muted/30 p-3 space-y-1 text-sm">
               <div className="flex justify-between text-muted-foreground">
-                <span>Subtotal</span><span>{formatCurrency(subtotal, currency)}</span>
+                <span>Subtotal</span>
+                <span>{formatCurrency(subtotal, currency)}</span>
               </div>
               {taxTotal > 0 && (
                 <div className="flex justify-between text-muted-foreground">
-                  <span>Tax</span><span>{formatCurrency(taxTotal, currency)}</span>
+                  <span>Tax</span>
+                  <span>{formatCurrency(taxTotal, currency)}</span>
                 </div>
               )}
-              {discountAmt > 0 && (
+              {effectiveDiscountAmount > 0 && (
                 <div className="flex justify-between text-green-600">
-                  <span>Discount</span><span>-{formatCurrency(discountAmt, currency)}</span>
+                  <span>Discount</span>
+                  <span>-{formatCurrency(effectiveDiscountAmount, currency)}</span>
                 </div>
               )}
               <Separator className="my-1" />
-              <div className="flex justify-between font-semibold">
-                <span>Total</span><span>{formatCurrency(total, currency)}</span>
+              <div className="flex justify-between font-semibold text-base">
+                <span>Total</span>
+                <span className={cn(
+                  discountValidation?.isValid && "text-green-600"
+                )}>
+                  {formatCurrency(total, currency)}
+                </span>
               </div>
+              
+              {/* Savings highlight */}
+              {discountValidation?.isValid && discountValidation.discountAmount && (
+                <div className="mt-2 pt-2 border-t border-green-200 dark:border-green-800">
+                  <p className="text-xs text-green-600 dark:text-green-400 text-center">
+                    🎉 You're saving {formatCurrency(discountValidation.discountAmount, currency)} with this discount!
+                  </p>
+                </div>
+              )}
             </div>
           </section>
 
           <Separator />
 
-          {/* ── Options (unchanged) ── */}
+          {/* ── Options ── */}
           <section className="space-y-3">
             <div className="flex items-center justify-between">
               <div>
@@ -484,12 +677,12 @@ export default function InvoiceForm({ open, onOpenChange, defaultMemberId, defau
             </div>
           </section>
 
-          {/* ── Footer (unchanged) ── */}
+          {/* ── Footer ── */}
           <div className="flex gap-2 pt-2 pb-4">
             <Button type="button" variant="outline" className="flex-1" onClick={() => handleClose(false)} disabled={isPending}>
               Cancel
             </Button>
-            <Button type="submit" className="flex-1" disabled={isPending}>
+            <Button type="submit" className="flex-1" disabled={isPending || (discountCode && !discountValidation?.isValid)}>
               {isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
               Create Invoice
             </Button>

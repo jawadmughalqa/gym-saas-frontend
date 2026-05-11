@@ -15,9 +15,10 @@ export async function logoutApi() {
 }
 
 // ─── Silent refresh (used by AuthProvider + axios interceptor) ─────────────────
+// Returns the same shape as login so callers can restore full auth state.
 
 export async function refreshTokenApi() {
-  const { data } = await api.post<ApiResponse<{ accessToken: string }>>('/auth/refresh');
+  const { data } = await api.post<ApiResponse<LoginResponse>>('/auth/refresh');
   return data.data;
 }
 

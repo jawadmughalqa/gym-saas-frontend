@@ -155,17 +155,19 @@ export default function ExpenseAnalyticsPage() {
       {/* Summary stat cards */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
         <StatCard
-          label="Total Expenses"
+          title="Total Expenses"
           value={summaryLoading ? '…' : `PKR ${formatCurrency(summary?.total ?? 0)}`}
-          icon={<TrendingDown className="h-4 w-4" />}
+          icon={TrendingDown}
+          subtitle="All categories"
         />
         <StatCard
-          label="Transactions"
+          title="Transactions"
           value={summaryLoading ? '…' : String(summary?.count ?? 0)}
-          icon={<ListOrdered className="h-4 w-4" />}
+          icon={ListOrdered}
+          subtitle="Expense entries"
         />
         <StatCard
-          label="Avg per Transaction"
+          title="Avg per Transaction"
           value={
             summaryLoading
               ? '…'
@@ -173,10 +175,11 @@ export default function ExpenseAnalyticsPage() {
               ? `PKR ${formatCurrency(Math.round(summary.total / summary.count))}`
               : '—'
           }
-          icon={<Calendar className="h-4 w-4" />}
+          icon={Calendar}
+          subtitle="Mean expense value"
         />
         <StatCard
-          label="Top Category"
+          title="Top Category"
           value={
             summaryLoading
               ? '…'
@@ -184,7 +187,8 @@ export default function ExpenseAnalyticsPage() {
               ? CATEGORY_LABELS[summary.categoryBreakdown[0].category] ?? summary.categoryBreakdown[0].category
               : '—'
           }
-          icon={<Building2 className="h-4 w-4" />}
+          icon={Building2}
+          subtitle="Highest spend"
         />
       </div>
 

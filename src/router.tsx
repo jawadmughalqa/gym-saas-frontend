@@ -32,6 +32,7 @@ const PlansPage           = lazy(() => import("@/features/super-admin/PlansPage"
 const MembershipPlansPage   = lazy(() => import("@/features/membership-plans/MembershipPlansPage"));
 const ExpensesPage          = lazy(() => import("@/features/expenses/ExpensesPage"));
 const ExpenseAnalyticsPage  = lazy(() => import("@/features/expenses/ExpenseAnalyticsPage"));
+const StaffPage             = lazy(() => import("@/features/staff/StaffPage"));
 
 // ─── Suspense wrapper ─────────────────────────────────────────────────────────
 
@@ -141,6 +142,13 @@ const router = createBrowserRouter([
             path: "expense-analytics",
             element: <Lazy><ExpenseAnalyticsPage /></Lazy>,
             handle: { crumb: "Expense Analytics" },
+          },
+
+          // ── Staff ────────────────────────────────────────────────────
+          {
+            path: "staff",
+            element: <Lazy><StaffPage /></Lazy>,
+            handle: { crumb: "Staff" },
           },
 
           // ── Trainers ─────────────────────────────────────────────────

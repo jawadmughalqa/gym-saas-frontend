@@ -15,6 +15,7 @@ import {
   BadgePercent,
   Receipt,
   TrendingDown,
+  UserCog,
   type LucideIcon,
 } from 'lucide-react';
 import type { UserRole } from '@/types/api.types';
@@ -54,6 +55,12 @@ export const NAV_ITEMS: NavItem[] = [
     label: 'Trainers',
     icon: Dumbbell,
     permission: 'trainer.read',
+  },
+  {
+    to: '/staff',
+    label: 'Staff',
+    icon: UserCog,
+    permission: 'role.read',
   },
   {
     to: '/branches',
@@ -150,6 +157,12 @@ export const NAV_GROUPS: NavGroup[] = [
         label: 'Trainers',
         icon: Dumbbell,
         permission: 'trainer.read',
+      },
+      {
+        to: '/staff',
+        label: 'Staff',
+        icon: UserCog,
+        permission: 'role.read',
       },
       {
         to: '/branches',

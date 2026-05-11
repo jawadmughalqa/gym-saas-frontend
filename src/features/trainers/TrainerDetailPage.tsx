@@ -96,12 +96,21 @@ function ProfileTab({ trainerId }: { trainerId: string }) {
   const { data, isLoading } = useGetTrainersTrainerId(trainerId);
   const trainer = data?.data;
 
+  // Fetch branches to get branch names from IDs
+  const { data: branchesData } = useGetBranches({ limit: 100 });
+  const allBranches = branchesData?.data ?? [];
+
+  // Get trainer's branch names
+  const trainerBranches = allBranches.filter((branch) =>
+    trainer?.branchIds?.includes(branch._id!),
+  );
+
   if (isLoading) return <CardSkeleton />;
   if (!trainer) return null;
 
   return (
     <div className="grid gap-4 md:grid-cols-2">
-      {/* Details */}
+      {/* Details Card */}
       <Card>
         <CardHeader className="pb-3">
           <CardTitle className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">
@@ -109,7 +118,38 @@ function ProfileTab({ trainerId }: { trainerId: string }) {
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
-          {trainer.bio && <p className="text-sm">{trainer.bio}</p>}
+          {/* Branches - ADD THIS SECTION */}
+          <div>
+            <p className="text-xs text-muted-foreground uppercase tracking-wide">
+              Assigned Branches
+            </p>
+            <div className="flex flex-wrap gap-1.5 mt-1.5">
+              {trainerBranches.length > 0 ? (
+                trainerBranches.map((branch) => (
+                  <Badge key={branch._id} variant="outline" className="text-xs">
+                    {branch.name}
+                    {branch.isHeadquarters && (
+                      <span className="ml-1 text-primary">(HQ)</span>
+                    )}
+                  </Badge>
+                ))
+              ) : (
+                <p className="text-sm text-muted-foreground italic">
+                  No branches assigned
+                </p>
+              )}
+            </div>
+          </div>
+
+          {trainer.bio && (
+            <div>
+              <p className="text-xs text-muted-foreground uppercase tracking-wide">
+                Bio
+              </p>
+              <p className="text-sm mt-1">{trainer.bio}</p>
+            </div>
+          )}
+
           {trainer.experienceYears != null && (
             <div>
               <p className="text-xs text-muted-foreground uppercase tracking-wide">
@@ -121,6 +161,7 @@ function ProfileTab({ trainerId }: { trainerId: string }) {
               </p>
             </div>
           )}
+
           {trainer.hourlyRate != null && (
             <div>
               <p className="text-xs text-muted-foreground uppercase tracking-wide">
@@ -131,6 +172,7 @@ function ProfileTab({ trainerId }: { trainerId: string }) {
               </p>
             </div>
           )}
+
           <div>
             <p className="text-xs text-muted-foreground uppercase tracking-wide">
               Client Capacity
@@ -139,6 +181,7 @@ function ProfileTab({ trainerId }: { trainerId: string }) {
               {trainer.currentClientCount} / {trainer.maxClients} clients
             </p>
           </div>
+
           <div>
             <p className="text-xs text-muted-foreground uppercase tracking-wide">
               Rating
@@ -155,7 +198,7 @@ function ProfileTab({ trainerId }: { trainerId: string }) {
         </CardContent>
       </Card>
 
-      {/* Skills */}
+      {/* Skills & Certifications Card - Keep as is */}
       <Card>
         <CardHeader className="pb-3">
           <CardTitle className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">
@@ -203,7 +246,7 @@ function ProfileTab({ trainerId }: { trainerId: string }) {
         </CardContent>
       </Card>
 
-      {/* Availability */}
+      {/* Availability Card - Keep as is */}
       <Card className="md:col-span-2">
         <CardHeader className="pb-3">
           <CardTitle className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">

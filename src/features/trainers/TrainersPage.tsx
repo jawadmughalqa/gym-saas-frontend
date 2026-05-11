@@ -29,8 +29,9 @@ import {
   useDeleteTrainersTrainerId,
   getGetTrainersQueryKey,
 } from "@/api/generated/trainers/trainers";
-import { toast } from "@/hooks/use-toast";
+import { useGetBranches } from "@/api/generated/branches/branches";
 import { useQueryClient } from "@tanstack/react-query";
+import { toast } from "@/hooks/use-toast";
 
 // ─── Star rating display ──────────────────────────────────────────────────────
 
@@ -64,13 +65,32 @@ const STATUS_LABEL: Record<TrainerStatus, string> = {
   on_leave: "On Leave",
 };
 
+// ─── Helper to get branch names from IDs ──────────────────────────────────────
+
+function getBranchNames(
+  branchIds: string[] | undefined,
+  branches: Array<{ _id: string; name: string; isHeadquarters?: boolean }>
+): Array<{ id: string; name: string; isHeadquarters: boolean }> {
+  if (!branchIds || branchIds.length === 0) return [];
+  
+  return branchIds
+    .map((id) => {
+      const branch = branches.find((b) => b._id === id);
+      return branch
+        ? { id: branch._id, name: branch.name, isHeadquarters: branch.isHeadquarters || false }
+        : null;
+    })
+    .filter((b): b is { id: string; name: string; isHeadquarters: boolean } => b !== null);
+}
+
 // ─── TrainersPage ─────────────────────────────────────────────────────────────
 
 export default function TrainersPage() {
   const navigate = useNavigate();
   const { can } = usePermission();
   const table = useTableState({ defaultLimit: 20 });
-  const { confirm, confirmProps } = useConfirm(); // ← ADD THIS LINE
+  const queryClient = useQueryClient();
+  const { confirm, confirmProps } = useConfirm();
 
   const [statusFilter, setStatusFilter] = useState<TrainerStatus | "all">(
     "all",
@@ -86,12 +106,14 @@ export default function TrainersPage() {
     ...(statusFilter !== "all" ? { status: statusFilter } : {}),
     ...(availableOnly ? { availableOnly: true } : {}),
   };
+  
   const { data, isLoading } = useGetTrainers(query);
-  const queryClient = useQueryClient();
+  const { data: branchesData } = useGetBranches({ limit: 100 });
+  const branches = branchesData?.data ?? [];
+  
   const archive = useDeleteTrainersTrainerId({
     mutation: {
       onSuccess: () => {
-        // Invalidate the trainers list query
         queryClient.invalidateQueries({ queryKey: getGetTrainersQueryKey() });
         toast({ title: "Trainer archived successfully" });
       },
@@ -128,6 +150,36 @@ export default function TrainersPage() {
           <p className="text-xs text-muted-foreground">{row.userId.email}</p>
         </div>
       ),
+    },
+    {
+      key: "branchIds",
+      header: "Branches",
+      hideOnMobile: true,
+      cell: (row) => {
+        const trainerBranches = getBranchNames(row.branchIds, branches);
+        
+        if (trainerBranches.length === 0) {
+          return <span className="text-muted-foreground text-sm">—</span>;
+        }
+        
+        return (
+          <div className="flex flex-wrap gap-1">
+            {trainerBranches.slice(0, 2).map((branch) => (
+              <Badge key={branch.id} variant="outline" className="text-xs">
+                {branch.name}
+                {branch.isHeadquarters && (
+                  <span className="ml-1 text-primary">(HQ)</span>
+                )}
+              </Badge>
+            ))}
+            {trainerBranches.length > 2 && (
+              <Badge variant="outline" className="text-xs">
+                +{trainerBranches.length - 2}
+              </Badge>
+            )}
+          </div>
+        );
+      },
     },
     {
       key: "specializations",

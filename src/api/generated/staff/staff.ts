@@ -26,8 +26,16 @@ import type {
 
 import type {
   ConflictResponse,
+  CreateStaffRequest,
   GetStaffParams,
-  PostStaffBody
+  GetStaffStaffId200,
+  NotFoundResponse,
+  PatchStaffStaffId200,
+  PatchStaffStaffIdStatus200,
+  PostStaff201,
+  StaffListResponse,
+  UpdateStaffRequest,
+  UpdateStaffStatusRequest
 } from '../schemas';
 
 import { orvalMutator } from '../../../lib/orval-mutator';
@@ -45,7 +53,7 @@ export const getStaff = (
 ) => {
 
 
-      return orvalMutator<void>(
+      return orvalMutator<StaffListResponse>(
       {url: `/staff`, method: 'GET',
         params, signal
     },
@@ -137,15 +145,15 @@ For trainers, use the returned userId to create a TrainerProfile separately.
  * @summary Create a staff user account
  */
 export const postStaff = (
-    postStaffBody: BodyType<PostStaffBody>,
+    createStaffRequest: BodyType<CreateStaffRequest>,
  signal?: AbortSignal
 ) => {
 
 
-      return orvalMutator<void>(
+      return orvalMutator<PostStaff201>(
       {url: `/staff`, method: 'POST',
       headers: {'Content-Type': 'application/json', },
-      data: postStaffBody, signal
+      data: createStaffRequest, signal
     },
       );
     }
@@ -153,8 +161,8 @@ export const postStaff = (
 
 
 export const getPostStaffMutationOptions = <TError = ErrorType<ConflictResponse>,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof postStaff>>, TError,{data: BodyType<PostStaffBody>}, TContext>, }
-): UseMutationOptions<Awaited<ReturnType<typeof postStaff>>, TError,{data: BodyType<PostStaffBody>}, TContext> => {
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof postStaff>>, TError,{data: BodyType<CreateStaffRequest>}, TContext>, }
+): UseMutationOptions<Awaited<ReturnType<typeof postStaff>>, TError,{data: BodyType<CreateStaffRequest>}, TContext> => {
 
 const mutationKey = ['postStaff'];
 const {mutation: mutationOptions} = options ?
@@ -166,7 +174,7 @@ const {mutation: mutationOptions} = options ?
 
 
 
-      const mutationFn: MutationFunction<Awaited<ReturnType<typeof postStaff>>, {data: BodyType<PostStaffBody>}> = (props) => {
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof postStaff>>, {data: BodyType<CreateStaffRequest>}> = (props) => {
           const {data} = props ?? {};
 
           return  postStaff(data,)
@@ -180,19 +188,239 @@ const {mutation: mutationOptions} = options ?
   return  { mutationFn, ...mutationOptions }}
 
     export type PostStaffMutationResult = NonNullable<Awaited<ReturnType<typeof postStaff>>>
-    export type PostStaffMutationBody = BodyType<PostStaffBody>
+    export type PostStaffMutationBody = BodyType<CreateStaffRequest>
     export type PostStaffMutationError = ErrorType<ConflictResponse>
 
     /**
  * @summary Create a staff user account
  */
 export const usePostStaff = <TError = ErrorType<ConflictResponse>,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof postStaff>>, TError,{data: BodyType<PostStaffBody>}, TContext>, }
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof postStaff>>, TError,{data: BodyType<CreateStaffRequest>}, TContext>, }
  , queryClient?: QueryClient): UseMutationResult<
         Awaited<ReturnType<typeof postStaff>>,
         TError,
-        {data: BodyType<PostStaffBody>},
+        {data: BodyType<CreateStaffRequest>},
         TContext
       > => {
       return useMutation(getPostStaffMutationOptions(options), queryClient);
+    }
+    /**
+ * @summary Get a staff user by ID
+ */
+export const getStaffStaffId = (
+    staffId: string,
+ signal?: AbortSignal
+) => {
+
+
+      return orvalMutator<GetStaffStaffId200>(
+      {url: `/staff/${staffId}`, method: 'GET', signal
+    },
+      );
+    }
+
+
+
+
+export const getGetStaffStaffIdQueryKey = (staffId: string,) => {
+    return [
+    `/staff/${staffId}`
+    ] as const;
+    }
+
+
+export const getGetStaffStaffIdQueryOptions = <TData = Awaited<ReturnType<typeof getStaffStaffId>>, TError = ErrorType<NotFoundResponse>>(staffId: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getStaffStaffId>>, TError, TData>>, }
+) => {
+
+const {query: queryOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetStaffStaffIdQueryKey(staffId);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getStaffStaffId>>> = ({ signal }) => getStaffStaffId(staffId, signal);
+
+
+
+
+
+   return  { queryKey, queryFn, enabled: !!(staffId), ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getStaffStaffId>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
+}
+
+export type GetStaffStaffIdQueryResult = NonNullable<Awaited<ReturnType<typeof getStaffStaffId>>>
+export type GetStaffStaffIdQueryError = ErrorType<NotFoundResponse>
+
+
+export function useGetStaffStaffId<TData = Awaited<ReturnType<typeof getStaffStaffId>>, TError = ErrorType<NotFoundResponse>>(
+ staffId: string, options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof getStaffStaffId>>, TError, TData>> & Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getStaffStaffId>>,
+          TError,
+          Awaited<ReturnType<typeof getStaffStaffId>>
+        > , 'initialData'
+      >, }
+ , queryClient?: QueryClient
+  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetStaffStaffId<TData = Awaited<ReturnType<typeof getStaffStaffId>>, TError = ErrorType<NotFoundResponse>>(
+ staffId: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getStaffStaffId>>, TError, TData>> & Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getStaffStaffId>>,
+          TError,
+          Awaited<ReturnType<typeof getStaffStaffId>>
+        > , 'initialData'
+      >, }
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetStaffStaffId<TData = Awaited<ReturnType<typeof getStaffStaffId>>, TError = ErrorType<NotFoundResponse>>(
+ staffId: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getStaffStaffId>>, TError, TData>>, }
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+/**
+ * @summary Get a staff user by ID
+ */
+
+export function useGetStaffStaffId<TData = Awaited<ReturnType<typeof getStaffStaffId>>, TError = ErrorType<NotFoundResponse>>(
+ staffId: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getStaffStaffId>>, TError, TData>>, }
+ , queryClient?: QueryClient
+ ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+
+  const queryOptions = getGetStaffStaffIdQueryOptions(staffId,options)
+
+  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+
+
+
+
+
+/**
+ * @summary Update a staff user account
+ */
+export const patchStaffStaffId = (
+    staffId: string,
+    updateStaffRequest: BodyType<UpdateStaffRequest>,
+ signal?: AbortSignal
+) => {
+
+
+      return orvalMutator<PatchStaffStaffId200>(
+      {url: `/staff/${staffId}`, method: 'PATCH',
+      headers: {'Content-Type': 'application/json', },
+      data: updateStaffRequest, signal
+    },
+      );
+    }
+
+
+
+export const getPatchStaffStaffIdMutationOptions = <TError = ErrorType<NotFoundResponse>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof patchStaffStaffId>>, TError,{staffId: string;data: BodyType<UpdateStaffRequest>}, TContext>, }
+): UseMutationOptions<Awaited<ReturnType<typeof patchStaffStaffId>>, TError,{staffId: string;data: BodyType<UpdateStaffRequest>}, TContext> => {
+
+const mutationKey = ['patchStaffStaffId'];
+const {mutation: mutationOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof patchStaffStaffId>>, {staffId: string;data: BodyType<UpdateStaffRequest>}> = (props) => {
+          const {staffId,data} = props ?? {};
+
+          return  patchStaffStaffId(staffId,data,)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type PatchStaffStaffIdMutationResult = NonNullable<Awaited<ReturnType<typeof patchStaffStaffId>>>
+    export type PatchStaffStaffIdMutationBody = BodyType<UpdateStaffRequest>
+    export type PatchStaffStaffIdMutationError = ErrorType<NotFoundResponse>
+
+    /**
+ * @summary Update a staff user account
+ */
+export const usePatchStaffStaffId = <TError = ErrorType<NotFoundResponse>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof patchStaffStaffId>>, TError,{staffId: string;data: BodyType<UpdateStaffRequest>}, TContext>, }
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof patchStaffStaffId>>,
+        TError,
+        {staffId: string;data: BodyType<UpdateStaffRequest>},
+        TContext
+      > => {
+      return useMutation(getPatchStaffStaffIdMutationOptions(options), queryClient);
+    }
+    /**
+ * @summary Update a staff user's status
+ */
+export const patchStaffStaffIdStatus = (
+    staffId: string,
+    updateStaffStatusRequest: BodyType<UpdateStaffStatusRequest>,
+ signal?: AbortSignal
+) => {
+
+
+      return orvalMutator<PatchStaffStaffIdStatus200>(
+      {url: `/staff/${staffId}/status`, method: 'PATCH',
+      headers: {'Content-Type': 'application/json', },
+      data: updateStaffStatusRequest, signal
+    },
+      );
+    }
+
+
+
+export const getPatchStaffStaffIdStatusMutationOptions = <TError = ErrorType<NotFoundResponse>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof patchStaffStaffIdStatus>>, TError,{staffId: string;data: BodyType<UpdateStaffStatusRequest>}, TContext>, }
+): UseMutationOptions<Awaited<ReturnType<typeof patchStaffStaffIdStatus>>, TError,{staffId: string;data: BodyType<UpdateStaffStatusRequest>}, TContext> => {
+
+const mutationKey = ['patchStaffStaffIdStatus'];
+const {mutation: mutationOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof patchStaffStaffIdStatus>>, {staffId: string;data: BodyType<UpdateStaffStatusRequest>}> = (props) => {
+          const {staffId,data} = props ?? {};
+
+          return  patchStaffStaffIdStatus(staffId,data,)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type PatchStaffStaffIdStatusMutationResult = NonNullable<Awaited<ReturnType<typeof patchStaffStaffIdStatus>>>
+    export type PatchStaffStaffIdStatusMutationBody = BodyType<UpdateStaffStatusRequest>
+    export type PatchStaffStaffIdStatusMutationError = ErrorType<NotFoundResponse>
+
+    /**
+ * @summary Update a staff user's status
+ */
+export const usePatchStaffStaffIdStatus = <TError = ErrorType<NotFoundResponse>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof patchStaffStaffIdStatus>>, TError,{staffId: string;data: BodyType<UpdateStaffStatusRequest>}, TContext>, }
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof patchStaffStaffIdStatus>>,
+        TError,
+        {staffId: string;data: BodyType<UpdateStaffStatusRequest>},
+        TContext
+      > => {
+      return useMutation(getPatchStaffStaffIdStatusMutationOptions(options), queryClient);
     }

@@ -1,0 +1,32 @@
+import { Badge } from '@/components/ui/badge';
+import { cn } from '@/lib/utils';
+import { CheckCircle, Clock, AlertCircle, XCircle } from 'lucide-react';
+
+const STATUS_CONFIG: Record<string, { label: string; className: string; icon: React.ElementType }> = {
+  active: { label: 'Active', className: 'bg-emerald-50 text-emerald-700 border-emerald-200', icon: CheckCircle },
+  paid: { label: 'Paid', className: 'bg-emerald-50 text-emerald-700 border-emerald-200', icon: CheckCircle },
+  pending: { label: 'Pending', className: 'bg-amber-50 text-amber-700 border-amber-200', icon: Clock },
+  overdue: { label: 'Overdue', className: 'bg-red-50 text-red-700 border-red-200', icon: AlertCircle },
+  partially_paid: { label: 'Partial', className: 'bg-orange-50 text-orange-700 border-orange-200', icon: Clock },
+  void: { label: 'Void', className: 'bg-gray-50 text-gray-700 border-gray-200', icon: XCircle },
+  draft: { label: 'Draft', className: 'bg-gray-50 text-gray-700 border-gray-200', icon: Clock },
+  issued: { label: 'Issued', className: 'bg-blue-50 text-blue-700 border-blue-200', icon: CheckCircle },
+};
+
+interface StatusBadgeProps {
+  status: string;
+  showIcon?: boolean;
+  className?: string;
+}
+
+export function StatusBadge({ status, showIcon = false, className }: StatusBadgeProps) {
+  const config = STATUS_CONFIG[status] || STATUS_CONFIG.pending;
+  const Icon = config.icon;
+
+  return (
+    <Badge variant="outline" className={cn('text-xs font-medium capitalize', config.className, className)}>
+      {showIcon && <Icon className="w-3 h-3 mr-1" />}
+      {config.label}
+    </Badge>
+  );
+}

@@ -112,7 +112,11 @@ export type Permission =
   | 'expense.create'
   | 'expense.read'
   | 'expense.update'
-  | 'expense.delete';
+  | 'expense.delete'
+
+  // ─── Billing Dashboard ────────────────────────────────────────────────────
+  | 'billing.dashboard.read'
+  | 'billing.transactions.read';
 
 // ─── Role → Permission map ────────────────────────────────────────────────────
 
@@ -155,6 +159,8 @@ const ROLE_PERMISSIONS: Record<Exclude<UserRole, 'super_admin'>, Permission[]> =
     'plan.read', 'plan.create', 'plan.update', 'plan.archive',
     // Expenses — full access
     'expense.create', 'expense.read', 'expense.update', 'expense.delete',
+    // Billing Dashboard — full access
+    'billing.dashboard.read', 'billing.transactions.read',
   ],
 
   branch_manager: [
@@ -194,6 +200,8 @@ const ROLE_PERMISSIONS: Record<Exclude<UserRole, 'super_admin'>, Permission[]> =
     'plan.read',
     // Expenses — create, read, update (no delete)
     'expense.create', 'expense.read', 'expense.update',
+    // Billing Dashboard — read access
+    'billing.dashboard.read', 'billing.transactions.read',
   ],
 
   staff: [
@@ -223,6 +231,8 @@ const ROLE_PERMISSIONS: Record<Exclude<UserRole, 'super_admin'>, Permission[]> =
     'plan.read',
     // Expenses — read only for staff
     'expense.read',
+    // Billing Dashboard — read access for staff
+    'billing.dashboard.read', 'billing.transactions.read',
   ],
 
   trainer: [
@@ -234,6 +244,8 @@ const ROLE_PERMISSIONS: Record<Exclude<UserRole, 'super_admin'>, Permission[]> =
     'training_note.create', 'training_note.read',
     // Notifications
     'notification.read',
+    // Trainers can view billing dashboard (read only)
+    'billing.dashboard.read',
   ],
 
   member: [

@@ -16,6 +16,7 @@ import {
   Receipt,
   TrendingDown,
   UserCog,
+  TrendingUp, // ← Add this
   type LucideIcon,
 } from 'lucide-react';
 import type { UserRole } from '@/types/api.types';
@@ -86,9 +87,16 @@ export const NAV_ITEMS: NavItem[] = [
     icon: BadgePercent,
     permission: 'plan.read',
   },
+  // ─── Billing Dashboard - ADD THIS ─────────────────────────────────────────
   {
-    to: '/billing',
-    label: 'Billing',
+    to: '/billing/dashboard',
+    label: 'Billing Dashboard',
+    icon: TrendingUp,
+    permission: 'billing.dashboard.read',
+  },
+  {
+    to: '/billing/invoices',
+    label: 'Invoices',
     icon: CreditCard,
     permission: 'invoice.read',
   },
@@ -188,9 +196,16 @@ export const NAV_GROUPS: NavGroup[] = [
         icon: BadgePercent,
         permission: 'plan.read',
       },
+      // ─── Billing section - ADD THESE ─────────────────────────────────────
       {
-        to: '/billing',
-        label: 'Billing',
+        to: '/billing/dashboard',
+        label: 'Billing Dashboard',
+        icon: TrendingUp,
+        permission: 'billing.dashboard.read',
+      },
+      {
+        to: '/billing/invoices',
+        label: 'Invoices',
         icon: CreditCard,
         permission: 'invoice.read',
       },

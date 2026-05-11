@@ -9,7 +9,6 @@ import {
   Plus,
   Trash2,
   UserCircle,
-  Tag,
 } from "lucide-react";
 import { Sheet, SheetContent } from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
@@ -40,11 +39,18 @@ import { Separator } from "@/components/ui/separator";
 import { Switch } from "@/components/ui/switch";
 import { cn } from "@/lib/utils";
 import { formatCurrency } from "@/utils/format";
-import { useCreateInvoice } from "../hooks/use-billing";
 import { useGetMembers } from "@/api/generated/members/members";
 import { useGetBranches } from "@/api/generated/branches/branches";
-import { usePostDiscountsValidate } from "@/api/generated/discounts/discounts";
-import type { ValidateDiscountResponse } from "@/api/generated/discounts/discounts";
+import {
+  usePostDiscountsValidate,
+  getGetDiscountsValidateQueryKey,
+} from "@/api/generated/discounts/discounts";
+import {
+  usePostInvoices,
+  getGetInvoicesQueryKey,
+} from "@/api/generated/invoices/invoices";
+import { useQueryClient } from "@tanstack/react-query";
+import { toast } from "@/hooks/use-toast";
 
 // ─── Schema ───────────────────────────────────────────────────────────────────
 
@@ -110,6 +116,7 @@ function MemberCombobox({
       query: {
         enabled: !!branchId,
         staleTime: 1000 * 60,
+        refetchOnWindowFocus: false,
       },
     },
   );
@@ -137,10 +144,10 @@ function MemberCombobox({
           )}
         >
           <span className="flex items-center gap-2 truncate">
-            <UserCircle className="h-4 w-4 shrink-0 text-muted-foreground" />
+            <UserCircle className="w-4 h-4 shrink-0 text-muted-foreground" />
             <span className="truncate">{triggerLabel}</span>
           </span>
-          <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+          <ChevronsUpDown className="w-4 h-4 ml-2 opacity-50 shrink-0" />
         </Button>
       </PopoverTrigger>
 
@@ -161,7 +168,7 @@ function MemberCombobox({
           <CommandList>
             {isLoading && (
               <div className="flex items-center justify-center gap-2 py-6 text-sm text-muted-foreground">
-                <Loader2 className="h-4 w-4 animate-spin" />
+                <Loader2 className="w-4 h-4 animate-spin" />
                 Loading members…
               </div>
             )}
@@ -186,15 +193,15 @@ function MemberCombobox({
                         value === m._id ? "opacity-100" : "opacity-0",
                       )}
                     />
-                    <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-muted text-xs font-semibold uppercase text-muted-foreground">
+                    <span className="flex items-center justify-center text-xs font-semibold uppercase rounded-full h-7 w-7 shrink-0 bg-muted text-muted-foreground">
                       {m.firstName[0]}
                       {m.lastName[0]}
                     </span>
-                    <span className="flex min-w-0 flex-1 flex-col">
-                      <span className="truncate text-sm font-medium">
+                    <span className="flex flex-col flex-1 min-w-0">
+                      <span className="text-sm font-medium truncate">
                         {m.firstName} {m.lastName}
                       </span>
-                      <span className="truncate text-xs text-muted-foreground">
+                      <span className="text-xs truncate text-muted-foreground">
                         {m.email}
                       </span>
                     </span>
@@ -216,7 +223,6 @@ interface DiscountValidationResult {
   discountAmount?: number;
   finalAmount?: number;
   message?: string;
-  discountData?: ValidateDiscountResponse;
 }
 
 // ─── InvoiceForm ──────────────────────────────────────────────────────────────
@@ -227,22 +233,38 @@ export default function InvoiceForm({
   defaultMemberId,
   defaultBranchId,
 }: InvoiceFormProps) {
-  const createInvoice = useCreateInvoice({
+  const queryClient = useQueryClient();
+
+  // Orval mutation for creating invoice
+  const createInvoice = usePostInvoices({
     mutation: {
       onSuccess: () => {
+        queryClient.invalidateQueries({ queryKey: getGetInvoicesQueryKey() });
+        toast({ title: "Invoice created successfully" });
         onOpenChange(false);
         reset();
         setDiscountValidation(null);
       },
       onError: (error: any) => {
-        console.error("Failed to create invoice:", error);
+        toast({
+          variant: "destructive",
+          title: "Failed to create invoice",
+          description: error?.response?.data?.message || error?.message,
+        });
       },
     },
   });
-  
-  const validateDiscountMutation = usePostDiscountsValidate();
-  const isPending =
-    createInvoice.isPending || validateDiscountMutation.isPending;
+
+  // Orval mutation for validating discount
+  const validateDiscountMutation = usePostDiscountsValidate({
+    mutation: {
+      onError: (error: any) => {
+        console.error("Discount validation error:", error);
+      },
+    },
+  });
+
+  const isPending = createInvoice.isPending || validateDiscountMutation.isPending;
 
   // Discount validation state
   const [discountValidation, setDiscountValidation] =
@@ -252,7 +274,12 @@ export default function InvoiceForm({
   // Branches — load all active ones upfront
   const { data: branchesData, isLoading: branchesLoading } = useGetBranches(
     { limit: 100, status: "active" },
-    { query: { staleTime: 1000 * 60 } },
+    {
+      query: {
+        staleTime: 1000 * 60,
+        refetchOnWindowFocus: false,
+      },
+    },
   );
   const branches = branchesData?.data ?? [];
 
@@ -287,7 +314,7 @@ export default function InvoiceForm({
     control,
     name: "lineItems",
   });
-  
+
   const lineItems = watch("lineItems");
   const currency = watch("currency");
   const branchId = watch("branchId");
@@ -301,7 +328,7 @@ export default function InvoiceForm({
       sum + (Number(item.quantity) || 0) * (Number(item.unitPrice) || 0),
     0,
   );
-  
+
   const taxTotal = lineItems.reduce(
     (sum, item) =>
       sum +
@@ -353,7 +380,7 @@ export default function InvoiceForm({
           },
         });
 
-        // Backend returns: { valid, discountAmount, discount }
+        // Backend returns: { valid, discountAmount }
         if (result.valid && result.discountAmount !== undefined) {
           const discountAmount = result.discountAmount;
           const finalAmount = subtotal - discountAmount;
@@ -363,7 +390,6 @@ export default function InvoiceForm({
             discountAmount: discountAmount,
             finalAmount: finalAmount,
             message: `✅ Valid! You save ${formatCurrency(discountAmount, currency)}`,
-            discountData: result,
           });
 
           // Clear manual discount if a code is applied
@@ -456,10 +482,10 @@ export default function InvoiceForm({
     <Sheet open={open} onOpenChange={handleClose}>
       <SheetContent
         side="right"
-        className="w-full sm:max-w-2xl overflow-y-auto p-0"
+        className="w-full p-0 overflow-y-auto sm:max-w-2xl"
       >
         {/* Header */}
-        <div className="sticky top-0 bg-background border-b px-6 py-4 z-10">
+        <div className="sticky top-0 z-10 px-6 py-4 border-b bg-background">
           <h2 className="text-lg font-semibold">Create Invoice</h2>
           <p className="text-sm text-muted-foreground">
             Add line items and billing details.
@@ -469,7 +495,7 @@ export default function InvoiceForm({
         <form onSubmit={handleSubmit(onSubmit)} className="px-6 py-5 space-y-6">
           {/* ── Invoice details ── */}
           <section className="space-y-4">
-            <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide">
+            <h3 className="text-sm font-semibold tracking-wide uppercase text-muted-foreground">
               Invoice Details
             </h3>
 
@@ -481,7 +507,8 @@ export default function InvoiceForm({
                   value={branchId}
                   onValueChange={(v) => {
                     setValue("branchId", v, { shouldValidate: true });
-                    if (memberId) setValue("memberId", "", { shouldValidate: false });
+                    if (memberId)
+                      setValue("memberId", "", { shouldValidate: false });
                   }}
                   disabled={isPending || branchesLoading}
                 >
@@ -572,7 +599,7 @@ export default function InvoiceForm({
           {/* ── Line items ── */}
           <section className="space-y-3">
             <div className="flex items-center justify-between">
-              <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide">
+              <h3 className="text-sm font-semibold tracking-wide uppercase text-muted-foreground">
                 Line Items
               </h3>
               <Button
@@ -604,7 +631,7 @@ export default function InvoiceForm({
               {fields.map((field, index) => (
                 <div
                   key={field.id}
-                  className="rounded-md border p-3 space-y-3 relative"
+                  className="relative p-3 space-y-3 border rounded-md"
                 >
                   {fields.length > 1 && (
                     <Button
@@ -693,7 +720,7 @@ export default function InvoiceForm({
                     </div>
                   </div>
 
-                  <div className="text-right text-xs text-muted-foreground">
+                  <div className="text-xs text-right text-muted-foreground">
                     Line total:{" "}
                     <span className="font-medium text-foreground">
                       {formatCurrency(
@@ -713,7 +740,7 @@ export default function InvoiceForm({
 
           {/* ── Discounts & totals ── */}
           <section className="space-y-3">
-            <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide">
+            <h3 className="text-sm font-semibold tracking-wide uppercase text-muted-foreground">
               Discount & Totals
             </h3>
 
@@ -735,13 +762,13 @@ export default function InvoiceForm({
                   {...register("discountCode")}
                 />
                 {validatingDiscount && (
-                  <div className="absolute right-3 top-1/2 -translate-y-1/2">
-                    <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
+                  <div className="absolute -translate-y-1/2 right-3 top-1/2">
+                    <Loader2 className="w-4 h-4 animate-spin text-muted-foreground" />
                   </div>
                 )}
                 {discountValidation?.isValid && !validatingDiscount && (
-                  <div className="absolute right-3 top-1/2 -translate-y-1/2">
-                    <Check className="h-4 w-4 text-green-500" />
+                  <div className="absolute -translate-y-1/2 right-3 top-1/2">
+                    <Check className="w-4 h-4 text-green-500" />
                   </div>
                 )}
               </div>
@@ -761,46 +788,29 @@ export default function InvoiceForm({
               )}
 
               {/* Show discount details if valid */}
-              {discountValidation?.isValid &&
-                discountValidation.discountData && (
-                  <div className="mt-2 p-2 bg-green-50 dark:bg-green-950/20 rounded-md text-xs space-y-1">
-                    <p className="text-green-700 dark:text-green-400 font-medium">
-                      ✨ Discount Applied!
-                    </p>
-                    <div className="flex justify-between text-green-600 dark:text-green-500">
-                      <span>Discount type:</span>
-                      <span className="font-mono">
-                        {discountValidation.discountData.discount
-                          ?.discountType === "percentage"
-                          ? `${discountValidation.discountData.discount.value}% OFF`
-                          : `PKR ${discountValidation.discountData.discount?.value} OFF`}
-                      </span>
-                    </div>
-                    <div className="flex justify-between text-green-600 dark:text-green-500">
-                      <span>Original amount:</span>
-                      <span>{formatCurrency(subtotal, currency)}</span>
-                    </div>
-                    <div className="flex justify-between text-green-600 dark:text-green-500">
-                      <span>You save:</span>
-                      <span className="font-bold">
-                        -
-                        {formatCurrency(
-                          discountValidation.discountAmount || 0,
-                          currency,
-                        )}
-                      </span>
-                    </div>
-                    <div className="flex justify-between font-semibold text-green-700 dark:text-green-400 pt-1 border-t border-green-200 dark:border-green-800">
-                      <span>Final after discount:</span>
-                      <span>
-                        {formatCurrency(
-                          discountValidation.finalAmount || 0,
-                          currency,
-                        )}
-                      </span>
-                    </div>
+              {discountValidation?.isValid && (
+                <div className="p-2 mt-2 space-y-1 text-xs rounded-md bg-green-50 dark:bg-green-950/20">
+                  <p className="font-medium text-green-700 dark:text-green-400">
+                    ✨ Discount Applied!
+                  </p>
+                  <div className="flex justify-between text-green-600 dark:text-green-500">
+                    <span>Original amount:</span>
+                    <span>{formatCurrency(subtotal, currency)}</span>
                   </div>
-                )}
+                  <div className="flex justify-between text-green-600 dark:text-green-500">
+                    <span>You save:</span>
+                    <span className="font-bold">
+                      -{formatCurrency(discountValidation.discountAmount || 0, currency)}
+                    </span>
+                  </div>
+                  <div className="flex justify-between pt-1 font-semibold text-green-700 border-t border-green-200 dark:text-green-400 dark:border-green-800">
+                    <span>Final after discount:</span>
+                    <span>
+                      {formatCurrency(discountValidation.finalAmount || 0, currency)}
+                    </span>
+                  </div>
+                </div>
+              )}
             </div>
 
             {/* Manual Discount - Disabled when code is applied */}
@@ -808,7 +818,7 @@ export default function InvoiceForm({
               <Label htmlFor="invoiceLevelDiscountAmount">
                 Manual Discount ({currency})
                 {discountValidation?.isValid && (
-                  <span className="text-xs text-muted-foreground ml-2">
+                  <span className="ml-2 text-xs text-muted-foreground">
                     (Disabled - discount code already applied)
                   </span>
                 )}
@@ -828,7 +838,7 @@ export default function InvoiceForm({
             </div>
 
             {/* Totals Display */}
-            <div className="rounded-md bg-muted/30 p-3 space-y-1 text-sm">
+            <div className="p-3 space-y-1 text-sm rounded-md bg-muted/30">
               <div className="flex justify-between text-muted-foreground">
                 <span>Subtotal</span>
                 <span>{formatCurrency(subtotal, currency)}</span>
@@ -848,7 +858,7 @@ export default function InvoiceForm({
                 </div>
               )}
               <Separator className="my-1" />
-              <div className="flex justify-between font-semibold text-base">
+              <div className="flex justify-between text-base font-semibold">
                 <span>Total</span>
                 <span
                   className={cn(
@@ -862,8 +872,8 @@ export default function InvoiceForm({
               {/* Savings highlight */}
               {discountValidation?.isValid &&
                 discountValidation.discountAmount && (
-                  <div className="mt-2 pt-2 border-t border-green-200 dark:border-green-800">
-                    <p className="text-xs text-green-600 dark:text-green-400 text-center">
+                  <div className="pt-2 mt-2 border-t border-green-200 dark:border-green-800">
+                    <p className="text-xs text-center text-green-600 dark:text-green-400">
                       🎉 You're saving{" "}
                       {formatCurrency(
                         discountValidation.discountAmount,
@@ -913,7 +923,7 @@ export default function InvoiceForm({
                 isPending || (discountCode && !discountValidation?.isValid)
               }
             >
-              {isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+              {isPending && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
               Create Invoice
             </Button>
           </div>

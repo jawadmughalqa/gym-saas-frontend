@@ -15,6 +15,7 @@ const MembersPage         = lazy(() => import("@/features/members/MembersPage"))
 const MemberDetailPage    = lazy(() => import("@/features/members/MemberDetailPage"));
 const InvoicesPage        = lazy(() => import("@/features/billing/InvoicesPage"));
 const InvoiceDetailPage   = lazy(() => import("@/features/billing/InvoiceDetailPage"));
+const BillingDashboard    = lazy(() => import("@/features/billing/BillingDashboard")); // ← ADD THIS
 const DiscountsPage       = lazy(() => import("@/features/billing/DiscountsPage"));
 const TrainersPage        = lazy(() => import("@/features/trainers/TrainersPage"));
 const TrainerDetailPage   = lazy(() => import("@/features/trainers/TrainerDetailPage"));
@@ -39,7 +40,7 @@ const StaffPage             = lazy(() => import("@/features/staff/StaffPage"));
 function PageLoader() {
   return (
     <div className="flex h-full min-h-[200px] items-center justify-center">
-      <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+      <Loader2 className="w-6 h-6 animate-spin text-muted-foreground" />
     </div>
   );
 }
@@ -116,20 +117,28 @@ const router = createBrowserRouter([
             path: "billing",
             handle: { crumb: "Billing" },
             children: [
-              { index: true, element: <Lazy><InvoicesPage /></Lazy> },
+              { index: true, element: <Navigate to="/billing/dashboard" replace /> }, // ← Redirect to dashboard
               {
-                path: ":invoiceId",
+                path: "dashboard",
+                element: <Lazy><BillingDashboard /></Lazy>,
+                handle: { crumb: "Dashboard" },
+              },
+              {
+                path: "invoices",
+                element: <Lazy><InvoicesPage /></Lazy>,
+                handle: { crumb: "Invoices" },
+              },
+              {
+                path: "invoices/:invoiceId",
                 element: <Lazy><InvoiceDetailPage /></Lazy>,
                 handle: { crumb: "Invoice" },
               },
+              {
+                path: "discounts",
+                element: <Lazy><DiscountsPage /></Lazy>,
+                handle: { crumb: "Discounts" },
+              },
             ],
-          },
-
-          // ── Discounts ────────────────────────────────────────────────
-          {
-            path: "discounts",
-            element: <Lazy><DiscountsPage /></Lazy>,
-            handle: { crumb: "Discounts" },
           },
 
           // ── Expenses ─────────────────────────────────────────────────

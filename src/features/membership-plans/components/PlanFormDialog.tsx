@@ -350,7 +350,7 @@ export function PlanFormDialog({
             <Separator />
 
             {/* ── Freeze Settings ──────────────────────────────────────────── */}
-            <div className="space-y-4">
+            {/* <div className="space-y-4">
               <h3 className="text-sm font-medium text-muted-foreground uppercase tracking-wide">
                 Freeze Policy
               </h3>
@@ -384,9 +384,9 @@ export function PlanFormDialog({
                   )}
                 />
               </div>
-            </div>
+            </div> */}
 
-            <Separator />
+            {/* <Separator /> */}
 
             {/* ── Features ────────────────────────────────────────────────── */}
             <div className="space-y-3">
@@ -440,10 +440,10 @@ export function PlanFormDialog({
               ))}
             </div>
 
-            <Separator />
+            {/* <Separator /> */}
 
             {/* ── Branch Price Overrides ───────────────────────────────────── */}
-            <div className="space-y-3">
+            {/* <div className="space-y-3">
               <div className="flex items-center justify-between">
                 <div>
                   <h3 className="text-sm font-medium text-muted-foreground uppercase tracking-wide">
@@ -503,7 +503,7 @@ export function PlanFormDialog({
                   </Button>
                 </div>
               ))}
-            </div>
+            </div> */}
 
             {/* ── Footer ──────────────────────────────────────────────────── */}
             <DialogFooter>

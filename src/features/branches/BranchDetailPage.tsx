@@ -417,10 +417,10 @@ export default function BranchDetailPage() {
             <p className="text-sm text-muted-foreground">
               Users assigned to this branch
             </p>
-            <Button size="sm" onClick={() => setAssignOpen(true)}>
+            {/* <Button size="sm" onClick={() => setAssignOpen(true)}>
               <UserPlus className="mr-1.5 h-3.5 w-3.5" />
               Assign User
-            </Button>
+            </Button> */}
           </div>
 
           <Separator />
@@ -430,7 +430,7 @@ export default function BranchDetailPage() {
               icon={<Users className="h-12 w-12" />}
               title="No users assigned"
               description="Assign users to give them access to this branch."
-              action={{ label: 'Assign User', onClick: () => setAssignOpen(true) }}
+              // action={{ label: 'Assign User', onClick: () => setAssignOpen(true) }}
             />
           ) : (
             <DataTable

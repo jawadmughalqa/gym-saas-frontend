@@ -54,7 +54,7 @@ import type {
 } from '../schemas';
 
 import { orvalMutator } from '../../../lib/orval-mutator';
-import type { ErrorType , BodyType } from '../../../lib/orval-mutator';
+import type { ErrorType, BodyType } from '../../../lib/orval-mutator';
 
 
 
@@ -66,108 +66,111 @@ This eliminates the need for separate /staff calls from frontend.
  * @summary Create trainer with user account (composite)
  */
 export const postTrainersWithUser = (
-    postTrainersWithUserBody: BodyType<PostTrainersWithUserBody>,
- signal?: AbortSignal
+  postTrainersWithUserBody: BodyType<PostTrainersWithUserBody>,
+  signal?: AbortSignal
 ) => {
 
 
-      return orvalMutator<TrainerProfileResponse>(
-      {url: `/trainers/with-user`, method: 'POST',
-      headers: {'Content-Type': 'application/json', },
+  return orvalMutator<TrainerProfileResponse>(
+    {
+      url: `/trainers/with-user`, method: 'POST',
+      headers: { 'Content-Type': 'application/json', },
       data: postTrainersWithUserBody, signal
     },
-      );
-    }
+  );
+}
 
 
 
 export const getPostTrainersWithUserMutationOptions = <TError = ErrorType<BadRequestResponse | ConflictResponse>,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof postTrainersWithUser>>, TError,{data: BodyType<PostTrainersWithUserBody>}, TContext>, }
-): UseMutationOptions<Awaited<ReturnType<typeof postTrainersWithUser>>, TError,{data: BodyType<PostTrainersWithUserBody>}, TContext> => {
+  TContext = unknown>(options?: { mutation?: UseMutationOptions<Awaited<ReturnType<typeof postTrainersWithUser>>, TError, { data: BodyType<PostTrainersWithUserBody> }, TContext>, }
+  ): UseMutationOptions<Awaited<ReturnType<typeof postTrainersWithUser>>, TError, { data: BodyType<PostTrainersWithUserBody> }, TContext> => {
 
-const mutationKey = ['postTrainersWithUser'];
-const {mutation: mutationOptions} = options ?
-      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+  const mutationKey = ['postTrainersWithUser'];
+  const { mutation: mutationOptions } = options ?
+    options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
       options
-      : {...options, mutation: {...options.mutation, mutationKey}}
-      : {mutation: { mutationKey, }};
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey, } };
 
 
 
 
-      const mutationFn: MutationFunction<Awaited<ReturnType<typeof postTrainersWithUser>>, {data: BodyType<PostTrainersWithUserBody>}> = (props) => {
-          const {data} = props ?? {};
+  const mutationFn: MutationFunction<Awaited<ReturnType<typeof postTrainersWithUser>>, { data: BodyType<PostTrainersWithUserBody> }> = (props) => {
+    const { data } = props ?? {};
 
-          return  postTrainersWithUser(data,)
-        }
-
-
+    return postTrainersWithUser(data,)
+  }
 
 
 
 
-  return  { mutationFn, ...mutationOptions }}
 
-    export type PostTrainersWithUserMutationResult = NonNullable<Awaited<ReturnType<typeof postTrainersWithUser>>>
-    export type PostTrainersWithUserMutationBody = BodyType<PostTrainersWithUserBody>
-    export type PostTrainersWithUserMutationError = ErrorType<BadRequestResponse | ConflictResponse>
 
-    /**
- * @summary Create trainer with user account (composite)
- */
+  return { mutationFn, ...mutationOptions }
+}
+
+export type PostTrainersWithUserMutationResult = NonNullable<Awaited<ReturnType<typeof postTrainersWithUser>>>
+export type PostTrainersWithUserMutationBody = BodyType<PostTrainersWithUserBody>
+export type PostTrainersWithUserMutationError = ErrorType<BadRequestResponse | ConflictResponse>
+
+/**
+* @summary Create trainer with user account (composite)
+*/
 export const usePostTrainersWithUser = <TError = ErrorType<BadRequestResponse | ConflictResponse>,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof postTrainersWithUser>>, TError,{data: BodyType<PostTrainersWithUserBody>}, TContext>, }
- , queryClient?: QueryClient): UseMutationResult<
-        Awaited<ReturnType<typeof postTrainersWithUser>>,
-        TError,
-        {data: BodyType<PostTrainersWithUserBody>},
-        TContext
-      > => {
-      return useMutation(getPostTrainersWithUserMutationOptions(options), queryClient);
-    }
-    /**
- * Paginated list of trainers for the tenant. Supports filtering by branch, status, specialization, and availability.
- * @summary List trainer profiles
- */
+  TContext = unknown>(options?: { mutation?: UseMutationOptions<Awaited<ReturnType<typeof postTrainersWithUser>>, TError, { data: BodyType<PostTrainersWithUserBody> }, TContext>, }
+    , queryClient?: QueryClient): UseMutationResult<
+      Awaited<ReturnType<typeof postTrainersWithUser>>,
+      TError,
+      { data: BodyType<PostTrainersWithUserBody> },
+      TContext
+    > => {
+  return useMutation(getPostTrainersWithUserMutationOptions(options), queryClient);
+}
+/**
+* Paginated list of trainers for the tenant. Supports filtering by branch, status, specialization, and availability.
+* @summary List trainer profiles
+*/
 export const getTrainers = (
-    params?: GetTrainersParams,
- signal?: AbortSignal
+  params?: GetTrainersParams,
+  signal?: AbortSignal
 ) => {
 
 
-      return orvalMutator<TrainerListResponse>(
-      {url: `/trainers`, method: 'GET',
-        params, signal
+  return orvalMutator<TrainerListResponse>(
+    {
+      url: `/trainers`, method: 'GET',
+      params, signal
     },
-      );
-    }
+  );
+}
 
 
 
 
 export const getGetTrainersQueryKey = (params?: GetTrainersParams,) => {
-    return [
+  return [
     `/trainers`, ...(params ? [params] : [])
-    ] as const;
-    }
+  ] as const;
+}
 
 
-export const getGetTrainersQueryOptions = <TData = Awaited<ReturnType<typeof getTrainers>>, TError = ErrorType<UnauthorizedResponse | ForbiddenResponse>>(params?: GetTrainersParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getTrainers>>, TError, TData>>, }
+export const getGetTrainersQueryOptions = <TData = Awaited<ReturnType<typeof getTrainers>>, TError = ErrorType<UnauthorizedResponse | ForbiddenResponse>>(params?: GetTrainersParams, options?: { query?: Partial<UseQueryOptions<Awaited<ReturnType<typeof getTrainers>>, TError, TData>>, }
 ) => {
 
-const {query: queryOptions} = options ?? {};
+  const { query: queryOptions } = options ?? {};
 
-  const queryKey =  queryOptions?.queryKey ?? getGetTrainersQueryKey(params);
-
-
-
-    const queryFn: QueryFunction<Awaited<ReturnType<typeof getTrainers>>> = ({ signal }) => getTrainers(params, signal);
+  const queryKey = queryOptions?.queryKey ?? getGetTrainersQueryKey(params);
 
 
 
+  const queryFn: QueryFunction<Awaited<ReturnType<typeof getTrainers>>> = ({ signal }) => getTrainers(params, signal);
 
 
-   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getTrainers>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
+
+
+
+  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<Awaited<ReturnType<typeof getTrainers>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
 }
 
 export type GetTrainersQueryResult = NonNullable<Awaited<ReturnType<typeof getTrainers>>>
@@ -175,41 +178,45 @@ export type GetTrainersQueryError = ErrorType<UnauthorizedResponse | ForbiddenRe
 
 
 export function useGetTrainers<TData = Awaited<ReturnType<typeof getTrainers>>, TError = ErrorType<UnauthorizedResponse | ForbiddenResponse>>(
- params: undefined |  GetTrainersParams, options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof getTrainers>>, TError, TData>> & Pick<
-        DefinedInitialDataOptions<
-          Awaited<ReturnType<typeof getTrainers>>,
-          TError,
-          Awaited<ReturnType<typeof getTrainers>>
-        > , 'initialData'
-      >, }
- , queryClient?: QueryClient
-  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+  params: undefined | GetTrainersParams, options: {
+    query: Partial<UseQueryOptions<Awaited<ReturnType<typeof getTrainers>>, TError, TData>> & Pick<
+      DefinedInitialDataOptions<
+        Awaited<ReturnType<typeof getTrainers>>,
+        TError,
+        Awaited<ReturnType<typeof getTrainers>>
+      >, 'initialData'
+    >,
+  }
+  , queryClient?: QueryClient
+): DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
 export function useGetTrainers<TData = Awaited<ReturnType<typeof getTrainers>>, TError = ErrorType<UnauthorizedResponse | ForbiddenResponse>>(
- params?: GetTrainersParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getTrainers>>, TError, TData>> & Pick<
-        UndefinedInitialDataOptions<
-          Awaited<ReturnType<typeof getTrainers>>,
-          TError,
-          Awaited<ReturnType<typeof getTrainers>>
-        > , 'initialData'
-      >, }
- , queryClient?: QueryClient
-  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+  params?: GetTrainersParams, options?: {
+    query?: Partial<UseQueryOptions<Awaited<ReturnType<typeof getTrainers>>, TError, TData>> & Pick<
+      UndefinedInitialDataOptions<
+        Awaited<ReturnType<typeof getTrainers>>,
+        TError,
+        Awaited<ReturnType<typeof getTrainers>>
+      >, 'initialData'
+    >,
+  }
+  , queryClient?: QueryClient
+): UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
 export function useGetTrainers<TData = Awaited<ReturnType<typeof getTrainers>>, TError = ErrorType<UnauthorizedResponse | ForbiddenResponse>>(
- params?: GetTrainersParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getTrainers>>, TError, TData>>, }
- , queryClient?: QueryClient
-  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+  params?: GetTrainersParams, options?: { query?: Partial<UseQueryOptions<Awaited<ReturnType<typeof getTrainers>>, TError, TData>>, }
+  , queryClient?: QueryClient
+): UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
 /**
  * @summary List trainer profiles
  */
 
 export function useGetTrainers<TData = Awaited<ReturnType<typeof getTrainers>>, TError = ErrorType<UnauthorizedResponse | ForbiddenResponse>>(
- params?: GetTrainersParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getTrainers>>, TError, TData>>, }
- , queryClient?: QueryClient
- ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+  params?: GetTrainersParams, options?: { query?: Partial<UseQueryOptions<Awaited<ReturnType<typeof getTrainers>>, TError, TData>>, }
+  , queryClient?: QueryClient
+): UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
 
-  const queryOptions = getGetTrainersQueryOptions(params,options)
+  const queryOptions = getGetTrainersQueryOptions(params, options)
 
-  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+  const query = useQuery(queryOptions, queryClient) as UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
 
   return { ...query, queryKey: queryOptions.queryKey };
 }
@@ -226,107 +233,110 @@ The user must already exist with role `trainer` in the same tenant.
  * @summary Create a trainer profile
  */
 export const postTrainers = (
-    createTrainerProfileRequest: BodyType<CreateTrainerProfileRequest>,
- signal?: AbortSignal
+  createTrainerProfileRequest: BodyType<CreateTrainerProfileRequest>,
+  signal?: AbortSignal
 ) => {
 
 
-      return orvalMutator<TrainerProfileResponse>(
-      {url: `/trainers`, method: 'POST',
-      headers: {'Content-Type': 'application/json', },
+  return orvalMutator<TrainerProfileResponse>(
+    {
+      url: `/trainers`, method: 'POST',
+      headers: { 'Content-Type': 'application/json', },
       data: createTrainerProfileRequest, signal
     },
-      );
-    }
+  );
+}
 
 
 
 export const getPostTrainersMutationOptions = <TError = ErrorType<BadRequestResponse | NotFoundResponse | ConflictResponse>,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof postTrainers>>, TError,{data: BodyType<CreateTrainerProfileRequest>}, TContext>, }
-): UseMutationOptions<Awaited<ReturnType<typeof postTrainers>>, TError,{data: BodyType<CreateTrainerProfileRequest>}, TContext> => {
+  TContext = unknown>(options?: { mutation?: UseMutationOptions<Awaited<ReturnType<typeof postTrainers>>, TError, { data: BodyType<CreateTrainerProfileRequest> }, TContext>, }
+  ): UseMutationOptions<Awaited<ReturnType<typeof postTrainers>>, TError, { data: BodyType<CreateTrainerProfileRequest> }, TContext> => {
 
-const mutationKey = ['postTrainers'];
-const {mutation: mutationOptions} = options ?
-      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+  const mutationKey = ['postTrainers'];
+  const { mutation: mutationOptions } = options ?
+    options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
       options
-      : {...options, mutation: {...options.mutation, mutationKey}}
-      : {mutation: { mutationKey, }};
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey, } };
 
 
 
 
-      const mutationFn: MutationFunction<Awaited<ReturnType<typeof postTrainers>>, {data: BodyType<CreateTrainerProfileRequest>}> = (props) => {
-          const {data} = props ?? {};
+  const mutationFn: MutationFunction<Awaited<ReturnType<typeof postTrainers>>, { data: BodyType<CreateTrainerProfileRequest> }> = (props) => {
+    const { data } = props ?? {};
 
-          return  postTrainers(data,)
-        }
-
-
+    return postTrainers(data,)
+  }
 
 
 
 
-  return  { mutationFn, ...mutationOptions }}
 
-    export type PostTrainersMutationResult = NonNullable<Awaited<ReturnType<typeof postTrainers>>>
-    export type PostTrainersMutationBody = BodyType<CreateTrainerProfileRequest>
-    export type PostTrainersMutationError = ErrorType<BadRequestResponse | NotFoundResponse | ConflictResponse>
 
-    /**
- * @summary Create a trainer profile
- */
+  return { mutationFn, ...mutationOptions }
+}
+
+export type PostTrainersMutationResult = NonNullable<Awaited<ReturnType<typeof postTrainers>>>
+export type PostTrainersMutationBody = BodyType<CreateTrainerProfileRequest>
+export type PostTrainersMutationError = ErrorType<BadRequestResponse | NotFoundResponse | ConflictResponse>
+
+/**
+* @summary Create a trainer profile
+*/
 export const usePostTrainers = <TError = ErrorType<BadRequestResponse | NotFoundResponse | ConflictResponse>,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof postTrainers>>, TError,{data: BodyType<CreateTrainerProfileRequest>}, TContext>, }
- , queryClient?: QueryClient): UseMutationResult<
-        Awaited<ReturnType<typeof postTrainers>>,
-        TError,
-        {data: BodyType<CreateTrainerProfileRequest>},
-        TContext
-      > => {
-      return useMutation(getPostTrainersMutationOptions(options), queryClient);
-    }
-    /**
- * Returns full trainer profile including linked user details.
- * @summary Get trainer profile
- */
+  TContext = unknown>(options?: { mutation?: UseMutationOptions<Awaited<ReturnType<typeof postTrainers>>, TError, { data: BodyType<CreateTrainerProfileRequest> }, TContext>, }
+    , queryClient?: QueryClient): UseMutationResult<
+      Awaited<ReturnType<typeof postTrainers>>,
+      TError,
+      { data: BodyType<CreateTrainerProfileRequest> },
+      TContext
+    > => {
+  return useMutation(getPostTrainersMutationOptions(options), queryClient);
+}
+/**
+* Returns full trainer profile including linked user details.
+* @summary Get trainer profile
+*/
 export const getTrainersTrainerId = (
-    trainerId: string,
- signal?: AbortSignal
+  trainerId: string,
+  signal?: AbortSignal
 ) => {
 
 
-      return orvalMutator<TrainerProfileResponse>(
-      {url: `/trainers/${trainerId}`, method: 'GET', signal
+  return orvalMutator<TrainerProfileResponse>(
+    {
+      url: `/trainers/${trainerId}`, method: 'GET', signal
     },
-      );
-    }
+  );
+}
 
 
 
 
 export const getGetTrainersTrainerIdQueryKey = (trainerId: string,) => {
-    return [
+  return [
     `/trainers/${trainerId}`
-    ] as const;
-    }
+  ] as const;
+}
 
 
-export const getGetTrainersTrainerIdQueryOptions = <TData = Awaited<ReturnType<typeof getTrainersTrainerId>>, TError = ErrorType<NotFoundResponse>>(trainerId: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getTrainersTrainerId>>, TError, TData>>, }
+export const getGetTrainersTrainerIdQueryOptions = <TData = Awaited<ReturnType<typeof getTrainersTrainerId>>, TError = ErrorType<NotFoundResponse>>(trainerId: string, options?: { query?: Partial<UseQueryOptions<Awaited<ReturnType<typeof getTrainersTrainerId>>, TError, TData>>, }
 ) => {
 
-const {query: queryOptions} = options ?? {};
+  const { query: queryOptions } = options ?? {};
 
-  const queryKey =  queryOptions?.queryKey ?? getGetTrainersTrainerIdQueryKey(trainerId);
-
-
-
-    const queryFn: QueryFunction<Awaited<ReturnType<typeof getTrainersTrainerId>>> = ({ signal }) => getTrainersTrainerId(trainerId, signal);
+  const queryKey = queryOptions?.queryKey ?? getGetTrainersTrainerIdQueryKey(trainerId);
 
 
 
+  const queryFn: QueryFunction<Awaited<ReturnType<typeof getTrainersTrainerId>>> = ({ signal }) => getTrainersTrainerId(trainerId, signal);
 
 
-   return  { queryKey, queryFn, enabled: !!(trainerId), ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getTrainersTrainerId>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
+
+
+
+  return { queryKey, queryFn, enabled: !!(trainerId), ...queryOptions } as UseQueryOptions<Awaited<ReturnType<typeof getTrainersTrainerId>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
 }
 
 export type GetTrainersTrainerIdQueryResult = NonNullable<Awaited<ReturnType<typeof getTrainersTrainerId>>>
@@ -334,41 +344,45 @@ export type GetTrainersTrainerIdQueryError = ErrorType<NotFoundResponse>
 
 
 export function useGetTrainersTrainerId<TData = Awaited<ReturnType<typeof getTrainersTrainerId>>, TError = ErrorType<NotFoundResponse>>(
- trainerId: string, options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof getTrainersTrainerId>>, TError, TData>> & Pick<
-        DefinedInitialDataOptions<
-          Awaited<ReturnType<typeof getTrainersTrainerId>>,
-          TError,
-          Awaited<ReturnType<typeof getTrainersTrainerId>>
-        > , 'initialData'
-      >, }
- , queryClient?: QueryClient
-  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+  trainerId: string, options: {
+    query: Partial<UseQueryOptions<Awaited<ReturnType<typeof getTrainersTrainerId>>, TError, TData>> & Pick<
+      DefinedInitialDataOptions<
+        Awaited<ReturnType<typeof getTrainersTrainerId>>,
+        TError,
+        Awaited<ReturnType<typeof getTrainersTrainerId>>
+      >, 'initialData'
+    >,
+  }
+  , queryClient?: QueryClient
+): DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
 export function useGetTrainersTrainerId<TData = Awaited<ReturnType<typeof getTrainersTrainerId>>, TError = ErrorType<NotFoundResponse>>(
- trainerId: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getTrainersTrainerId>>, TError, TData>> & Pick<
-        UndefinedInitialDataOptions<
-          Awaited<ReturnType<typeof getTrainersTrainerId>>,
-          TError,
-          Awaited<ReturnType<typeof getTrainersTrainerId>>
-        > , 'initialData'
-      >, }
- , queryClient?: QueryClient
-  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+  trainerId: string, options?: {
+    query?: Partial<UseQueryOptions<Awaited<ReturnType<typeof getTrainersTrainerId>>, TError, TData>> & Pick<
+      UndefinedInitialDataOptions<
+        Awaited<ReturnType<typeof getTrainersTrainerId>>,
+        TError,
+        Awaited<ReturnType<typeof getTrainersTrainerId>>
+      >, 'initialData'
+    >,
+  }
+  , queryClient?: QueryClient
+): UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
 export function useGetTrainersTrainerId<TData = Awaited<ReturnType<typeof getTrainersTrainerId>>, TError = ErrorType<NotFoundResponse>>(
- trainerId: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getTrainersTrainerId>>, TError, TData>>, }
- , queryClient?: QueryClient
-  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+  trainerId: string, options?: { query?: Partial<UseQueryOptions<Awaited<ReturnType<typeof getTrainersTrainerId>>, TError, TData>>, }
+  , queryClient?: QueryClient
+): UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
 /**
  * @summary Get trainer profile
  */
 
 export function useGetTrainersTrainerId<TData = Awaited<ReturnType<typeof getTrainersTrainerId>>, TError = ErrorType<NotFoundResponse>>(
- trainerId: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getTrainersTrainerId>>, TError, TData>>, }
- , queryClient?: QueryClient
- ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+  trainerId: string, options?: { query?: Partial<UseQueryOptions<Awaited<ReturnType<typeof getTrainersTrainerId>>, TError, TData>>, }
+  , queryClient?: QueryClient
+): UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
 
-  const queryOptions = getGetTrainersTrainerIdQueryOptions(trainerId,options)
+  const queryOptions = getGetTrainersTrainerIdQueryOptions(trainerId, options)
 
-  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+  const query = useQuery(queryOptions, queryClient) as UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
 
   return { ...query, queryKey: queryOptions.queryKey };
 }
@@ -383,174 +397,179 @@ export function useGetTrainersTrainerId<TData = Awaited<ReturnType<typeof getTra
  * @summary Update trainer profile
  */
 export const patchTrainersTrainerId = (
-    trainerId: string,
-    updateTrainerProfileRequest: BodyType<UpdateTrainerProfileRequest>,
- signal?: AbortSignal
+  trainerId: string,
+  updateTrainerProfileRequest: BodyType<UpdateTrainerProfileRequest>,
+  signal?: AbortSignal
 ) => {
 
 
-      return orvalMutator<TrainerProfileResponse>(
-      {url: `/trainers/${trainerId}`, method: 'PATCH',
-      headers: {'Content-Type': 'application/json', },
+  return orvalMutator<TrainerProfileResponse>(
+    {
+      url: `/trainers/${trainerId}`, method: 'PATCH',
+      headers: { 'Content-Type': 'application/json', },
       data: updateTrainerProfileRequest, signal
     },
-      );
-    }
+  );
+}
 
 
 
 export const getPatchTrainersTrainerIdMutationOptions = <TError = ErrorType<NotFoundResponse>,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof patchTrainersTrainerId>>, TError,{trainerId: string;data: BodyType<UpdateTrainerProfileRequest>}, TContext>, }
-): UseMutationOptions<Awaited<ReturnType<typeof patchTrainersTrainerId>>, TError,{trainerId: string;data: BodyType<UpdateTrainerProfileRequest>}, TContext> => {
+  TContext = unknown>(options?: { mutation?: UseMutationOptions<Awaited<ReturnType<typeof patchTrainersTrainerId>>, TError, { trainerId: string; data: BodyType<UpdateTrainerProfileRequest> }, TContext>, }
+  ): UseMutationOptions<Awaited<ReturnType<typeof patchTrainersTrainerId>>, TError, { trainerId: string; data: BodyType<UpdateTrainerProfileRequest> }, TContext> => {
 
-const mutationKey = ['patchTrainersTrainerId'];
-const {mutation: mutationOptions} = options ?
-      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+  const mutationKey = ['patchTrainersTrainerId'];
+  const { mutation: mutationOptions } = options ?
+    options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
       options
-      : {...options, mutation: {...options.mutation, mutationKey}}
-      : {mutation: { mutationKey, }};
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey, } };
 
 
 
 
-      const mutationFn: MutationFunction<Awaited<ReturnType<typeof patchTrainersTrainerId>>, {trainerId: string;data: BodyType<UpdateTrainerProfileRequest>}> = (props) => {
-          const {trainerId,data} = props ?? {};
+  const mutationFn: MutationFunction<Awaited<ReturnType<typeof patchTrainersTrainerId>>, { trainerId: string; data: BodyType<UpdateTrainerProfileRequest> }> = (props) => {
+    const { trainerId, data } = props ?? {};
 
-          return  patchTrainersTrainerId(trainerId,data,)
-        }
-
-
+    return patchTrainersTrainerId(trainerId, data,)
+  }
 
 
 
 
-  return  { mutationFn, ...mutationOptions }}
 
-    export type PatchTrainersTrainerIdMutationResult = NonNullable<Awaited<ReturnType<typeof patchTrainersTrainerId>>>
-    export type PatchTrainersTrainerIdMutationBody = BodyType<UpdateTrainerProfileRequest>
-    export type PatchTrainersTrainerIdMutationError = ErrorType<NotFoundResponse>
 
-    /**
- * @summary Update trainer profile
- */
+  return { mutationFn, ...mutationOptions }
+}
+
+export type PatchTrainersTrainerIdMutationResult = NonNullable<Awaited<ReturnType<typeof patchTrainersTrainerId>>>
+export type PatchTrainersTrainerIdMutationBody = BodyType<UpdateTrainerProfileRequest>
+export type PatchTrainersTrainerIdMutationError = ErrorType<NotFoundResponse>
+
+/**
+* @summary Update trainer profile
+*/
 export const usePatchTrainersTrainerId = <TError = ErrorType<NotFoundResponse>,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof patchTrainersTrainerId>>, TError,{trainerId: string;data: BodyType<UpdateTrainerProfileRequest>}, TContext>, }
- , queryClient?: QueryClient): UseMutationResult<
-        Awaited<ReturnType<typeof patchTrainersTrainerId>>,
-        TError,
-        {trainerId: string;data: BodyType<UpdateTrainerProfileRequest>},
-        TContext
-      > => {
-      return useMutation(getPatchTrainersTrainerIdMutationOptions(options), queryClient);
-    }
-    /**
- * Soft-archives the trainer profile and ends all active assignments.
- * @summary Archive a trainer
- */
+  TContext = unknown>(options?: { mutation?: UseMutationOptions<Awaited<ReturnType<typeof patchTrainersTrainerId>>, TError, { trainerId: string; data: BodyType<UpdateTrainerProfileRequest> }, TContext>, }
+    , queryClient?: QueryClient): UseMutationResult<
+      Awaited<ReturnType<typeof patchTrainersTrainerId>>,
+      TError,
+      { trainerId: string; data: BodyType<UpdateTrainerProfileRequest> },
+      TContext
+    > => {
+  return useMutation(getPatchTrainersTrainerIdMutationOptions(options), queryClient);
+}
+/**
+* Soft-archives the trainer profile and ends all active assignments.
+* @summary Archive a trainer
+*/
 export const deleteTrainersTrainerId = (
-    trainerId: string,
- signal?: AbortSignal
+  trainerId: string,
+  signal?: AbortSignal
 ) => {
 
 
-      return orvalMutator<SuccessResponse>(
-      {url: `/trainers/${trainerId}`, method: 'DELETE', signal
+  return orvalMutator<SuccessResponse>(
+    {
+      url: `/trainers/${trainerId}`, method: 'DELETE', signal
     },
-      );
-    }
+  );
+}
 
 
 
 export const getDeleteTrainersTrainerIdMutationOptions = <TError = ErrorType<NotFoundResponse>,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof deleteTrainersTrainerId>>, TError,{trainerId: string}, TContext>, }
-): UseMutationOptions<Awaited<ReturnType<typeof deleteTrainersTrainerId>>, TError,{trainerId: string}, TContext> => {
+  TContext = unknown>(options?: { mutation?: UseMutationOptions<Awaited<ReturnType<typeof deleteTrainersTrainerId>>, TError, { trainerId: string }, TContext>, }
+  ): UseMutationOptions<Awaited<ReturnType<typeof deleteTrainersTrainerId>>, TError, { trainerId: string }, TContext> => {
 
-const mutationKey = ['deleteTrainersTrainerId'];
-const {mutation: mutationOptions} = options ?
-      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+  const mutationKey = ['deleteTrainersTrainerId'];
+  const { mutation: mutationOptions } = options ?
+    options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
       options
-      : {...options, mutation: {...options.mutation, mutationKey}}
-      : {mutation: { mutationKey, }};
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey, } };
 
 
 
 
-      const mutationFn: MutationFunction<Awaited<ReturnType<typeof deleteTrainersTrainerId>>, {trainerId: string}> = (props) => {
-          const {trainerId} = props ?? {};
+  const mutationFn: MutationFunction<Awaited<ReturnType<typeof deleteTrainersTrainerId>>, { trainerId: string }> = (props) => {
+    const { trainerId } = props ?? {};
 
-          return  deleteTrainersTrainerId(trainerId,)
-        }
-
-
+    return deleteTrainersTrainerId(trainerId,)
+  }
 
 
 
 
-  return  { mutationFn, ...mutationOptions }}
 
-    export type DeleteTrainersTrainerIdMutationResult = NonNullable<Awaited<ReturnType<typeof deleteTrainersTrainerId>>>
 
-    export type DeleteTrainersTrainerIdMutationError = ErrorType<NotFoundResponse>
+  return { mutationFn, ...mutationOptions }
+}
 
-    /**
- * @summary Archive a trainer
- */
+export type DeleteTrainersTrainerIdMutationResult = NonNullable<Awaited<ReturnType<typeof deleteTrainersTrainerId>>>
+
+export type DeleteTrainersTrainerIdMutationError = ErrorType<NotFoundResponse>
+
+/**
+* @summary Archive a trainer
+*/
 export const useDeleteTrainersTrainerId = <TError = ErrorType<NotFoundResponse>,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof deleteTrainersTrainerId>>, TError,{trainerId: string}, TContext>, }
- , queryClient?: QueryClient): UseMutationResult<
-        Awaited<ReturnType<typeof deleteTrainersTrainerId>>,
-        TError,
-        {trainerId: string},
-        TContext
-      > => {
-      return useMutation(getDeleteTrainersTrainerIdMutationOptions(options), queryClient);
-    }
-    /**
- * Returns all assignments (active and historical) for a trainer. Filter by ?status=active|ended
- * @summary List trainer assignments
- */
+  TContext = unknown>(options?: { mutation?: UseMutationOptions<Awaited<ReturnType<typeof deleteTrainersTrainerId>>, TError, { trainerId: string }, TContext>, }
+    , queryClient?: QueryClient): UseMutationResult<
+      Awaited<ReturnType<typeof deleteTrainersTrainerId>>,
+      TError,
+      { trainerId: string },
+      TContext
+    > => {
+  return useMutation(getDeleteTrainersTrainerIdMutationOptions(options), queryClient);
+}
+/**
+* Returns all assignments (active and historical) for a trainer. Filter by ?status=active|ended
+* @summary List trainer assignments
+*/
 export const getTrainersTrainerIdAssignments = (
-    trainerId: string,
-    params?: GetTrainersTrainerIdAssignmentsParams,
- signal?: AbortSignal
+  trainerId: string,
+  params?: GetTrainersTrainerIdAssignmentsParams,
+  signal?: AbortSignal
 ) => {
 
 
-      return orvalMutator<AssignmentListResponse>(
-      {url: `/trainers/${trainerId}/assignments`, method: 'GET',
-        params, signal
+  return orvalMutator<AssignmentListResponse>(
+    {
+      url: `/trainers/${trainerId}/assignments`, method: 'GET',
+      params, signal
     },
-      );
-    }
+  );
+}
 
 
 
 
 export const getGetTrainersTrainerIdAssignmentsQueryKey = (trainerId: string,
-    params?: GetTrainersTrainerIdAssignmentsParams,) => {
-    return [
+  params?: GetTrainersTrainerIdAssignmentsParams,) => {
+  return [
     `/trainers/${trainerId}/assignments`, ...(params ? [params] : [])
-    ] as const;
-    }
+  ] as const;
+}
 
 
 export const getGetTrainersTrainerIdAssignmentsQueryOptions = <TData = Awaited<ReturnType<typeof getTrainersTrainerIdAssignments>>, TError = ErrorType<unknown>>(trainerId: string,
-    params?: GetTrainersTrainerIdAssignmentsParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getTrainersTrainerIdAssignments>>, TError, TData>>, }
+  params?: GetTrainersTrainerIdAssignmentsParams, options?: { query?: Partial<UseQueryOptions<Awaited<ReturnType<typeof getTrainersTrainerIdAssignments>>, TError, TData>>, }
 ) => {
 
-const {query: queryOptions} = options ?? {};
+  const { query: queryOptions } = options ?? {};
 
-  const queryKey =  queryOptions?.queryKey ?? getGetTrainersTrainerIdAssignmentsQueryKey(trainerId,params);
-
-
-
-    const queryFn: QueryFunction<Awaited<ReturnType<typeof getTrainersTrainerIdAssignments>>> = ({ signal }) => getTrainersTrainerIdAssignments(trainerId,params, signal);
+  const queryKey = queryOptions?.queryKey ?? getGetTrainersTrainerIdAssignmentsQueryKey(trainerId, params);
 
 
 
+  const queryFn: QueryFunction<Awaited<ReturnType<typeof getTrainersTrainerIdAssignments>>> = ({ signal }) => getTrainersTrainerIdAssignments(trainerId, params, signal);
 
 
-   return  { queryKey, queryFn, enabled: !!(trainerId), ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getTrainersTrainerIdAssignments>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
+
+
+
+  return { queryKey, queryFn, enabled: !!(trainerId), ...queryOptions } as UseQueryOptions<Awaited<ReturnType<typeof getTrainersTrainerIdAssignments>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
 }
 
 export type GetTrainersTrainerIdAssignmentsQueryResult = NonNullable<Awaited<ReturnType<typeof getTrainersTrainerIdAssignments>>>
@@ -558,45 +577,49 @@ export type GetTrainersTrainerIdAssignmentsQueryError = ErrorType<unknown>
 
 
 export function useGetTrainersTrainerIdAssignments<TData = Awaited<ReturnType<typeof getTrainersTrainerIdAssignments>>, TError = ErrorType<unknown>>(
- trainerId: string,
-    params: undefined |  GetTrainersTrainerIdAssignmentsParams, options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof getTrainersTrainerIdAssignments>>, TError, TData>> & Pick<
-        DefinedInitialDataOptions<
-          Awaited<ReturnType<typeof getTrainersTrainerIdAssignments>>,
-          TError,
-          Awaited<ReturnType<typeof getTrainersTrainerIdAssignments>>
-        > , 'initialData'
-      >, }
- , queryClient?: QueryClient
-  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+  trainerId: string,
+  params: undefined | GetTrainersTrainerIdAssignmentsParams, options: {
+    query: Partial<UseQueryOptions<Awaited<ReturnType<typeof getTrainersTrainerIdAssignments>>, TError, TData>> & Pick<
+      DefinedInitialDataOptions<
+        Awaited<ReturnType<typeof getTrainersTrainerIdAssignments>>,
+        TError,
+        Awaited<ReturnType<typeof getTrainersTrainerIdAssignments>>
+      >, 'initialData'
+    >,
+  }
+  , queryClient?: QueryClient
+): DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
 export function useGetTrainersTrainerIdAssignments<TData = Awaited<ReturnType<typeof getTrainersTrainerIdAssignments>>, TError = ErrorType<unknown>>(
- trainerId: string,
-    params?: GetTrainersTrainerIdAssignmentsParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getTrainersTrainerIdAssignments>>, TError, TData>> & Pick<
-        UndefinedInitialDataOptions<
-          Awaited<ReturnType<typeof getTrainersTrainerIdAssignments>>,
-          TError,
-          Awaited<ReturnType<typeof getTrainersTrainerIdAssignments>>
-        > , 'initialData'
-      >, }
- , queryClient?: QueryClient
-  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+  trainerId: string,
+  params?: GetTrainersTrainerIdAssignmentsParams, options?: {
+    query?: Partial<UseQueryOptions<Awaited<ReturnType<typeof getTrainersTrainerIdAssignments>>, TError, TData>> & Pick<
+      UndefinedInitialDataOptions<
+        Awaited<ReturnType<typeof getTrainersTrainerIdAssignments>>,
+        TError,
+        Awaited<ReturnType<typeof getTrainersTrainerIdAssignments>>
+      >, 'initialData'
+    >,
+  }
+  , queryClient?: QueryClient
+): UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
 export function useGetTrainersTrainerIdAssignments<TData = Awaited<ReturnType<typeof getTrainersTrainerIdAssignments>>, TError = ErrorType<unknown>>(
- trainerId: string,
-    params?: GetTrainersTrainerIdAssignmentsParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getTrainersTrainerIdAssignments>>, TError, TData>>, }
- , queryClient?: QueryClient
-  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+  trainerId: string,
+  params?: GetTrainersTrainerIdAssignmentsParams, options?: { query?: Partial<UseQueryOptions<Awaited<ReturnType<typeof getTrainersTrainerIdAssignments>>, TError, TData>>, }
+  , queryClient?: QueryClient
+): UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
 /**
  * @summary List trainer assignments
  */
 
 export function useGetTrainersTrainerIdAssignments<TData = Awaited<ReturnType<typeof getTrainersTrainerIdAssignments>>, TError = ErrorType<unknown>>(
- trainerId: string,
-    params?: GetTrainersTrainerIdAssignmentsParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getTrainersTrainerIdAssignments>>, TError, TData>>, }
- , queryClient?: QueryClient
- ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+  trainerId: string,
+  params?: GetTrainersTrainerIdAssignmentsParams, options?: { query?: Partial<UseQueryOptions<Awaited<ReturnType<typeof getTrainersTrainerIdAssignments>>, TError, TData>>, }
+  , queryClient?: QueryClient
+): UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
 
-  const queryOptions = getGetTrainersTrainerIdAssignmentsQueryOptions(trainerId,params,options)
+  const queryOptions = getGetTrainersTrainerIdAssignmentsQueryOptions(trainerId, params, options)
 
-  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+  const query = useQuery(queryOptions, queryClient) as UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
 
   return { ...query, queryKey: queryOptions.queryKey };
 }
@@ -615,251 +638,258 @@ Enforces trainer capacity (`maxClients`).
  * @summary Assign a member to a trainer
  */
 export const postTrainersTrainerIdAssignments = (
-    trainerId: string,
-    createAssignmentRequest: BodyType<CreateAssignmentRequest>,
- signal?: AbortSignal
+  trainerId: string,
+  createAssignmentRequest: BodyType<CreateAssignmentRequest>,
+  signal?: AbortSignal
 ) => {
 
 
-      return orvalMutator<AssignmentResponse>(
-      {url: `/trainers/${trainerId}/assignments`, method: 'POST',
-      headers: {'Content-Type': 'application/json', },
+  return orvalMutator<AssignmentResponse>(
+    {
+      url: `/trainers/${trainerId}/assignments`, method: 'POST',
+      headers: { 'Content-Type': 'application/json', },
       data: createAssignmentRequest, signal
     },
-      );
-    }
+  );
+}
 
 
 
 export const getPostTrainersTrainerIdAssignmentsMutationOptions = <TError = ErrorType<void | NotFoundResponse | ConflictResponse>,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof postTrainersTrainerIdAssignments>>, TError,{trainerId: string;data: BodyType<CreateAssignmentRequest>}, TContext>, }
-): UseMutationOptions<Awaited<ReturnType<typeof postTrainersTrainerIdAssignments>>, TError,{trainerId: string;data: BodyType<CreateAssignmentRequest>}, TContext> => {
+  TContext = unknown>(options?: { mutation?: UseMutationOptions<Awaited<ReturnType<typeof postTrainersTrainerIdAssignments>>, TError, { trainerId: string; data: BodyType<CreateAssignmentRequest> }, TContext>, }
+  ): UseMutationOptions<Awaited<ReturnType<typeof postTrainersTrainerIdAssignments>>, TError, { trainerId: string; data: BodyType<CreateAssignmentRequest> }, TContext> => {
 
-const mutationKey = ['postTrainersTrainerIdAssignments'];
-const {mutation: mutationOptions} = options ?
-      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+  const mutationKey = ['postTrainersTrainerIdAssignments'];
+  const { mutation: mutationOptions } = options ?
+    options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
       options
-      : {...options, mutation: {...options.mutation, mutationKey}}
-      : {mutation: { mutationKey, }};
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey, } };
 
 
 
 
-      const mutationFn: MutationFunction<Awaited<ReturnType<typeof postTrainersTrainerIdAssignments>>, {trainerId: string;data: BodyType<CreateAssignmentRequest>}> = (props) => {
-          const {trainerId,data} = props ?? {};
+  const mutationFn: MutationFunction<Awaited<ReturnType<typeof postTrainersTrainerIdAssignments>>, { trainerId: string; data: BodyType<CreateAssignmentRequest> }> = (props) => {
+    const { trainerId, data } = props ?? {};
 
-          return  postTrainersTrainerIdAssignments(trainerId,data,)
-        }
-
-
+    return postTrainersTrainerIdAssignments(trainerId, data,)
+  }
 
 
 
 
-  return  { mutationFn, ...mutationOptions }}
 
-    export type PostTrainersTrainerIdAssignmentsMutationResult = NonNullable<Awaited<ReturnType<typeof postTrainersTrainerIdAssignments>>>
-    export type PostTrainersTrainerIdAssignmentsMutationBody = BodyType<CreateAssignmentRequest>
-    export type PostTrainersTrainerIdAssignmentsMutationError = ErrorType<void | NotFoundResponse | ConflictResponse>
 
-    /**
- * @summary Assign a member to a trainer
- */
+  return { mutationFn, ...mutationOptions }
+}
+
+export type PostTrainersTrainerIdAssignmentsMutationResult = NonNullable<Awaited<ReturnType<typeof postTrainersTrainerIdAssignments>>>
+export type PostTrainersTrainerIdAssignmentsMutationBody = BodyType<CreateAssignmentRequest>
+export type PostTrainersTrainerIdAssignmentsMutationError = ErrorType<void | NotFoundResponse | ConflictResponse>
+
+/**
+* @summary Assign a member to a trainer
+*/
 export const usePostTrainersTrainerIdAssignments = <TError = ErrorType<void | NotFoundResponse | ConflictResponse>,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof postTrainersTrainerIdAssignments>>, TError,{trainerId: string;data: BodyType<CreateAssignmentRequest>}, TContext>, }
- , queryClient?: QueryClient): UseMutationResult<
-        Awaited<ReturnType<typeof postTrainersTrainerIdAssignments>>,
-        TError,
-        {trainerId: string;data: BodyType<CreateAssignmentRequest>},
-        TContext
-      > => {
-      return useMutation(getPostTrainersTrainerIdAssignmentsMutationOptions(options), queryClient);
-    }
-    /**
- * Updates the PT charge, goal, session frequency, or notes on an active assignment.
+  TContext = unknown>(options?: { mutation?: UseMutationOptions<Awaited<ReturnType<typeof postTrainersTrainerIdAssignments>>, TError, { trainerId: string; data: BodyType<CreateAssignmentRequest> }, TContext>, }
+    , queryClient?: QueryClient): UseMutationResult<
+      Awaited<ReturnType<typeof postTrainersTrainerIdAssignments>>,
+      TError,
+      { trainerId: string; data: BodyType<CreateAssignmentRequest> },
+      TContext
+    > => {
+  return useMutation(getPostTrainersTrainerIdAssignmentsMutationOptions(options), queryClient);
+}
+/**
+* Updates the PT charge, goal, session frequency, or notes on an active assignment.
 Does not change the trainer — use POST /assignments to reassign.
 
- * @summary Update assignment details
- */
+* @summary Update assignment details
+*/
 export const patchTrainersTrainerIdAssignmentsAssignmentId = (
-    trainerId: string,
-    assignmentId: string,
-    updateAssignmentRequest: BodyType<UpdateAssignmentRequest>,
- signal?: AbortSignal
+  trainerId: string,
+  assignmentId: string,
+  updateAssignmentRequest: BodyType<UpdateAssignmentRequest>,
+  signal?: AbortSignal
 ) => {
 
 
-      return orvalMutator<AssignmentResponse>(
-      {url: `/trainers/${trainerId}/assignments/${assignmentId}`, method: 'PATCH',
-      headers: {'Content-Type': 'application/json', },
+  return orvalMutator<AssignmentResponse>(
+    {
+      url: `/trainers/${trainerId}/assignments/${assignmentId}`, method: 'PATCH',
+      headers: { 'Content-Type': 'application/json', },
       data: updateAssignmentRequest, signal
     },
-      );
-    }
+  );
+}
 
 
 
 export const getPatchTrainersTrainerIdAssignmentsAssignmentIdMutationOptions = <TError = ErrorType<void | NotFoundResponse>,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof patchTrainersTrainerIdAssignmentsAssignmentId>>, TError,{trainerId: string;assignmentId: string;data: BodyType<UpdateAssignmentRequest>}, TContext>, }
-): UseMutationOptions<Awaited<ReturnType<typeof patchTrainersTrainerIdAssignmentsAssignmentId>>, TError,{trainerId: string;assignmentId: string;data: BodyType<UpdateAssignmentRequest>}, TContext> => {
+  TContext = unknown>(options?: { mutation?: UseMutationOptions<Awaited<ReturnType<typeof patchTrainersTrainerIdAssignmentsAssignmentId>>, TError, { trainerId: string; assignmentId: string; data: BodyType<UpdateAssignmentRequest> }, TContext>, }
+  ): UseMutationOptions<Awaited<ReturnType<typeof patchTrainersTrainerIdAssignmentsAssignmentId>>, TError, { trainerId: string; assignmentId: string; data: BodyType<UpdateAssignmentRequest> }, TContext> => {
 
-const mutationKey = ['patchTrainersTrainerIdAssignmentsAssignmentId'];
-const {mutation: mutationOptions} = options ?
-      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+  const mutationKey = ['patchTrainersTrainerIdAssignmentsAssignmentId'];
+  const { mutation: mutationOptions } = options ?
+    options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
       options
-      : {...options, mutation: {...options.mutation, mutationKey}}
-      : {mutation: { mutationKey, }};
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey, } };
 
 
 
 
-      const mutationFn: MutationFunction<Awaited<ReturnType<typeof patchTrainersTrainerIdAssignmentsAssignmentId>>, {trainerId: string;assignmentId: string;data: BodyType<UpdateAssignmentRequest>}> = (props) => {
-          const {trainerId,assignmentId,data} = props ?? {};
+  const mutationFn: MutationFunction<Awaited<ReturnType<typeof patchTrainersTrainerIdAssignmentsAssignmentId>>, { trainerId: string; assignmentId: string; data: BodyType<UpdateAssignmentRequest> }> = (props) => {
+    const { trainerId, assignmentId, data } = props ?? {};
 
-          return  patchTrainersTrainerIdAssignmentsAssignmentId(trainerId,assignmentId,data,)
-        }
-
-
+    return patchTrainersTrainerIdAssignmentsAssignmentId(trainerId, assignmentId, data,)
+  }
 
 
 
 
-  return  { mutationFn, ...mutationOptions }}
 
-    export type PatchTrainersTrainerIdAssignmentsAssignmentIdMutationResult = NonNullable<Awaited<ReturnType<typeof patchTrainersTrainerIdAssignmentsAssignmentId>>>
-    export type PatchTrainersTrainerIdAssignmentsAssignmentIdMutationBody = BodyType<UpdateAssignmentRequest>
-    export type PatchTrainersTrainerIdAssignmentsAssignmentIdMutationError = ErrorType<void | NotFoundResponse>
 
-    /**
- * @summary Update assignment details
- */
+  return { mutationFn, ...mutationOptions }
+}
+
+export type PatchTrainersTrainerIdAssignmentsAssignmentIdMutationResult = NonNullable<Awaited<ReturnType<typeof patchTrainersTrainerIdAssignmentsAssignmentId>>>
+export type PatchTrainersTrainerIdAssignmentsAssignmentIdMutationBody = BodyType<UpdateAssignmentRequest>
+export type PatchTrainersTrainerIdAssignmentsAssignmentIdMutationError = ErrorType<void | NotFoundResponse>
+
+/**
+* @summary Update assignment details
+*/
 export const usePatchTrainersTrainerIdAssignmentsAssignmentId = <TError = ErrorType<void | NotFoundResponse>,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof patchTrainersTrainerIdAssignmentsAssignmentId>>, TError,{trainerId: string;assignmentId: string;data: BodyType<UpdateAssignmentRequest>}, TContext>, }
- , queryClient?: QueryClient): UseMutationResult<
-        Awaited<ReturnType<typeof patchTrainersTrainerIdAssignmentsAssignmentId>>,
-        TError,
-        {trainerId: string;assignmentId: string;data: BodyType<UpdateAssignmentRequest>},
-        TContext
-      > => {
-      return useMutation(getPatchTrainersTrainerIdAssignmentsAssignmentIdMutationOptions(options), queryClient);
-    }
-    /**
- * Ends an active assignment and decrements the trainer's client count.
+  TContext = unknown>(options?: { mutation?: UseMutationOptions<Awaited<ReturnType<typeof patchTrainersTrainerIdAssignmentsAssignmentId>>, TError, { trainerId: string; assignmentId: string; data: BodyType<UpdateAssignmentRequest> }, TContext>, }
+    , queryClient?: QueryClient): UseMutationResult<
+      Awaited<ReturnType<typeof patchTrainersTrainerIdAssignmentsAssignmentId>>,
+      TError,
+      { trainerId: string; assignmentId: string; data: BodyType<UpdateAssignmentRequest> },
+      TContext
+    > => {
+  return useMutation(getPatchTrainersTrainerIdAssignmentsAssignmentIdMutationOptions(options), queryClient);
+}
+/**
+* Ends an active assignment and decrements the trainer's client count.
 The assignment is preserved in history with the end date and optional reason.
 
- * @summary End a trainer assignment
- */
+* @summary End a trainer assignment
+*/
 export const postTrainersTrainerIdAssignmentsAssignmentIdEnd = (
-    trainerId: string,
-    assignmentId: string,
-    endAssignmentRequest?: BodyType<EndAssignmentRequest>,
- signal?: AbortSignal
+  trainerId: string,
+  assignmentId: string,
+  endAssignmentRequest?: BodyType<EndAssignmentRequest>,
+  signal?: AbortSignal
 ) => {
 
 
-      return orvalMutator<AssignmentResponse>(
-      {url: `/trainers/${trainerId}/assignments/${assignmentId}/end`, method: 'POST',
-      headers: {'Content-Type': 'application/json', },
+  return orvalMutator<AssignmentResponse>(
+    {
+      url: `/trainers/${trainerId}/assignments/${assignmentId}/end`, method: 'POST',
+      headers: { 'Content-Type': 'application/json', },
       data: endAssignmentRequest, signal
     },
-      );
-    }
+  );
+}
 
 
 
 export const getPostTrainersTrainerIdAssignmentsAssignmentIdEndMutationOptions = <TError = ErrorType<void | NotFoundResponse>,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof postTrainersTrainerIdAssignmentsAssignmentIdEnd>>, TError,{trainerId: string;assignmentId: string;data?: BodyType<EndAssignmentRequest>}, TContext>, }
-): UseMutationOptions<Awaited<ReturnType<typeof postTrainersTrainerIdAssignmentsAssignmentIdEnd>>, TError,{trainerId: string;assignmentId: string;data?: BodyType<EndAssignmentRequest>}, TContext> => {
+  TContext = unknown>(options?: { mutation?: UseMutationOptions<Awaited<ReturnType<typeof postTrainersTrainerIdAssignmentsAssignmentIdEnd>>, TError, { trainerId: string; assignmentId: string; data?: BodyType<EndAssignmentRequest> }, TContext>, }
+  ): UseMutationOptions<Awaited<ReturnType<typeof postTrainersTrainerIdAssignmentsAssignmentIdEnd>>, TError, { trainerId: string; assignmentId: string; data?: BodyType<EndAssignmentRequest> }, TContext> => {
 
-const mutationKey = ['postTrainersTrainerIdAssignmentsAssignmentIdEnd'];
-const {mutation: mutationOptions} = options ?
-      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+  const mutationKey = ['postTrainersTrainerIdAssignmentsAssignmentIdEnd'];
+  const { mutation: mutationOptions } = options ?
+    options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
       options
-      : {...options, mutation: {...options.mutation, mutationKey}}
-      : {mutation: { mutationKey, }};
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey, } };
 
 
 
 
-      const mutationFn: MutationFunction<Awaited<ReturnType<typeof postTrainersTrainerIdAssignmentsAssignmentIdEnd>>, {trainerId: string;assignmentId: string;data?: BodyType<EndAssignmentRequest>}> = (props) => {
-          const {trainerId,assignmentId,data} = props ?? {};
+  const mutationFn: MutationFunction<Awaited<ReturnType<typeof postTrainersTrainerIdAssignmentsAssignmentIdEnd>>, { trainerId: string; assignmentId: string; data?: BodyType<EndAssignmentRequest> }> = (props) => {
+    const { trainerId, assignmentId, data } = props ?? {};
 
-          return  postTrainersTrainerIdAssignmentsAssignmentIdEnd(trainerId,assignmentId,data,)
-        }
-
-
+    return postTrainersTrainerIdAssignmentsAssignmentIdEnd(trainerId, assignmentId, data,)
+  }
 
 
 
 
-  return  { mutationFn, ...mutationOptions }}
 
-    export type PostTrainersTrainerIdAssignmentsAssignmentIdEndMutationResult = NonNullable<Awaited<ReturnType<typeof postTrainersTrainerIdAssignmentsAssignmentIdEnd>>>
-    export type PostTrainersTrainerIdAssignmentsAssignmentIdEndMutationBody = BodyType<EndAssignmentRequest> | undefined
-    export type PostTrainersTrainerIdAssignmentsAssignmentIdEndMutationError = ErrorType<void | NotFoundResponse>
 
-    /**
- * @summary End a trainer assignment
- */
+  return { mutationFn, ...mutationOptions }
+}
+
+export type PostTrainersTrainerIdAssignmentsAssignmentIdEndMutationResult = NonNullable<Awaited<ReturnType<typeof postTrainersTrainerIdAssignmentsAssignmentIdEnd>>>
+export type PostTrainersTrainerIdAssignmentsAssignmentIdEndMutationBody = BodyType<EndAssignmentRequest> | undefined
+export type PostTrainersTrainerIdAssignmentsAssignmentIdEndMutationError = ErrorType<void | NotFoundResponse>
+
+/**
+* @summary End a trainer assignment
+*/
 export const usePostTrainersTrainerIdAssignmentsAssignmentIdEnd = <TError = ErrorType<void | NotFoundResponse>,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof postTrainersTrainerIdAssignmentsAssignmentIdEnd>>, TError,{trainerId: string;assignmentId: string;data?: BodyType<EndAssignmentRequest>}, TContext>, }
- , queryClient?: QueryClient): UseMutationResult<
-        Awaited<ReturnType<typeof postTrainersTrainerIdAssignmentsAssignmentIdEnd>>,
-        TError,
-        {trainerId: string;assignmentId: string;data?: BodyType<EndAssignmentRequest>},
-        TContext
-      > => {
-      return useMutation(getPostTrainersTrainerIdAssignmentsAssignmentIdEndMutationOptions(options), queryClient);
-    }
-    /**
- * Returns session notes written by this trainer.
+  TContext = unknown>(options?: { mutation?: UseMutationOptions<Awaited<ReturnType<typeof postTrainersTrainerIdAssignmentsAssignmentIdEnd>>, TError, { trainerId: string; assignmentId: string; data?: BodyType<EndAssignmentRequest> }, TContext>, }
+    , queryClient?: QueryClient): UseMutationResult<
+      Awaited<ReturnType<typeof postTrainersTrainerIdAssignmentsAssignmentIdEnd>>,
+      TError,
+      { trainerId: string; assignmentId: string; data?: BodyType<EndAssignmentRequest> },
+      TContext
+    > => {
+  return useMutation(getPostTrainersTrainerIdAssignmentsAssignmentIdEndMutationOptions(options), queryClient);
+}
+/**
+* Returns session notes written by this trainer.
 Trainers can only see their own notes.
 Staff/managers see all notes.
 
- * @summary List training notes
- */
+* @summary List training notes
+*/
 export const getTrainersTrainerIdNotes = (
-    trainerId: string,
-    params?: GetTrainersTrainerIdNotesParams,
- signal?: AbortSignal
+  trainerId: string,
+  params?: GetTrainersTrainerIdNotesParams,
+  signal?: AbortSignal
 ) => {
 
 
-      return orvalMutator<TrainingNoteListResponse>(
-      {url: `/trainers/${trainerId}/notes`, method: 'GET',
-        params, signal
+  return orvalMutator<TrainingNoteListResponse>(
+    {
+      url: `/trainers/${trainerId}/notes`, method: 'GET',
+      params, signal
     },
-      );
-    }
+  );
+}
 
 
 
 
 export const getGetTrainersTrainerIdNotesQueryKey = (trainerId: string,
-    params?: GetTrainersTrainerIdNotesParams,) => {
-    return [
+  params?: GetTrainersTrainerIdNotesParams,) => {
+  return [
     `/trainers/${trainerId}/notes`, ...(params ? [params] : [])
-    ] as const;
-    }
+  ] as const;
+}
 
 
 export const getGetTrainersTrainerIdNotesQueryOptions = <TData = Awaited<ReturnType<typeof getTrainersTrainerIdNotes>>, TError = ErrorType<unknown>>(trainerId: string,
-    params?: GetTrainersTrainerIdNotesParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getTrainersTrainerIdNotes>>, TError, TData>>, }
+  params?: GetTrainersTrainerIdNotesParams, options?: { query?: Partial<UseQueryOptions<Awaited<ReturnType<typeof getTrainersTrainerIdNotes>>, TError, TData>>, }
 ) => {
 
-const {query: queryOptions} = options ?? {};
+  const { query: queryOptions } = options ?? {};
 
-  const queryKey =  queryOptions?.queryKey ?? getGetTrainersTrainerIdNotesQueryKey(trainerId,params);
-
-
-
-    const queryFn: QueryFunction<Awaited<ReturnType<typeof getTrainersTrainerIdNotes>>> = ({ signal }) => getTrainersTrainerIdNotes(trainerId,params, signal);
+  const queryKey = queryOptions?.queryKey ?? getGetTrainersTrainerIdNotesQueryKey(trainerId, params);
 
 
 
+  const queryFn: QueryFunction<Awaited<ReturnType<typeof getTrainersTrainerIdNotes>>> = ({ signal }) => getTrainersTrainerIdNotes(trainerId, params, signal);
 
 
-   return  { queryKey, queryFn, enabled: !!(trainerId), ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getTrainersTrainerIdNotes>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
+
+
+
+  return { queryKey, queryFn, enabled: !!(trainerId), ...queryOptions } as UseQueryOptions<Awaited<ReturnType<typeof getTrainersTrainerIdNotes>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
 }
 
 export type GetTrainersTrainerIdNotesQueryResult = NonNullable<Awaited<ReturnType<typeof getTrainersTrainerIdNotes>>>
@@ -867,45 +897,49 @@ export type GetTrainersTrainerIdNotesQueryError = ErrorType<unknown>
 
 
 export function useGetTrainersTrainerIdNotes<TData = Awaited<ReturnType<typeof getTrainersTrainerIdNotes>>, TError = ErrorType<unknown>>(
- trainerId: string,
-    params: undefined |  GetTrainersTrainerIdNotesParams, options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof getTrainersTrainerIdNotes>>, TError, TData>> & Pick<
-        DefinedInitialDataOptions<
-          Awaited<ReturnType<typeof getTrainersTrainerIdNotes>>,
-          TError,
-          Awaited<ReturnType<typeof getTrainersTrainerIdNotes>>
-        > , 'initialData'
-      >, }
- , queryClient?: QueryClient
-  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+  trainerId: string,
+  params: undefined | GetTrainersTrainerIdNotesParams, options: {
+    query: Partial<UseQueryOptions<Awaited<ReturnType<typeof getTrainersTrainerIdNotes>>, TError, TData>> & Pick<
+      DefinedInitialDataOptions<
+        Awaited<ReturnType<typeof getTrainersTrainerIdNotes>>,
+        TError,
+        Awaited<ReturnType<typeof getTrainersTrainerIdNotes>>
+      >, 'initialData'
+    >,
+  }
+  , queryClient?: QueryClient
+): DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
 export function useGetTrainersTrainerIdNotes<TData = Awaited<ReturnType<typeof getTrainersTrainerIdNotes>>, TError = ErrorType<unknown>>(
- trainerId: string,
-    params?: GetTrainersTrainerIdNotesParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getTrainersTrainerIdNotes>>, TError, TData>> & Pick<
-        UndefinedInitialDataOptions<
-          Awaited<ReturnType<typeof getTrainersTrainerIdNotes>>,
-          TError,
-          Awaited<ReturnType<typeof getTrainersTrainerIdNotes>>
-        > , 'initialData'
-      >, }
- , queryClient?: QueryClient
-  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+  trainerId: string,
+  params?: GetTrainersTrainerIdNotesParams, options?: {
+    query?: Partial<UseQueryOptions<Awaited<ReturnType<typeof getTrainersTrainerIdNotes>>, TError, TData>> & Pick<
+      UndefinedInitialDataOptions<
+        Awaited<ReturnType<typeof getTrainersTrainerIdNotes>>,
+        TError,
+        Awaited<ReturnType<typeof getTrainersTrainerIdNotes>>
+      >, 'initialData'
+    >,
+  }
+  , queryClient?: QueryClient
+): UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
 export function useGetTrainersTrainerIdNotes<TData = Awaited<ReturnType<typeof getTrainersTrainerIdNotes>>, TError = ErrorType<unknown>>(
- trainerId: string,
-    params?: GetTrainersTrainerIdNotesParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getTrainersTrainerIdNotes>>, TError, TData>>, }
- , queryClient?: QueryClient
-  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+  trainerId: string,
+  params?: GetTrainersTrainerIdNotesParams, options?: { query?: Partial<UseQueryOptions<Awaited<ReturnType<typeof getTrainersTrainerIdNotes>>, TError, TData>>, }
+  , queryClient?: QueryClient
+): UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
 /**
  * @summary List training notes
  */
 
 export function useGetTrainersTrainerIdNotes<TData = Awaited<ReturnType<typeof getTrainersTrainerIdNotes>>, TError = ErrorType<unknown>>(
- trainerId: string,
-    params?: GetTrainersTrainerIdNotesParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getTrainersTrainerIdNotes>>, TError, TData>>, }
- , queryClient?: QueryClient
- ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+  trainerId: string,
+  params?: GetTrainersTrainerIdNotesParams, options?: { query?: Partial<UseQueryOptions<Awaited<ReturnType<typeof getTrainersTrainerIdNotes>>, TError, TData>>, }
+  , queryClient?: QueryClient
+): UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
 
-  const queryOptions = getGetTrainersTrainerIdNotesQueryOptions(trainerId,params,options)
+  const queryOptions = getGetTrainersTrainerIdNotesQueryOptions(trainerId, params, options)
 
-  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+  const query = useQuery(queryOptions, queryClient) as UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
 
   return { ...query, queryKey: queryOptions.queryKey };
 }
@@ -922,174 +956,179 @@ Trainers must have an active assignment with the member.
  * @summary Create a training note
  */
 export const postTrainersTrainerIdNotes = (
-    trainerId: string,
-    createTrainingNoteRequest: BodyType<CreateTrainingNoteRequest>,
- signal?: AbortSignal
+  trainerId: string,
+  createTrainingNoteRequest: BodyType<CreateTrainingNoteRequest>,
+  signal?: AbortSignal
 ) => {
 
 
-      return orvalMutator<TrainingNoteResponse>(
-      {url: `/trainers/${trainerId}/notes`, method: 'POST',
-      headers: {'Content-Type': 'application/json', },
+  return orvalMutator<TrainingNoteResponse>(
+    {
+      url: `/trainers/${trainerId}/notes`, method: 'POST',
+      headers: { 'Content-Type': 'application/json', },
       data: createTrainingNoteRequest, signal
     },
-      );
-    }
+  );
+}
 
 
 
 export const getPostTrainersTrainerIdNotesMutationOptions = <TError = ErrorType<void>,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof postTrainersTrainerIdNotes>>, TError,{trainerId: string;data: BodyType<CreateTrainingNoteRequest>}, TContext>, }
-): UseMutationOptions<Awaited<ReturnType<typeof postTrainersTrainerIdNotes>>, TError,{trainerId: string;data: BodyType<CreateTrainingNoteRequest>}, TContext> => {
+  TContext = unknown>(options?: { mutation?: UseMutationOptions<Awaited<ReturnType<typeof postTrainersTrainerIdNotes>>, TError, { trainerId: string; data: BodyType<CreateTrainingNoteRequest> }, TContext>, }
+  ): UseMutationOptions<Awaited<ReturnType<typeof postTrainersTrainerIdNotes>>, TError, { trainerId: string; data: BodyType<CreateTrainingNoteRequest> }, TContext> => {
 
-const mutationKey = ['postTrainersTrainerIdNotes'];
-const {mutation: mutationOptions} = options ?
-      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+  const mutationKey = ['postTrainersTrainerIdNotes'];
+  const { mutation: mutationOptions } = options ?
+    options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
       options
-      : {...options, mutation: {...options.mutation, mutationKey}}
-      : {mutation: { mutationKey, }};
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey, } };
 
 
 
 
-      const mutationFn: MutationFunction<Awaited<ReturnType<typeof postTrainersTrainerIdNotes>>, {trainerId: string;data: BodyType<CreateTrainingNoteRequest>}> = (props) => {
-          const {trainerId,data} = props ?? {};
+  const mutationFn: MutationFunction<Awaited<ReturnType<typeof postTrainersTrainerIdNotes>>, { trainerId: string; data: BodyType<CreateTrainingNoteRequest> }> = (props) => {
+    const { trainerId, data } = props ?? {};
 
-          return  postTrainersTrainerIdNotes(trainerId,data,)
-        }
-
-
+    return postTrainersTrainerIdNotes(trainerId, data,)
+  }
 
 
 
 
-  return  { mutationFn, ...mutationOptions }}
 
-    export type PostTrainersTrainerIdNotesMutationResult = NonNullable<Awaited<ReturnType<typeof postTrainersTrainerIdNotes>>>
-    export type PostTrainersTrainerIdNotesMutationBody = BodyType<CreateTrainingNoteRequest>
-    export type PostTrainersTrainerIdNotesMutationError = ErrorType<void>
 
-    /**
- * @summary Create a training note
- */
+  return { mutationFn, ...mutationOptions }
+}
+
+export type PostTrainersTrainerIdNotesMutationResult = NonNullable<Awaited<ReturnType<typeof postTrainersTrainerIdNotes>>>
+export type PostTrainersTrainerIdNotesMutationBody = BodyType<CreateTrainingNoteRequest>
+export type PostTrainersTrainerIdNotesMutationError = ErrorType<void>
+
+/**
+* @summary Create a training note
+*/
 export const usePostTrainersTrainerIdNotes = <TError = ErrorType<void>,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof postTrainersTrainerIdNotes>>, TError,{trainerId: string;data: BodyType<CreateTrainingNoteRequest>}, TContext>, }
- , queryClient?: QueryClient): UseMutationResult<
-        Awaited<ReturnType<typeof postTrainersTrainerIdNotes>>,
-        TError,
-        {trainerId: string;data: BodyType<CreateTrainingNoteRequest>},
-        TContext
-      > => {
-      return useMutation(getPostTrainersTrainerIdNotesMutationOptions(options), queryClient);
-    }
-    /**
- * Trainers can only edit their own notes. Staff can edit any note.
- * @summary Update a training note
- */
+  TContext = unknown>(options?: { mutation?: UseMutationOptions<Awaited<ReturnType<typeof postTrainersTrainerIdNotes>>, TError, { trainerId: string; data: BodyType<CreateTrainingNoteRequest> }, TContext>, }
+    , queryClient?: QueryClient): UseMutationResult<
+      Awaited<ReturnType<typeof postTrainersTrainerIdNotes>>,
+      TError,
+      { trainerId: string; data: BodyType<CreateTrainingNoteRequest> },
+      TContext
+    > => {
+  return useMutation(getPostTrainersTrainerIdNotesMutationOptions(options), queryClient);
+}
+/**
+* Trainers can only edit their own notes. Staff can edit any note.
+* @summary Update a training note
+*/
 export const patchTrainersTrainerIdNotesNoteId = (
-    trainerId: string,
-    noteId: string,
-    updateTrainingNoteRequest: BodyType<UpdateTrainingNoteRequest>,
- signal?: AbortSignal
+  trainerId: string,
+  noteId: string,
+  updateTrainingNoteRequest: BodyType<UpdateTrainingNoteRequest>,
+  signal?: AbortSignal
 ) => {
 
 
-      return orvalMutator<TrainingNoteResponse>(
-      {url: `/trainers/${trainerId}/notes/${noteId}`, method: 'PATCH',
-      headers: {'Content-Type': 'application/json', },
+  return orvalMutator<TrainingNoteResponse>(
+    {
+      url: `/trainers/${trainerId}/notes/${noteId}`, method: 'PATCH',
+      headers: { 'Content-Type': 'application/json', },
       data: updateTrainingNoteRequest, signal
     },
-      );
-    }
+  );
+}
 
 
 
 export const getPatchTrainersTrainerIdNotesNoteIdMutationOptions = <TError = ErrorType<unknown>,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof patchTrainersTrainerIdNotesNoteId>>, TError,{trainerId: string;noteId: string;data: BodyType<UpdateTrainingNoteRequest>}, TContext>, }
-): UseMutationOptions<Awaited<ReturnType<typeof patchTrainersTrainerIdNotesNoteId>>, TError,{trainerId: string;noteId: string;data: BodyType<UpdateTrainingNoteRequest>}, TContext> => {
+  TContext = unknown>(options?: { mutation?: UseMutationOptions<Awaited<ReturnType<typeof patchTrainersTrainerIdNotesNoteId>>, TError, { trainerId: string; noteId: string; data: BodyType<UpdateTrainingNoteRequest> }, TContext>, }
+  ): UseMutationOptions<Awaited<ReturnType<typeof patchTrainersTrainerIdNotesNoteId>>, TError, { trainerId: string; noteId: string; data: BodyType<UpdateTrainingNoteRequest> }, TContext> => {
 
-const mutationKey = ['patchTrainersTrainerIdNotesNoteId'];
-const {mutation: mutationOptions} = options ?
-      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+  const mutationKey = ['patchTrainersTrainerIdNotesNoteId'];
+  const { mutation: mutationOptions } = options ?
+    options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
       options
-      : {...options, mutation: {...options.mutation, mutationKey}}
-      : {mutation: { mutationKey, }};
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey, } };
 
 
 
 
-      const mutationFn: MutationFunction<Awaited<ReturnType<typeof patchTrainersTrainerIdNotesNoteId>>, {trainerId: string;noteId: string;data: BodyType<UpdateTrainingNoteRequest>}> = (props) => {
-          const {trainerId,noteId,data} = props ?? {};
+  const mutationFn: MutationFunction<Awaited<ReturnType<typeof patchTrainersTrainerIdNotesNoteId>>, { trainerId: string; noteId: string; data: BodyType<UpdateTrainingNoteRequest> }> = (props) => {
+    const { trainerId, noteId, data } = props ?? {};
 
-          return  patchTrainersTrainerIdNotesNoteId(trainerId,noteId,data,)
-        }
-
-
+    return patchTrainersTrainerIdNotesNoteId(trainerId, noteId, data,)
+  }
 
 
 
 
-  return  { mutationFn, ...mutationOptions }}
 
-    export type PatchTrainersTrainerIdNotesNoteIdMutationResult = NonNullable<Awaited<ReturnType<typeof patchTrainersTrainerIdNotesNoteId>>>
-    export type PatchTrainersTrainerIdNotesNoteIdMutationBody = BodyType<UpdateTrainingNoteRequest>
-    export type PatchTrainersTrainerIdNotesNoteIdMutationError = ErrorType<unknown>
 
-    /**
- * @summary Update a training note
- */
+  return { mutationFn, ...mutationOptions }
+}
+
+export type PatchTrainersTrainerIdNotesNoteIdMutationResult = NonNullable<Awaited<ReturnType<typeof patchTrainersTrainerIdNotesNoteId>>>
+export type PatchTrainersTrainerIdNotesNoteIdMutationBody = BodyType<UpdateTrainingNoteRequest>
+export type PatchTrainersTrainerIdNotesNoteIdMutationError = ErrorType<unknown>
+
+/**
+* @summary Update a training note
+*/
 export const usePatchTrainersTrainerIdNotesNoteId = <TError = ErrorType<unknown>,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof patchTrainersTrainerIdNotesNoteId>>, TError,{trainerId: string;noteId: string;data: BodyType<UpdateTrainingNoteRequest>}, TContext>, }
- , queryClient?: QueryClient): UseMutationResult<
-        Awaited<ReturnType<typeof patchTrainersTrainerIdNotesNoteId>>,
-        TError,
-        {trainerId: string;noteId: string;data: BodyType<UpdateTrainingNoteRequest>},
-        TContext
-      > => {
-      return useMutation(getPatchTrainersTrainerIdNotesNoteIdMutationOptions(options), queryClient);
-    }
-    /**
- * Returns all visible ratings for a trainer, sorted newest first.
- * @summary Get trainer ratings
- */
+  TContext = unknown>(options?: { mutation?: UseMutationOptions<Awaited<ReturnType<typeof patchTrainersTrainerIdNotesNoteId>>, TError, { trainerId: string; noteId: string; data: BodyType<UpdateTrainingNoteRequest> }, TContext>, }
+    , queryClient?: QueryClient): UseMutationResult<
+      Awaited<ReturnType<typeof patchTrainersTrainerIdNotesNoteId>>,
+      TError,
+      { trainerId: string; noteId: string; data: BodyType<UpdateTrainingNoteRequest> },
+      TContext
+    > => {
+  return useMutation(getPatchTrainersTrainerIdNotesNoteIdMutationOptions(options), queryClient);
+}
+/**
+* Returns all visible ratings for a trainer, sorted newest first.
+* @summary Get trainer ratings
+*/
 export const getTrainersTrainerIdRatings = (
-    trainerId: string,
- signal?: AbortSignal
+  trainerId: string,
+  signal?: AbortSignal
 ) => {
 
 
-      return orvalMutator<TrainerRatingListResponse>(
-      {url: `/trainers/${trainerId}/ratings`, method: 'GET', signal
+  return orvalMutator<TrainerRatingListResponse>(
+    {
+      url: `/trainers/${trainerId}/ratings`, method: 'GET', signal
     },
-      );
-    }
+  );
+}
 
 
 
 
 export const getGetTrainersTrainerIdRatingsQueryKey = (trainerId: string,) => {
-    return [
+  return [
     `/trainers/${trainerId}/ratings`
-    ] as const;
-    }
+  ] as const;
+}
 
 
-export const getGetTrainersTrainerIdRatingsQueryOptions = <TData = Awaited<ReturnType<typeof getTrainersTrainerIdRatings>>, TError = ErrorType<unknown>>(trainerId: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getTrainersTrainerIdRatings>>, TError, TData>>, }
+export const getGetTrainersTrainerIdRatingsQueryOptions = <TData = Awaited<ReturnType<typeof getTrainersTrainerIdRatings>>, TError = ErrorType<unknown>>(trainerId: string, options?: { query?: Partial<UseQueryOptions<Awaited<ReturnType<typeof getTrainersTrainerIdRatings>>, TError, TData>>, }
 ) => {
 
-const {query: queryOptions} = options ?? {};
+  const { query: queryOptions } = options ?? {};
 
-  const queryKey =  queryOptions?.queryKey ?? getGetTrainersTrainerIdRatingsQueryKey(trainerId);
-
-
-
-    const queryFn: QueryFunction<Awaited<ReturnType<typeof getTrainersTrainerIdRatings>>> = ({ signal }) => getTrainersTrainerIdRatings(trainerId, signal);
+  const queryKey = queryOptions?.queryKey ?? getGetTrainersTrainerIdRatingsQueryKey(trainerId);
 
 
 
+  const queryFn: QueryFunction<Awaited<ReturnType<typeof getTrainersTrainerIdRatings>>> = ({ signal }) => getTrainersTrainerIdRatings(trainerId, signal);
 
 
-   return  { queryKey, queryFn, enabled: !!(trainerId), ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getTrainersTrainerIdRatings>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
+
+
+
+  return { queryKey, queryFn, enabled: !!(trainerId), ...queryOptions } as UseQueryOptions<Awaited<ReturnType<typeof getTrainersTrainerIdRatings>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
 }
 
 export type GetTrainersTrainerIdRatingsQueryResult = NonNullable<Awaited<ReturnType<typeof getTrainersTrainerIdRatings>>>
@@ -1097,41 +1136,45 @@ export type GetTrainersTrainerIdRatingsQueryError = ErrorType<unknown>
 
 
 export function useGetTrainersTrainerIdRatings<TData = Awaited<ReturnType<typeof getTrainersTrainerIdRatings>>, TError = ErrorType<unknown>>(
- trainerId: string, options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof getTrainersTrainerIdRatings>>, TError, TData>> & Pick<
-        DefinedInitialDataOptions<
-          Awaited<ReturnType<typeof getTrainersTrainerIdRatings>>,
-          TError,
-          Awaited<ReturnType<typeof getTrainersTrainerIdRatings>>
-        > , 'initialData'
-      >, }
- , queryClient?: QueryClient
-  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+  trainerId: string, options: {
+    query: Partial<UseQueryOptions<Awaited<ReturnType<typeof getTrainersTrainerIdRatings>>, TError, TData>> & Pick<
+      DefinedInitialDataOptions<
+        Awaited<ReturnType<typeof getTrainersTrainerIdRatings>>,
+        TError,
+        Awaited<ReturnType<typeof getTrainersTrainerIdRatings>>
+      >, 'initialData'
+    >,
+  }
+  , queryClient?: QueryClient
+): DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
 export function useGetTrainersTrainerIdRatings<TData = Awaited<ReturnType<typeof getTrainersTrainerIdRatings>>, TError = ErrorType<unknown>>(
- trainerId: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getTrainersTrainerIdRatings>>, TError, TData>> & Pick<
-        UndefinedInitialDataOptions<
-          Awaited<ReturnType<typeof getTrainersTrainerIdRatings>>,
-          TError,
-          Awaited<ReturnType<typeof getTrainersTrainerIdRatings>>
-        > , 'initialData'
-      >, }
- , queryClient?: QueryClient
-  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+  trainerId: string, options?: {
+    query?: Partial<UseQueryOptions<Awaited<ReturnType<typeof getTrainersTrainerIdRatings>>, TError, TData>> & Pick<
+      UndefinedInitialDataOptions<
+        Awaited<ReturnType<typeof getTrainersTrainerIdRatings>>,
+        TError,
+        Awaited<ReturnType<typeof getTrainersTrainerIdRatings>>
+      >, 'initialData'
+    >,
+  }
+  , queryClient?: QueryClient
+): UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
 export function useGetTrainersTrainerIdRatings<TData = Awaited<ReturnType<typeof getTrainersTrainerIdRatings>>, TError = ErrorType<unknown>>(
- trainerId: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getTrainersTrainerIdRatings>>, TError, TData>>, }
- , queryClient?: QueryClient
-  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+  trainerId: string, options?: { query?: Partial<UseQueryOptions<Awaited<ReturnType<typeof getTrainersTrainerIdRatings>>, TError, TData>>, }
+  , queryClient?: QueryClient
+): UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
 /**
  * @summary Get trainer ratings
  */
 
 export function useGetTrainersTrainerIdRatings<TData = Awaited<ReturnType<typeof getTrainersTrainerIdRatings>>, TError = ErrorType<unknown>>(
- trainerId: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getTrainersTrainerIdRatings>>, TError, TData>>, }
- , queryClient?: QueryClient
- ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+  trainerId: string, options?: { query?: Partial<UseQueryOptions<Awaited<ReturnType<typeof getTrainersTrainerIdRatings>>, TError, TData>>, }
+  , queryClient?: QueryClient
+): UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
 
-  const queryOptions = getGetTrainersTrainerIdRatingsQueryOptions(trainerId,options)
+  const queryOptions = getGetTrainersTrainerIdRatingsQueryOptions(trainerId, options)
 
-  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+  const query = useQuery(queryOptions, queryClient) as UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
 
   return { ...query, queryKey: queryOptions.queryKey };
 }
@@ -1149,64 +1192,66 @@ The trainer's `ratingAvg` and `ratingCount` are recalculated automatically.
  * @summary Submit or update a trainer rating
  */
 export const postTrainersTrainerIdRatingsMemberId = (
-    trainerId: string,
-    memberId: string,
-    createRatingRequest: BodyType<CreateRatingRequest>,
- signal?: AbortSignal
+  trainerId: string,
+  memberId: string,
+  createRatingRequest: BodyType<CreateRatingRequest>,
+  signal?: AbortSignal
 ) => {
 
 
-      return orvalMutator<TrainerRatingResponse>(
-      {url: `/trainers/${trainerId}/ratings/${memberId}`, method: 'POST',
-      headers: {'Content-Type': 'application/json', },
+  return orvalMutator<TrainerRatingResponse>(
+    {
+      url: `/trainers/${trainerId}/ratings/${memberId}`, method: 'POST',
+      headers: { 'Content-Type': 'application/json', },
       data: createRatingRequest, signal
     },
-      );
-    }
+  );
+}
 
 
 
 export const getPostTrainersTrainerIdRatingsMemberIdMutationOptions = <TError = ErrorType<unknown>,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof postTrainersTrainerIdRatingsMemberId>>, TError,{trainerId: string;memberId: string;data: BodyType<CreateRatingRequest>}, TContext>, }
-): UseMutationOptions<Awaited<ReturnType<typeof postTrainersTrainerIdRatingsMemberId>>, TError,{trainerId: string;memberId: string;data: BodyType<CreateRatingRequest>}, TContext> => {
+  TContext = unknown>(options?: { mutation?: UseMutationOptions<Awaited<ReturnType<typeof postTrainersTrainerIdRatingsMemberId>>, TError, { trainerId: string; memberId: string; data: BodyType<CreateRatingRequest> }, TContext>, }
+  ): UseMutationOptions<Awaited<ReturnType<typeof postTrainersTrainerIdRatingsMemberId>>, TError, { trainerId: string; memberId: string; data: BodyType<CreateRatingRequest> }, TContext> => {
 
-const mutationKey = ['postTrainersTrainerIdRatingsMemberId'];
-const {mutation: mutationOptions} = options ?
-      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+  const mutationKey = ['postTrainersTrainerIdRatingsMemberId'];
+  const { mutation: mutationOptions } = options ?
+    options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
       options
-      : {...options, mutation: {...options.mutation, mutationKey}}
-      : {mutation: { mutationKey, }};
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey, } };
 
 
 
 
-      const mutationFn: MutationFunction<Awaited<ReturnType<typeof postTrainersTrainerIdRatingsMemberId>>, {trainerId: string;memberId: string;data: BodyType<CreateRatingRequest>}> = (props) => {
-          const {trainerId,memberId,data} = props ?? {};
+  const mutationFn: MutationFunction<Awaited<ReturnType<typeof postTrainersTrainerIdRatingsMemberId>>, { trainerId: string; memberId: string; data: BodyType<CreateRatingRequest> }> = (props) => {
+    const { trainerId, memberId, data } = props ?? {};
 
-          return  postTrainersTrainerIdRatingsMemberId(trainerId,memberId,data,)
-        }
-
-
+    return postTrainersTrainerIdRatingsMemberId(trainerId, memberId, data,)
+  }
 
 
 
 
-  return  { mutationFn, ...mutationOptions }}
 
-    export type PostTrainersTrainerIdRatingsMemberIdMutationResult = NonNullable<Awaited<ReturnType<typeof postTrainersTrainerIdRatingsMemberId>>>
-    export type PostTrainersTrainerIdRatingsMemberIdMutationBody = BodyType<CreateRatingRequest>
-    export type PostTrainersTrainerIdRatingsMemberIdMutationError = ErrorType<unknown>
 
-    /**
- * @summary Submit or update a trainer rating
- */
+  return { mutationFn, ...mutationOptions }
+}
+
+export type PostTrainersTrainerIdRatingsMemberIdMutationResult = NonNullable<Awaited<ReturnType<typeof postTrainersTrainerIdRatingsMemberId>>>
+export type PostTrainersTrainerIdRatingsMemberIdMutationBody = BodyType<CreateRatingRequest>
+export type PostTrainersTrainerIdRatingsMemberIdMutationError = ErrorType<unknown>
+
+/**
+* @summary Submit or update a trainer rating
+*/
 export const usePostTrainersTrainerIdRatingsMemberId = <TError = ErrorType<unknown>,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof postTrainersTrainerIdRatingsMemberId>>, TError,{trainerId: string;memberId: string;data: BodyType<CreateRatingRequest>}, TContext>, }
- , queryClient?: QueryClient): UseMutationResult<
-        Awaited<ReturnType<typeof postTrainersTrainerIdRatingsMemberId>>,
-        TError,
-        {trainerId: string;memberId: string;data: BodyType<CreateRatingRequest>},
-        TContext
-      > => {
-      return useMutation(getPostTrainersTrainerIdRatingsMemberIdMutationOptions(options), queryClient);
-    }
+  TContext = unknown>(options?: { mutation?: UseMutationOptions<Awaited<ReturnType<typeof postTrainersTrainerIdRatingsMemberId>>, TError, { trainerId: string; memberId: string; data: BodyType<CreateRatingRequest> }, TContext>, }
+    , queryClient?: QueryClient): UseMutationResult<
+      Awaited<ReturnType<typeof postTrainersTrainerIdRatingsMemberId>>,
+      TError,
+      { trainerId: string; memberId: string; data: BodyType<CreateRatingRequest> },
+      TContext
+    > => {
+  return useMutation(getPostTrainersTrainerIdRatingsMemberIdMutationOptions(options), queryClient);
+}

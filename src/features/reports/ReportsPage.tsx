@@ -32,6 +32,12 @@ import type { GetReportsAttendanceGranularity } from '@/api/generated/schemas/ge
 
 const CHART_COLORS = ['#6366f1', '#22c55e', '#f59e0b', '#ef4444', '#8b5cf6', '#14b8a6'];
 
+const formatPKR = (value: number) => {
+  if (value >= 1_000_000) return `PKR ${(value / 1_000_000).toFixed(1)}M`;
+  if (value >= 1_000) return `PKR ${(value / 1_000).toFixed(1)}K`;
+  return `PKR ${value.toLocaleString()}`;
+};
+
 const DAY_NAMES = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 
 // ─── Date range helper ────────────────────────────────────────────────────────
@@ -153,13 +159,13 @@ function DashboardTab() {
       <div className="grid gap-4 sm:grid-cols-3">
         <StatCard
           title="Revenue This Month"
-          value={isLoading ? '—' : `$${(dashboardData?.revenue?.thisMonth ?? 0).toLocaleString()}`}
+          value={isLoading ? '—' : formatPKR(dashboardData?.revenue?.thisMonth ?? 0)}
           icon={DollarSign}
           iconClassName="bg-green-500/10"
         />
         <StatCard
           title="Revenue Last Month"
-          value={isLoading ? '—' : `$${(dashboardData?.revenue?.lastMonth ?? 0).toLocaleString()}`}
+          value={isLoading ? '—' : formatPKR(dashboardData?.revenue?.lastMonth ?? 0)}
           icon={DollarSign}
         />
         <StatCard
@@ -236,18 +242,18 @@ function RevenueTab() {
       <div className="grid gap-4 sm:grid-cols-3">
         <StatCard
           title="Gross Revenue"
-          value={`$${(totals?.grossRevenue ?? 0).toLocaleString()}`}
+          value={formatPKR(totals?.grossRevenue ?? 0)}
           icon={DollarSign}
           iconClassName="bg-green-500/10"
         />
         <StatCard
           title="Net Revenue"
-          value={`$${(totals?.netRevenue ?? 0).toLocaleString()}`}
+          value={formatPKR(totals?.netRevenue ?? 0)}
           icon={DollarSign}
         />
         <StatCard
           title="Total Refunded"
-          value={`$${(totals?.totalRefunded ?? 0).toLocaleString()}`}
+          value={formatPKR(totals?.totalRefunded ?? 0)}
           icon={TrendingUp}
           iconClassName="bg-yellow-500/10"
         />
@@ -271,8 +277,8 @@ function RevenueTab() {
               </defs>
               <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" />
               <XAxis dataKey="period" tick={{ fontSize: 11 }} tickFormatter={(v: string) => v.slice(5)} />
-              <YAxis tick={{ fontSize: 11 }} tickFormatter={(v: number) => `$${v >= 1000 ? `${(v / 1000).toFixed(1)}k` : v}`} />
-              <Tooltip formatter={(v: number) => [`$${v.toLocaleString()}`, 'Revenue']} />
+              <YAxis tick={{ fontSize: 11 }} tickFormatter={(v: number) => formatPKR(v)} />
+              <Tooltip formatter={(v: number) => [formatPKR(v as number), 'Revenue']} />
               <Area type="monotone" dataKey="totalRevenue" stroke={CHART_COLORS[0]} fill="url(#revenueGrad)" strokeWidth={2} />
             </AreaChart>
           </ResponsiveContainer>
@@ -302,7 +308,7 @@ function RevenueTab() {
                     <Cell key={i} fill={CHART_COLORS[i % CHART_COLORS.length]} />
                   ))}
                 </Pie>
-                <Tooltip formatter={(v: number) => `$${v.toLocaleString()}`} />
+                <Tooltip formatter={(v: number) => formatPKR(v as number)} />
               </PieChart>
             </ResponsiveContainer>
           </div>
@@ -319,7 +325,7 @@ function RevenueTab() {
                     <span className="capitalize">{item.method}</span>
                   </div>
                   <div className="text-right">
-                    <span className="font-medium">${(item.total ?? 0).toLocaleString()}</span>
+                    <span className="font-medium">{formatPKR(item.total ?? 0)}</span>
                     <span className="text-muted-foreground ml-2">({item.count} txns)</span>
                   </div>
                 </div>
@@ -335,14 +341,14 @@ function RevenueTab() {
           {d.outstanding && (
             <div className="rounded-lg border p-4 space-y-2">
               <SectionTitle>Outstanding</SectionTitle>
-              <p className="text-2xl font-bold">${(d.outstanding.totalAmount ?? 0).toLocaleString()}</p>
+              <p className="text-2xl font-bold">{formatPKR(d.outstanding.totalAmount ?? 0)}</p>
               <p className="text-sm text-muted-foreground">{d.outstanding.count} invoices pending</p>
             </div>
           )}
           {d.overdue && (
             <div className="rounded-lg border border-destructive/30 bg-destructive/5 p-4 space-y-2">
               <SectionTitle>Overdue</SectionTitle>
-              <p className="text-2xl font-bold text-destructive">${(d.overdue.totalAmount ?? 0).toLocaleString()}</p>
+              <p className="text-2xl font-bold text-destructive">{formatPKR(d.overdue.totalAmount ?? 0)}</p>
               <p className="text-sm text-muted-foreground">{d.overdue.count} overdue invoices</p>
             </div>
           )}

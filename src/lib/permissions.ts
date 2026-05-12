@@ -93,6 +93,7 @@ export type Permission =
   | 'discount.create'
   | 'discount.read'
   | 'discount.update'
+  | 'discount.delete'
   | 'discount.apply'
 
   // ── Instalment Plans ──────────────────────────────────────────────────────
@@ -148,7 +149,7 @@ const ROLE_PERMISSIONS: Record<Exclude<UserRole, 'super_admin'>, Permission[]> =
     // Payments
     'payment.create', 'payment.read', 'payment.refund', 'payment.discount.override',
     // Discounts
-    'discount.create', 'discount.read', 'discount.update', 'discount.apply',
+    'discount.create', 'discount.read', 'discount.update', 'discount.delete', 'discount.apply',
     // Instalments
     'instalment.create', 'instalment.read', 'instalment.update',
     // Notifications

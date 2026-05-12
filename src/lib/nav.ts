@@ -101,7 +101,7 @@ export const NAV_ITEMS: NavItem[] = [
     permission: 'invoice.read',
   },
   {
-    to: '/discounts',
+    to: '/billing/discounts',
     label: 'Discounts',
     icon: Percent,
     permission: 'discount.read',
@@ -210,7 +210,7 @@ export const NAV_GROUPS: NavGroup[] = [
         permission: 'invoice.read',
       },
       {
-        to: '/discounts',
+        to: '/billing/discounts',
         label: 'Discounts',
         icon: Percent,
         permission: 'discount.read',

@@ -157,7 +157,7 @@ export default function MemberDetailPage() {
             <Dumbbell className="h-4 w-4" />
             <span className="hidden sm:inline">Trainer</span>
           </TabsTrigger>
-          <TabsTrigger value="checkins" className="flex items-center gap-1.5">
+          {/* <TabsTrigger value="checkins" className="flex items-center gap-1.5">
             <Clock className="h-4 w-4" />
             <span className="hidden sm:inline">Check-ins</span>
           </TabsTrigger>
@@ -167,7 +167,7 @@ export default function MemberDetailPage() {
           >
             <Activity className="h-4 w-4" />
             <span className="hidden sm:inline">Measurements</span>
-          </TabsTrigger>
+          </TabsTrigger> */}
           <TabsTrigger value="billing" className="flex items-center gap-1.5">
             <Wallet className="h-4 w-4" />
             <span className="hidden sm:inline">Billing</span>

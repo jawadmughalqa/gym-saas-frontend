@@ -420,9 +420,11 @@ export default function InvoiceForm({
           },
         });
 
-        // Backend returns: { valid, discountAmount }
-        if (result.valid && result.discountAmount !== undefined) {
-          const discountAmount = result.discountAmount;
+        // Backend wraps response: { success, data: { valid, discountAmount, discount, error } }
+        const payload = result.data;
+
+        if (payload?.valid && payload.discountAmount !== undefined) {
+          const discountAmount = payload.discountAmount;
           const finalAmount = subtotal - discountAmount;
 
           setDiscountValidation({
@@ -439,7 +441,7 @@ export default function InvoiceForm({
         } else {
           setDiscountValidation({
             isValid: false,
-            message: result.error || "Invalid or expired discount code",
+            message: payload?.error ?? "Invalid or expired discount code",
           });
         }
       } catch (error: any) {

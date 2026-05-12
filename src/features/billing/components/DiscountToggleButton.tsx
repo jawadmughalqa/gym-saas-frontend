@@ -10,13 +10,10 @@ interface Props {
 }
 
 export default function DiscountToggleButton({ discount }: Props) {
-  console.log("discount", discount);
   const queryClient = useQueryClient();
   const updateDiscountMutation = usePatchDiscountsDiscountId();
 
   const handleToggle = async () => {
-    console.log("handle toggle called ");
-
     try {
       await updateDiscountMutation.mutateAsync({
         discountId: discount?._id,

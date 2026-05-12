@@ -9,6 +9,7 @@ import {
   Edit,
   AlertCircle,
   Dumbbell,
+  Wallet,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
@@ -27,6 +28,18 @@ import { CheckInsTab } from "./components/MemberDetail/CheckInsTab";
 import { MeasurementsTab } from "./components/MemberDetail/MeasurementsTab";
 import MemberForm from "./components/MemberForm";
 import { TrainerTab } from "./components/MemberDetail/TrainerTab";
+import { BillingTab } from "./components/MemberDetail/BillingTab";
+
+// ─── Helper ───────────────────────────────────────────────────────────────────
+// branchId may arrive as a populated object { _id, name, code } or a plain string
+function extractId(field: unknown): string {
+  if (!field) return "";
+  if (typeof field === "object" && field !== null && "_id" in field) {
+    return String((field as { _id: string })._id);
+  }
+  return String(field);
+}
+
 // ─── Component ────────────────────────────────────────────────────────────────
 
 export default function MemberDetailPage() {
@@ -155,6 +168,10 @@ export default function MemberDetailPage() {
             <Activity className="h-4 w-4" />
             <span className="hidden sm:inline">Measurements</span>
           </TabsTrigger>
+          <TabsTrigger value="billing" className="flex items-center gap-1.5">
+            <Wallet className="h-4 w-4" />
+            <span className="hidden sm:inline">Billing</span>
+          </TabsTrigger>
         </TabsList>
 
         <TabsContent value="profile" className="mt-4">
@@ -164,22 +181,30 @@ export default function MemberDetailPage() {
         <TabsContent value="subscriptions" className="mt-4">
           <SubscriptionsTab
             memberId={member._id ?? ""}
-            branchId={member.branchId ?? ""}
+            branchId={extractId(member.branchId)}
           />
         </TabsContent>
 
         <TabsContent value="trainer" className="mt-4">
           <TrainerTab
             memberId={member._id ?? ""}
-            branchId={member.branchId ?? ""}
+            branchId={extractId(member.branchId)}
           />
         </TabsContent>
-        <TabsContent value="checkins" className="mt-4">
+        {/* <TabsContent value="checkins" className="mt-4">
           <CheckInsTab memberId={member._id ?? ""} />
-        </TabsContent>
+        </TabsContent> */}
 
-        <TabsContent value="measurements" className="mt-4">
+        {/* <TabsContent value="measurements" className="mt-4">
           <MeasurementsTab memberId={member._id ?? ""} />
+        </TabsContent> */}
+
+        <TabsContent value="billing" className="mt-4">
+          <BillingTab
+            memberId={member._id ?? ""}
+            branchId={extractId(member.branchId)}
+            memberName={fullName}
+          />
         </TabsContent>
       </Tabs>
 

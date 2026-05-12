@@ -110,7 +110,7 @@ export default function MemberForm({
     if (member) {
       reset({
         ...memberFormDefaults,
-        branchId:              member.branchId ?? '',
+        branchId:              (typeof member.branchId === 'object' && member.branchId !== null ? (member.branchId as any)._id : member.branchId) ?? '',
         firstName:             member.firstName,
         lastName:              member.lastName,
         email:                 member.email,

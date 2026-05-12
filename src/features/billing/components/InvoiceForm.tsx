@@ -41,10 +41,7 @@ import { cn } from "@/lib/utils";
 import { formatCurrency } from "@/utils/format";
 import { useGetMembers } from "@/api/generated/members/members";
 import { useGetBranches } from "@/api/generated/branches/branches";
-import {
-  usePostDiscountsValidate,
-  getGetDiscountsValidateQueryKey,
-} from "@/api/generated/discounts/discounts";
+import { usePostDiscountsValidate } from "@/api/generated/discounts/discounts";
 import {
   usePostInvoices,
   getGetInvoicesQueryKey,
@@ -52,17 +49,59 @@ import {
 import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "@/hooks/use-toast";
 
+// ─── Charge presets ───────────────────────────────────────────────────────────
+// Maps line item type → default description label.
+// Selecting a preset auto-fills the description; user can still edit it freely.
+
+const CHARGE_PRESETS = [
+  { value: "subscription",       label: "Membership Fee" },
+  { value: "personal_training",  label: "PT Fee" },
+  { value: "product",            label: "Supplement Charges" },
+  { value: "addon",              label: "Diet Plan" },
+  { value: "late_fee",           label: "Late Fee" },
+  { value: "other",              label: "Water Charges",      group: "Facilities" },
+  // extra gym-specific types reuse "other" on the backend; description carries meaning
+] as const;
+
+// Extended display list — all named charge categories shown in the dropdown.
+// Backend only accepts the 6 enum values; we map extras → "other".
+const LINE_ITEM_DISPLAY = [
+  { value: "subscription",      label: "Membership Fee",       backendType: "subscription" },
+  { value: "personal_training", label: "PT Fee",               backendType: "personal_training" },
+  { value: "water",             label: "Water Charges",        backendType: "other" },
+  { value: "locker",            label: "Locker Fee",           backendType: "other" },
+  { value: "treadmill",         label: "Treadmill Usage",      backendType: "other" },
+  { value: "supplement",        label: "Supplement Charges",   backendType: "product" },
+  { value: "diet_plan",         label: "Diet Plan",            backendType: "addon" },
+  { value: "late_fee",          label: "Late Fee",             backendType: "late_fee" },
+  { value: "misc",              label: "Misc",                 backendType: "other" },
+] as const;
+
+type DisplayType = typeof LINE_ITEM_DISPLAY[number]["value"];
+
+// Default description when a preset is selected
+const PRESET_DESCRIPTION: Record<DisplayType, string> = {
+  subscription:      "Membership Fee",
+  personal_training: "PT Fee",
+  water:             "Water Charges",
+  locker:            "Locker Fee",
+  treadmill:         "Treadmill Usage",
+  supplement:        "Supplement Charges",
+  diet_plan:         "Diet Plan",
+  late_fee:          "Late Fee",
+  misc:              "",
+};
+
+// Map display type → backend enum value
+function toBackendType(displayType: DisplayType): "subscription" | "personal_training" | "product" | "late_fee" | "addon" | "other" {
+  return LINE_ITEM_DISPLAY.find((d) => d.value === displayType)?.backendType ?? "other";
+}
+
 // ─── Schema ───────────────────────────────────────────────────────────────────
 
 const lineItemSchema = z.object({
-  type: z.enum([
-    "subscription",
-    "personal_training",
-    "product",
-    "late_fee",
-    "addon",
-    "other",
-  ]),
+  // We store the display type in the form; map to backend type on submit
+  displayType: z.string().min(1, "Select a charge type"),
   description: z.string().min(1, "Description required"),
   quantity: z.coerce.number().positive("Must be > 0"),
   unitPrice: z.coerce.number().min(0, "Must be ≥ 0"),
@@ -83,6 +122,7 @@ const formSchema = z.object({
 });
 
 type FormValues = z.infer<typeof formSchema>;
+type LineItem = FormValues["lineItems"][number];
 
 // ─── Props ────────────────────────────────────────────────────────────────────
 
@@ -300,8 +340,8 @@ export default function InvoiceForm({
       issueImmediately: false,
       lineItems: [
         {
-          type: "subscription",
-          description: "",
+          displayType: "subscription",
+          description: "Membership Fee",
           quantity: 1,
           unitPrice: 0,
           taxRate: 0,
@@ -451,7 +491,7 @@ export default function InvoiceForm({
         notes: values.notes || undefined,
         issueImmediately: values.issueImmediately,
         lineItems: values.lineItems.map((li) => ({
-          type: li.type,
+          type: toBackendType(li.displayType as DisplayType),
           description: li.description,
           quantity: li.quantity,
           unitPrice: li.unitPrice,
@@ -468,15 +508,6 @@ export default function InvoiceForm({
     }
     onOpenChange(val);
   }
-
-  const LINE_ITEM_TYPES = [
-    { value: "subscription", label: "Subscription" },
-    { value: "personal_training", label: "Personal Training" },
-    { value: "product", label: "Product" },
-    { value: "late_fee", label: "Late Fee" },
-    { value: "addon", label: "Add-on" },
-    { value: "other", label: "Other" },
-  ] as const;
 
   return (
     <Sheet open={open} onOpenChange={handleClose}>
@@ -608,7 +639,7 @@ export default function InvoiceForm({
                 size="sm"
                 onClick={() =>
                   append({
-                    type: "other",
+                    displayType: "misc",
                     description: "",
                     quantity: 1,
                     unitPrice: 0,
@@ -647,30 +678,40 @@ export default function InvoiceForm({
                   )}
 
                   <div className="grid grid-cols-2 gap-2 pr-8">
+                    {/* Charge type preset — auto-fills description */}
                     <div className="space-y-1">
-                      <Label className="text-xs">Type</Label>
+                      <Label className="text-xs">Charge Type</Label>
                       <Select
-                        value={watch(`lineItems.${index}.type`)}
-                        onValueChange={(v) =>
-                          setValue(
-                            `lineItems.${index}.type`,
-                            v as FormValues["lineItems"][0]["type"],
-                          )
-                        }
+                        value={watch(`lineItems.${index}.displayType`)}
+                        onValueChange={(v) => {
+                          setValue(`lineItems.${index}.displayType`, v);
+                          // Auto-fill description from preset (only if blank or still the previous preset label)
+                          const preset = PRESET_DESCRIPTION[v as DisplayType];
+                          if (preset) {
+                            setValue(`lineItems.${index}.description`, preset, { shouldValidate: true });
+                          }
+                        }}
                         disabled={isPending}
                       >
                         <SelectTrigger className="h-8 text-xs">
-                          <SelectValue />
+                          <SelectValue placeholder="Select charge…" />
                         </SelectTrigger>
                         <SelectContent>
-                          {LINE_ITEM_TYPES.map((t) => (
+                          {LINE_ITEM_DISPLAY.map((t) => (
                             <SelectItem key={t.value} value={t.value}>
                               {t.label}
                             </SelectItem>
                           ))}
                         </SelectContent>
                       </Select>
+                      {errors.lineItems?.[index]?.displayType && (
+                        <p className="text-xs text-destructive">
+                          {errors.lineItems[index]?.displayType?.message}
+                        </p>
+                      )}
                     </div>
+
+                    {/* Description — editable, pre-filled by preset */}
                     <div className="space-y-1">
                       <Label className="text-xs">Description *</Label>
                       <Input
@@ -679,6 +720,11 @@ export default function InvoiceForm({
                         disabled={isPending}
                         {...register(`lineItems.${index}.description`)}
                       />
+                      {errors.lineItems?.[index]?.description && (
+                        <p className="text-xs text-destructive">
+                          {errors.lineItems[index]?.description?.message}
+                        </p>
+                      )}
                     </div>
                   </div>
 

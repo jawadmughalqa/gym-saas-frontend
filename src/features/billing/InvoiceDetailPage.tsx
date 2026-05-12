@@ -34,21 +34,227 @@ import {
 } from '@/api/generated/invoices/invoices';
 
 import {
+  useGetPayments,
   usePostPayments,
   getGetPaymentsQueryKey,
 } from '@/api/generated/payments/payments';
 
 import {
-  useGetInstalmentPlansPlanId,
-  usePostInstalmentPlans,
-  usePostInstalmentPlansPlanIdPayments,
-  usePatchInstalmentPlansPlanIdCancel,
-  getGetInstalmentPlansPlanIdQueryKey,
+  useGetInstalmentsPlanId,
+  usePostInstalments,
+  usePostInstalmentsPlanIdCancel,
+  getGetInstalmentsPlanIdQueryKey,
 } from '@/api/generated/instalments/instalments';
 
 import type { Invoice, InvoiceLineItem, InstalmentScheduleEntry } from '@/types/billing.types';
+import { cn } from '@/lib/utils';
 
-// ... rest of your components (InvoiceSummary, LineItemsTable, etc. remain the same)
+// ─── InvoiceSummary ───────────────────────────────────────────────────────────
+
+function InvoiceSummary({ invoice }: { invoice: Invoice }) {
+  return (
+    <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+      <Card>
+        <CardContent className="pt-4 pb-3">
+          <p className="text-xs text-muted-foreground uppercase tracking-wide mb-1">Total</p>
+          <p className="text-lg font-bold">{formatCurrency(invoice.total, invoice.currency)}</p>
+        </CardContent>
+      </Card>
+      <Card>
+        <CardContent className="pt-4 pb-3">
+          <p className="text-xs text-muted-foreground uppercase tracking-wide mb-1">Amount Paid</p>
+          <p className="text-lg font-bold text-green-600">{formatCurrency(invoice.amountPaid, invoice.currency)}</p>
+        </CardContent>
+      </Card>
+      <Card>
+        <CardContent className="pt-4 pb-3">
+          <p className="text-xs text-muted-foreground uppercase tracking-wide mb-1">Amount Due</p>
+          <p className={cn('text-lg font-bold', invoice.amountDue > 0 ? 'text-destructive' : 'text-muted-foreground')}>
+            {formatCurrency(invoice.amountDue, invoice.currency)}
+          </p>
+        </CardContent>
+      </Card>
+      <Card>
+        <CardContent className="pt-4 pb-3">
+          <p className="text-xs text-muted-foreground uppercase tracking-wide mb-1">Discount</p>
+          <p className="text-lg font-bold text-orange-600">
+            {invoice.discountTotal > 0 ? `-${formatCurrency(invoice.discountTotal, invoice.currency)}` : '—'}
+          </p>
+          {invoice.discountCode && (
+            <p className="text-xs text-muted-foreground font-mono mt-0.5">{invoice.discountCode}</p>
+          )}
+        </CardContent>
+      </Card>
+    </div>
+  );
+}
+
+// ─── LineItemsTable ───────────────────────────────────────────────────────────
+
+function LineItemsTable({ items, currency }: { items: InvoiceLineItem[]; currency: string }) {
+  const subtotal = items.reduce((s, li) => s + li.unitPrice * li.quantity, 0);
+  const discountTotal = items.reduce((s, li) => s + (li.discountAmount ?? 0), 0);
+  const taxTotal = items.reduce((s, li) => s + (li.taxAmount ?? 0), 0);
+
+  return (
+    <Card>
+      <CardHeader className="pb-2">
+        <CardTitle className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">
+          Line Items
+        </CardTitle>
+      </CardHeader>
+      <CardContent className="p-0">
+        <div className="overflow-x-auto">
+          <table className="w-full text-sm">
+            <thead>
+              <tr className="border-b bg-muted/30">
+                <th className="px-4 py-2.5 text-left font-medium text-muted-foreground">Description</th>
+                <th className="px-4 py-2.5 text-center font-medium text-muted-foreground w-16">Qty</th>
+                <th className="px-4 py-2.5 text-right font-medium text-muted-foreground w-28">Unit Price</th>
+                <th className="px-4 py-2.5 text-right font-medium text-muted-foreground w-28">Discount</th>
+                <th className="px-4 py-2.5 text-right font-medium text-muted-foreground w-28">Tax</th>
+                <th className="px-4 py-2.5 text-right font-medium text-muted-foreground w-28">Total</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y">
+              {items.map((li, i) => {
+                const lineTotal = li.unitPrice * li.quantity - (li.discountAmount ?? 0) + (li.taxAmount ?? 0);
+                return (
+                  <tr key={i} className="hover:bg-muted/20">
+                    <td className="px-4 py-3">
+                      <p className="font-medium">{li.description}</p>
+                      <p className="text-xs text-muted-foreground capitalize">
+                        {li.type.replace(/_/g, ' ')}
+                        {li.planSnapshotName && ` · ${li.planSnapshotName}`}
+                      </p>
+                    </td>
+                    <td className="px-4 py-3 text-center text-muted-foreground">{li.quantity}</td>
+                    <td className="px-4 py-3 text-right">{formatCurrency(li.unitPrice, currency)}</td>
+                    <td className="px-4 py-3 text-right text-orange-600">
+                      {(li.discountAmount ?? 0) > 0 ? `-${formatCurrency(li.discountAmount!, currency)}` : '—'}
+                    </td>
+                    <td className="px-4 py-3 text-right text-muted-foreground">
+                      {(li.taxAmount ?? 0) > 0 ? formatCurrency(li.taxAmount!, currency) : '—'}
+                    </td>
+                    <td className="px-4 py-3 text-right font-semibold">{formatCurrency(lineTotal, currency)}</td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        </div>
+
+        {/* Totals */}
+        <div className="border-t px-4 py-3 space-y-1.5 bg-muted/10">
+          <div className="flex justify-between text-sm text-muted-foreground">
+            <span>Subtotal</span>
+            <span>{formatCurrency(subtotal, currency)}</span>
+          </div>
+          {discountTotal > 0 && (
+            <div className="flex justify-between text-sm text-orange-600">
+              <span>Total Discount</span>
+              <span>-{formatCurrency(discountTotal, currency)}</span>
+            </div>
+          )}
+          {taxTotal > 0 && (
+            <div className="flex justify-between text-sm text-muted-foreground">
+              <span>Total Tax</span>
+              <span>{formatCurrency(taxTotal, currency)}</span>
+            </div>
+          )}
+          <div className="flex justify-between text-base font-bold pt-1 border-t">
+            <span>Grand Total</span>
+            <span>{formatCurrency(items.reduce((s, li) => s + (li.total ?? li.unitPrice * li.quantity - (li.discountAmount ?? 0) + (li.taxAmount ?? 0)), 0), currency)}</span>
+          </div>
+        </div>
+      </CardContent>
+    </Card>
+  );
+}
+
+// ─── PaymentsTab ──────────────────────────────────────────────────────────────
+
+function PaymentsTab({ invoice }: { invoice: Invoice }) {
+  const { can } = usePermission();
+  const [payOpen, setPayOpen] = useState(false);
+
+  const { data: paymentsData, isLoading } = useGetPayments(
+    { invoiceId: invoice._id, limit: 50 },
+    { query: { staleTime: 1000 * 30 } },
+  );
+  const payments: any[] = (paymentsData as any)?.data ?? [];
+
+  const METHOD_LABELS: Record<string, string> = {
+    cash: 'Cash', card: 'Card', bank_transfer: 'Bank Transfer',
+    cheque: 'Cheque', online: 'Online', other: 'Other',
+  };
+
+  if (isLoading) return <CardSkeleton />;
+
+  return (
+    <div className="space-y-4">
+      {can('payment.create') && ['issued', 'partially_paid', 'overdue'].includes(invoice.status) && (
+        <div className="flex justify-end">
+          <Button size="sm" onClick={() => setPayOpen(true)}>
+            <CreditCard className="mr-2 h-4 w-4" />
+            Record Payment
+          </Button>
+        </div>
+      )}
+
+      {payments.length === 0 ? (
+        <EmptyState
+          icon={<CreditCard className="h-10 w-10" />}
+          title="No payments yet"
+          description="Payments recorded against this invoice will appear here."
+        />
+      ) : (
+        <Card>
+          <CardContent className="p-0">
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="border-b bg-muted/30">
+                    <th className="px-4 py-2.5 text-left font-medium text-muted-foreground">Date</th>
+                    <th className="px-4 py-2.5 text-left font-medium text-muted-foreground">Method</th>
+                    <th className="px-4 py-2.5 text-left font-medium text-muted-foreground">Reference</th>
+                    <th className="px-4 py-2.5 text-right font-medium text-muted-foreground">Amount</th>
+                    <th className="px-4 py-2.5 text-center font-medium text-muted-foreground">Status</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y">
+                  {payments.map((p: any) => (
+                    <tr key={p._id} className="hover:bg-muted/20">
+                      <td className="px-4 py-3 text-muted-foreground">{formatDate(p.paidAt ?? p.createdAt)}</td>
+                      <td className="px-4 py-3 capitalize">{METHOD_LABELS[p.method] ?? p.method}</td>
+                      <td className="px-4 py-3 font-mono text-xs text-muted-foreground">{p.reference ?? '—'}</td>
+                      <td className="px-4 py-3 text-right font-semibold text-green-700">
+                        {formatCurrency(p.amount, invoice.currency)}
+                      </td>
+                      <td className="px-4 py-3 text-center">
+                        <Badge variant={p.status === 'completed' ? 'success' : p.status === 'failed' ? 'destructive' : 'outline'}>
+                          {p.status}
+                        </Badge>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      <RecordPaymentDialog
+        invoiceId={invoice._id}
+        currency={invoice.currency}
+        amountDue={invoice.amountDue}
+        open={payOpen}
+        onOpenChange={setPayOpen}
+      />
+    </div>
+  );
+}
 
 // ─── Record Payment Dialog ────────────────────────────────────────────────────
 
@@ -178,14 +384,14 @@ function InstalmentTab({ invoice }: { invoice: Invoice }) {
   const [createOpen, setCreateOpen] = useState(false);
   const { confirm, confirmProps } = useConfirm();
 
-  const { data: planData, isLoading } = useGetInstalmentPlansPlanId(invoice.instalmentPlanId ?? '', {
+  const { data: planData, isLoading } = useGetInstalmentsPlanId(invoice.instalmentPlanId ?? '', {
     query: { enabled: !!invoice.instalmentPlanId },
   });
 
-  const cancelPlan = usePatchInstalmentPlansPlanIdCancel({
+  const cancelPlan = usePostInstalmentsPlanIdCancel({
     mutation: {
       onSuccess: () => {
-        queryClient.invalidateQueries({ queryKey: getGetInstalmentPlansPlanIdQueryKey(invoice.instalmentPlanId ?? '') });
+        queryClient.invalidateQueries({ queryKey: getGetInstalmentsPlanIdQueryKey(invoice.instalmentPlanId ?? '') });
         queryClient.invalidateQueries({ queryKey: getGetInvoicesInvoiceIdQueryKey(invoice._id) });
         toast({ title: 'Instalment plan cancelled' });
       },
@@ -327,7 +533,7 @@ function CreateInstalmentDialog({
 }) {
   const queryClient = useQueryClient();
 
-  const create = usePostInstalmentPlans({
+  const create = usePostInstalments({
     mutation: {
       onSuccess: () => {
         queryClient.invalidateQueries({ queryKey: getGetInvoicesInvoiceIdQueryKey(invoiceId) });
@@ -565,7 +771,7 @@ export default function InvoiceDetailPage() {
         <div className="flex flex-col items-center justify-center py-20 gap-4 text-center">
           <AlertCircle className="h-12 w-12 text-muted-foreground" />
           <h2 className="text-xl font-semibold">Invoice not found</h2>
-          <Button variant="outline" onClick={() => navigate('/billing')}>
+          <Button variant="outline" onClick={() => navigate('/billing/invoices')}>
             <ArrowLeft className="mr-2 h-4 w-4" /> Back to Invoices
           </Button>
         </div>
@@ -577,7 +783,7 @@ export default function InvoiceDetailPage() {
     <PageShell>
       {/* Header */}
       <div className="flex items-start gap-4">
-        <Button variant="ghost" size="icon" className="-ml-2 mt-0.5" onClick={() => navigate('/billing')}>
+        <Button variant="ghost" size="icon" className="-ml-2 mt-0.5" onClick={() => navigate(-1)}>
           <ArrowLeft className="h-4 w-4" />
         </Button>
 

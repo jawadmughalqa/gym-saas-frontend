@@ -122,7 +122,7 @@ export default function DiscountsPage() {
         }
       />
 
-      {!isLoading && (!discounts || discounts?.data?.length === 0) ? (
+      {!isLoading && (discounts?.data ?? []).length === 0 ? (
         <EmptyState
           icon={<Tag className="h-12 w-12" />}
           title="No discount codes"

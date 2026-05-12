@@ -121,7 +121,9 @@ export function ProfileTab({ memberId }: ProfileTabProps) {
               member.branchId ? (
                 <span className="flex items-center gap-1.5">
                   <MapPin className="h-3.5 w-3.5 text-muted-foreground" />
-                  {member.branchId}
+                  {typeof member.branchId === 'object'
+                    ? (member.branchId as any).name
+                    : member.branchId}
                 </span>
               ) : undefined
             }

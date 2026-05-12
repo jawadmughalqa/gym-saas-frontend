@@ -618,7 +618,7 @@ function TrainersTab() {
     { dateFrom, dateTo },
     { query: { staleTime: 1000 * 60 * 5 } },
   );
-  const trainers = data?.data ?? [];
+  const trainers = (data as any)?.data?.trainers ?? [];
 
   return (
     <div className="space-y-6">

@@ -23,19 +23,34 @@ import type { InvoiceStatus } from '@/types/billing.types';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
-// Matches the actual API response shape — memberId is a plain string (not populated)
+interface PopulatedMember {
+  _id: string;
+  firstName: string;
+  lastName: string;
+  email?: string;
+  phone?: string;
+}
+
+// memberId may be a populated object (when fetched via listInvoices) or a plain string
 interface InvoiceRow {
   _id: string;
   invoiceNumber: string;
   status: InvoiceStatus;
-  memberId: string;
-  branchId: string;
+  memberId: PopulatedMember | string;
+  branchId: { _id: string; name: string } | string;
   total: number;
   amountDue: number;
   amountPaid: number;
   currency: string;
   dueDate?: string;
   createdAt: string;
+}
+
+function memberName(row: InvoiceRow): string {
+  if (row.memberId && typeof row.memberId === 'object') {
+    return `${row.memberId.firstName} ${row.memberId.lastName}`;
+  }
+  return typeof row.memberId === 'string' ? `…${row.memberId.slice(-6).toUpperCase()}` : '—';
 }
 
 // ─── InvoicesPage ─────────────────────────────────────────────────────────────
@@ -99,9 +114,8 @@ export default function InvoicesPage() {
       cell: (row) => (
         <div>
           <p className="font-medium font-mono text-sm">{row.invoiceNumber}</p>
-          {/* memberId is a plain ObjectId string — backend does not populate it */}
-          <p className="text-xs text-muted-foreground font-mono">
-            #{row.memberId.slice(-6).toUpperCase()}
+          <p className="text-xs text-muted-foreground truncate max-w-[160px]">
+            {memberName(row)}
           </p>
         </div>
       ),
@@ -240,7 +254,7 @@ export default function InvoicesPage() {
             skeletonRows={10}
             sort={table.sort}
             onSortChange={table.setSort}
-            onRowClick={(row) => navigate(`/billing/${row._id}`)}
+            onRowClick={(row) => navigate(`/billing/invoices/${row._id}`)}
           />
           {pagination && (
             <Pagination

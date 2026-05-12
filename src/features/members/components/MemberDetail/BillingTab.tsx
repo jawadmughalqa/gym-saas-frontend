@@ -2,37 +2,34 @@
  * BillingTab
  *
  * Shown inside MemberDetailPage > Billing tab.
- * Renders the member's outstanding invoices inline with per-invoice
- * payment collection, payment history, and a "New Invoice" shortcut.
+ * Renders the member's outstanding invoices with:
+ *  - Per-invoice line-item breakdown
+ *  - Single-invoice payment via CollectPaymentForm
+ *  - Multi-select checkboxes + "Pay Selected" via MultiInvoicePaymentDialog
+ *  - Payment history timeline
+ *  - "New Invoice" shortcut
  */
 
 import { useState } from 'react';
 import { FilePlus, ExternalLink } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+import { useQueryClient } from '@tanstack/react-query';
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
 import { Skeleton } from '@/components/ui/skeleton';
-import { useGetInvoices } from '@/api/generated/invoices/invoices';
+import { useGetInvoices, getGetInvoicesQueryKey } from '@/api/generated/invoices/invoices';
+import { getGetPaymentsQueryKey } from '@/api/generated/payments/payments';
 import { formatCurrency } from '@/lib/utils';
 import { cn } from '@/lib/utils';
 import { usePermission } from '@/hooks/use-permission';
-import { OutstandingFeesList } from '@/features/billing/components/OutstandingFeesList';
+import { OutstandingFeesList, type OutstandingInvoice } from '@/features/billing/components/OutstandingFeesList';
 import { CollectPaymentForm } from '@/features/billing/components/CollectPaymentForm';
 import { PaymentHistoryList } from '@/features/billing/components/PaymentHistoryList';
 import { StatusBadge } from '@/features/billing/components/StatusBadge';
+import { MultiInvoicePaymentDialog } from '@/features/billing/components/MultiInvoicePaymentDialog';
 import InvoiceForm from '@/features/billing/components/InvoiceForm';
 
-// ─── Types ────────────────────────────────────────────────────────────────────
-
-interface OutstandingInvoice {
-  _id: string;
-  invoiceNumber: string;
-  status: string;
-  amountDue: number;
-  currency: string;
-  dueDate?: string;
-  lineItems?: { description?: string }[];
-}
+// ─── BillingTabProps ──────────────────────────────────────────────────────────
 
 interface BillingTabProps {
   memberId: string;
@@ -45,24 +42,49 @@ interface BillingTabProps {
 export function BillingTab({ memberId, branchId, memberName }: BillingTabProps) {
   const navigate = useNavigate();
   const { can } = usePermission();
+  const queryClient = useQueryClient();
 
+  // Single-invoice collect
   const [activeInvoiceId, setActiveInvoiceId] = useState<string | null>(null);
+
+  // Multi-select state
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const [multiPayOpen, setMultiPayOpen] = useState(false);
+
   const [newInvoiceOpen, setNewInvoiceOpen] = useState(false);
 
   // ── Fetch invoices for this member ─────────────────────────────────────────
   const { data: invoicesData, isLoading, refetch } = useGetInvoices(
-    { memberId, limit: 50 },
+    { memberId, limit: 100 },
     { query: { staleTime: 5000 } },
   );
 
   const allInvoices = (invoicesData as any)?.data ?? [];
 
-  const outstandingInvoices: OutstandingInvoice[] = allInvoices.filter(
-    (inv: OutstandingInvoice) =>
-      inv.status === 'issued' ||
-      inv.status === 'partially_paid' ||
-      inv.status === 'overdue',
-  );
+  const outstandingInvoices: OutstandingInvoice[] = allInvoices
+    .filter(
+      (inv: any) =>
+        inv.status === 'issued' ||
+        inv.status === 'partially_paid' ||
+        inv.status === 'overdue',
+    )
+    .map((inv: any) => ({
+      _id: inv._id,
+      invoiceNumber: inv.invoiceNumber,
+      status: inv.status,
+      amountDue: inv.amountDue ?? 0,
+      amountPaid: inv.amountPaid ?? 0,
+      total: inv.total ?? 0,
+      currency: inv.currency ?? 'PKR',
+      dueDate: inv.dueDate,
+      lineItems: (inv.lineItems ?? []).map((li: any) => ({
+        description: li.description ?? '',
+        quantity: li.quantity ?? 1,
+        unitPrice: li.unitPrice ?? 0,
+        total: li.total ?? li.subtotal ?? 0,
+        type: li.type ?? 'other',
+      })),
+    }));
 
   const totalOutstanding = outstandingInvoices.reduce(
     (sum, inv) => sum + (inv.amountDue || 0),
@@ -71,14 +93,41 @@ export function BillingTab({ memberId, branchId, memberName }: BillingTabProps) 
 
   const activeInvoice = outstandingInvoices.find((inv) => inv._id === activeInvoiceId) ?? null;
 
+  // Selected invoices (for multi-pay dialog)
+  const selectedInvoices = outstandingInvoices.filter((inv) => selectedIds.has(inv._id));
+  const currency = outstandingInvoices[0]?.currency ?? 'PKR';
+
   // ── Handlers ───────────────────────────────────────────────────────────────
 
   function handleCollect(invoiceId: string) {
+    // Single-collect: toggle panel; clear multi-select
+    setSelectedIds(new Set());
     setActiveInvoiceId((prev) => (prev === invoiceId ? null : invoiceId));
+  }
+
+  function handleToggleSelect(invoiceId: string) {
+    // Multi-select: toggle; close single-collect panel
+    setActiveInvoiceId(null);
+    setSelectedIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(invoiceId)) next.delete(invoiceId);
+      else next.add(invoiceId);
+      return next;
+    });
+  }
+
+  function handlePaySelected(_ids: string[]) {
+    setMultiPayOpen(true);
   }
 
   function handlePaymentSuccess() {
     setActiveInvoiceId(null);
+    setSelectedIds(new Set());
+    // Invalidate all billing-related queries so the UI auto-refreshes
+    queryClient.invalidateQueries({ queryKey: getGetInvoicesQueryKey({ memberId }) });
+    queryClient.invalidateQueries({ queryKey: getGetPaymentsQueryKey({ memberId }) });
+    // Also invalidate any expanded per-invoice payment timelines
+    queryClient.invalidateQueries({ queryKey: ['invoices'] });
     refetch();
   }
 
@@ -137,12 +186,24 @@ export function BillingTab({ memberId, branchId, memberName }: BillingTabProps) 
                 totalOutstanding > 0 ? 'text-red-600' : 'text-emerald-600',
               )}
             >
-              {formatCurrency(totalOutstanding, 'PKR')}
+              {formatCurrency(totalOutstanding, currency)}
             </p>
             {outstandingInvoices.length > 0 && (
               <p className="text-xs text-muted-foreground mt-1">
                 Across {outstandingInvoices.length} unpaid invoice
                 {outstandingInvoices.length !== 1 ? 's' : ''}
+                {outstandingInvoices.length > 1 && (
+                  <span className="ml-1 text-primary cursor-pointer hover:underline" onClick={() => {
+                    // Select all on click
+                    if (selectedIds.size === outstandingInvoices.length) {
+                      setSelectedIds(new Set());
+                    } else {
+                      setSelectedIds(new Set(outstandingInvoices.map((i) => i._id)));
+                    }
+                  }}>
+                    · {selectedIds.size === outstandingInvoices.length ? 'Deselect all' : 'Select all'}
+                  </span>
+                )}
               </p>
             )}
           </div>
@@ -151,11 +212,14 @@ export function BillingTab({ memberId, branchId, memberName }: BillingTabProps) 
           <OutstandingFeesList
             invoices={outstandingInvoices}
             activeInvoiceId={activeInvoiceId}
-            onCollect={can('payment.create') ? handleCollect : undefined}
+            onCollect={can('payment.create') && selectedIds.size === 0 ? handleCollect : undefined}
+            selectedIds={can('payment.create') && outstandingInvoices.length > 1 ? selectedIds : undefined}
+            onToggleSelect={can('payment.create') && outstandingInvoices.length > 1 ? handleToggleSelect : undefined}
+            onPaySelected={can('payment.create') ? handlePaySelected : undefined}
           />
 
-          {/* ── Inline payment form ───────────────────────────────────────── */}
-          {activeInvoice && (
+          {/* ── Inline single-invoice payment form ───────────────────────── */}
+          {activeInvoice && selectedIds.size === 0 && (
             <>
               <Separator />
               <div className="rounded-lg border bg-muted/20 p-4 space-y-3">
@@ -185,6 +249,17 @@ export function BillingTab({ memberId, branchId, memberName }: BillingTabProps) 
           {/* ── Payment history ───────────────────────────────────────────── */}
           <PaymentHistoryList memberId={memberId} />
         </>
+      )}
+
+      {/* Multi-invoice payment dialog */}
+      {multiPayOpen && (
+        <MultiInvoicePaymentDialog
+          open={multiPayOpen}
+          onOpenChange={setMultiPayOpen}
+          invoices={selectedInvoices}
+          currency={currency}
+          onSuccess={handlePaymentSuccess}
+        />
       )}
 
       {/* New Invoice form — pre-fills member + branch */}

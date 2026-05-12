@@ -1,108 +1,168 @@
-import { Eye, Receipt } from 'lucide-react';
-import { Button } from '@/components/ui/button';
+/**
+ * PaymentHistoryList
+ *
+ * Shows ALL payments made by a member, grouped by invoice.
+ * Each invoice row is expandable — clicking it reveals InvoicePaymentTimeline
+ * which shows WHEN each partial/full payment was made for that invoice.
+ *
+ * Grouped view:
+ *   📄 INV-001 · Membership Fee  → PKR 5,000 · Paid   [↓ expand]
+ *      └─ Timeline: 3,000 on Jan 5  + 2,000 on Jan 10 → Fully settled
+ *
+ *   📄 INV-002 · Water Charges   → PKR 500 · Partial  [↓ expand]
+ *      └─ Timeline: 200 on Feb 1  → PKR 300 remaining
+ */
+import { useState } from 'react';
+import { Receipt, ChevronDown, ChevronUp, FileText } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
-import { formatCurrency, formatDateTime } from '@/lib/utils';
-import { useGetPayments } from '@/api/generated/payments/payments';
+import { formatCurrency } from '@/lib/utils';
+import { useGetInvoices } from '@/api/generated/invoices/invoices';
+import { useQueryClient } from '@tanstack/react-query';
 import { StatusBadge } from './StatusBadge';
+import { InvoicePaymentTimeline } from './InvoicePaymentTimeline';
+import { INVOICE_PAYMENTS_KEY } from '../hooks/useInvoicePayments';
 import { cn } from '@/lib/utils';
+
+// ─── Props ────────────────────────────────────────────────────────────────────
 
 interface PaymentHistoryListProps {
   memberId: string;
-  onViewReceipt?: (transactionCode: string) => void;
+  /** Called by parent so it can invalidate/refetch if needed */
+  onRefetch?: () => void;
 }
 
-export function PaymentHistoryList({ memberId, onViewReceipt }: PaymentHistoryListProps) {
-  const { data: paymentsData, isLoading } = useGetPayments(
-    { memberId, limit: 20 },
-    { query: { enabled: !!memberId, staleTime: 1000 * 30 } }
+// ─── Component ────────────────────────────────────────────────────────────────
+
+export function PaymentHistoryList({ memberId }: PaymentHistoryListProps) {
+  const queryClient = useQueryClient();
+  const [expandedInvoiceId, setExpandedInvoiceId] = useState<string | null>(null);
+
+  // Fetch all invoices for this member (all statuses) so we can show history
+  const { data: invoicesData, isLoading } = useGetInvoices(
+    { memberId, limit: 100 },
+    { query: { staleTime: 1000 * 30, enabled: !!memberId } },
   );
 
-  const payments = paymentsData?.data ?? [];
+  const allInvoices = ((invoicesData as any)?.data ?? []) as any[];
 
-  const getPaymentMethodLabel = (method: string): string => {
-    const methods: Record<string, string> = {
-      cash: 'Cash',
-      card: 'Card',
-      bank_transfer: 'Bank Transfer',
-      cheque: 'Cheque',
-      online: 'Online',
-      other: 'Other',
-    };
-    return methods[method] || method;
-  };
+  // Show invoices that have at least some payment activity
+  const paidInvoices = allInvoices.filter(
+    (inv: any) =>
+      inv.status === 'paid' ||
+      inv.status === 'partially_paid' ||
+      inv.amountPaid > 0,
+  );
 
-  if (isLoading) {
-    return (
-      <div className="space-y-3">
-        <p className="text-xs font-semibold tracking-wide uppercase text-muted-foreground">
-          Payment History
-        </p>
-        {[...Array(3)].map((_, i) => (
-          <Skeleton key={i} className="w-full h-16" />
-        ))}
-      </div>
-    );
+  // ── Expand / collapse ─────────────────────────────────────────────────────
+
+  function handleToggle(invoiceId: string) {
+    if (expandedInvoiceId === invoiceId) {
+      setExpandedInvoiceId(null);
+    } else {
+      setExpandedInvoiceId(invoiceId);
+      // Prefetch / invalidate timeline so it's fresh when expanded
+      queryClient.invalidateQueries({ queryKey: INVOICE_PAYMENTS_KEY(invoiceId) });
+    }
   }
 
-  if (payments.length === 0) {
-    return (
-      <div className="space-y-3">
-        <p className="text-xs font-semibold tracking-wide uppercase text-muted-foreground">
-          Payment History
-        </p>
-        <div className="flex flex-col items-center justify-center gap-2 py-6 text-center">
-          <Receipt className="w-8 h-8 text-muted-foreground" />
-          <p className="text-sm text-muted-foreground">No payment history</p>
-        </div>
-      </div>
-    );
-  }
+  // ─── Render ───────────────────────────────────────────────────────────────
 
   return (
     <div className="space-y-3">
       <p className="text-xs font-semibold tracking-wide uppercase text-muted-foreground">
-        Payment History ({payments.length})
+        Payment History
+        {paidInvoices.length > 0 && (
+          <span className="ml-1 font-normal text-muted-foreground/60">
+            ({paidInvoices.length} invoice{paidInvoices.length !== 1 ? 's' : ''})
+          </span>
+        )}
       </p>
 
-      <div className="space-y-2">
-        {payments.map((payment: any) => (
-          <div
-            key={payment._id}
-            className="flex items-center justify-between p-3 transition-colors border rounded-lg hover:bg-muted/30"
-          >
-            <div className="flex-1 min-w-0">
-              <div className="flex flex-wrap items-center gap-2">
-                <span className="text-sm font-medium">
-                  {formatCurrency(payment.amount, payment.currency)}
-                </span>
-                <span className="text-xs text-muted-foreground">•</span>
-                <span className="text-xs text-muted-foreground">{getPaymentMethodLabel(payment.method)}</span>
-              </div>
-              <p className="mt-1 text-xs text-muted-foreground">
-                {formatDateTime(payment.paidAt)}
-              </p>
-              {payment.reference && (
-                <p className="text-xs text-muted-foreground mt-0.5">
-                  Ref: {payment.reference}
-                </p>
-              )}
-            </div>
-            <div className="flex items-center gap-2 shrink-0">
-              <StatusBadge status={payment.status} />
-              {onViewReceipt && (
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  className="px-2 h-7"
-                  onClick={() => onViewReceipt(payment.transactionCode || payment._id)}
+      {isLoading ? (
+        <div className="space-y-2">
+          {[...Array(3)].map((_, i) => (
+            <Skeleton key={i} className="w-full h-14" />
+          ))}
+        </div>
+      ) : paidInvoices.length === 0 ? (
+        <div className="flex flex-col items-center justify-center gap-2 py-6 text-center">
+          <Receipt className="w-8 h-8 text-muted-foreground" />
+          <p className="text-sm text-muted-foreground">No payment history</p>
+        </div>
+      ) : (
+        <div className="space-y-1.5">
+          {paidInvoices.map((inv: any) => {
+            const isExpanded = expandedInvoiceId === inv._id;
+            const currency = inv.currency || 'PKR';
+            const isSettled = inv.amountDue <= 0.01;
+
+            // Summarise the invoice: first line item or invoice number
+            const firstItem = inv.lineItems?.[0];
+            const itemLabel =
+              inv.lineItems?.length === 1
+                ? firstItem?.description
+                : inv.lineItems?.length > 1
+                  ? `${firstItem?.description} +${inv.lineItems.length - 1} more`
+                  : inv.invoiceNumber;
+
+            return (
+              <div
+                key={inv._id}
+                className={cn(
+                  'rounded-lg border overflow-hidden',
+                  isExpanded ? 'border-primary/30 bg-background' : 'bg-background',
+                )}
+              >
+                {/* ── Invoice row (clickable header) ────────────────────── */}
+                <button
+                  type="button"
+                  className="w-full text-left px-3 py-2.5 flex items-center gap-3 hover:bg-muted/30 transition-colors"
+                  onClick={() => handleToggle(inv._id)}
                 >
-                  <Eye className="h-3.5 w-3.5" />
-                </Button>
-              )}
-            </div>
-          </div>
-        ))}
-      </div>
+                  <FileText className="h-4 w-4 text-muted-foreground shrink-0" />
+
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <span className="text-xs font-mono text-muted-foreground shrink-0">
+                        {inv.invoiceNumber}
+                      </span>
+                      {itemLabel && (
+                        <span className="text-xs text-foreground truncate">
+                          · {itemLabel}
+                        </span>
+                      )}
+                    </div>
+                    <div className="flex items-center gap-2 mt-0.5 flex-wrap">
+                      <span className="text-sm font-semibold">
+                        {formatCurrency(inv.amountPaid, currency)}
+                      </span>
+                      {!isSettled && inv.amountDue > 0 && (
+                        <span className="text-xs text-muted-foreground">
+                          of {formatCurrency(inv.total, currency)}
+                        </span>
+                      )}
+                      <StatusBadge status={inv.status} />
+                    </div>
+                  </div>
+
+                  <span className="text-muted-foreground shrink-0">
+                    {isExpanded ? (
+                      <ChevronUp className="h-4 w-4" />
+                    ) : (
+                      <ChevronDown className="h-4 w-4" />
+                    )}
+                  </span>
+                </button>
+
+                {/* ── Expandable timeline ───────────────────────────────── */}
+                {isExpanded && (
+                  <InvoicePaymentTimeline invoiceId={inv._id} currency={currency} />
+                )}
+              </div>
+            );
+          })}
+        </div>
+      )}
     </div>
   );
 }

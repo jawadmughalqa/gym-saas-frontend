@@ -57,12 +57,12 @@ export const NAV_ITEMS: NavItem[] = [
     icon: Dumbbell,
     permission: 'trainer.read',
   },
-  {
-    to: '/staff',
-    label: 'Staff',
-    icon: UserCog,
-    permission: 'role.read',
-  },
+  // {
+  //   to: '/staff',
+  //   label: 'Staff',
+  //   icon: UserCog,
+  //   permission: 'role.read',
+  // },
   {
     to: '/branches',
     label: 'Branches',
@@ -166,12 +166,12 @@ export const NAV_GROUPS: NavGroup[] = [
         icon: Dumbbell,
         permission: 'trainer.read',
       },
-      {
-        to: '/staff',
-        label: 'Staff',
-        icon: UserCog,
-        permission: 'role.read',
-      },
+      // {
+      //   to: '/staff',
+      //   label: 'Staff',
+      //   icon: UserCog,
+      //   permission: 'role.read',
+      // },
       {
         to: '/branches',
         label: 'Branches',

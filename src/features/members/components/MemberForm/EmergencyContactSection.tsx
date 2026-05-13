@@ -1,5 +1,6 @@
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { PHONE } from '@/config/tenant.config';
 import type { UseFormRegister, FieldErrors } from 'react-hook-form';
 import type { MemberFormValues } from './types';
 
@@ -41,7 +42,7 @@ export function EmergencyContactSection({ register, errors, isPending }: Props) 
           <Input
             id="ec_phone"
             type="tel"
-            placeholder="+92 300 0000000"
+            placeholder={PHONE.placeholder}
             disabled={isPending}
             {...register('ec_phone')}
           />

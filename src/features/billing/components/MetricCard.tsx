@@ -1,6 +1,7 @@
 import { Card, CardContent } from '@/components/ui/card';
 import { cn } from '@/lib/utils';
 import { type LucideIcon } from 'lucide-react';
+import { CURRENCY, LOCALE } from '@/config/tenant.config';
 
 interface MetricCardProps {
   title: string;
@@ -35,9 +36,9 @@ export function MetricCard({
   subtitle,
 }: MetricCardProps) {
   const formatCurrency = (amount: number): string => {
-    return new Intl.NumberFormat('en-PK', {
+    return new Intl.NumberFormat(LOCALE, {
       style: 'currency',
-      currency: 'PKR',
+      currency: CURRENCY,
       minimumFractionDigits: 0,
       maximumFractionDigits: 0,
     }).format(amount);

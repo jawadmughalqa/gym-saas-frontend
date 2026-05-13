@@ -8,6 +8,7 @@ import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { usePostDiscountsValidate } from '@/api/generated/discounts/discounts';
+import { CURRENCY } from '@/config/tenant.config';
 
 const discountSchema = z.object({
   code: z.string().min(1, 'Enter a discount code'),
@@ -134,7 +135,7 @@ export function DiscountInput({
             <Badge variant="outline" className="text-green-700">
               {validatedDiscount.discountType === 'percentage'
                 ? `${validatedDiscount.value}% OFF`
-                : `PKR ${validatedDiscount.discountAmount} OFF`}
+                : `${CURRENCY} ${validatedDiscount.discountAmount} OFF`}
             </Badge>
           </div>
           <Button
@@ -160,7 +161,7 @@ export function DiscountInput({
       {validatedDiscount && (
         <p className="text-xs text-green-600 flex items-center gap-1">
           <CheckCircle className="h-3 w-3" />
-          Discount applied: PKR {validatedDiscount.discountAmount.toFixed(2)} off
+          Discount applied: {CURRENCY} {validatedDiscount.discountAmount.toFixed(2)} off
         </p>
       )}
     </div>

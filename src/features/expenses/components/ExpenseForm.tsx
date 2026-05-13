@@ -15,6 +15,7 @@ import {
 import { useGetBranches } from '@/api/generated/branches/branches';
 import { useCreateExpense, useUpdateExpense } from '../hooks/use-expenses';
 import type { Expense } from '@/api/generated/expenses/expenses';
+import { CURRENCY, CURRENCIES } from '@/config/tenant.config';
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 
@@ -50,7 +51,7 @@ const RECURRING_LABELS: Record<string, string> = {
   yearly: 'Yearly',
 };
 
-const CURRENCIES = ['PKR', 'USD', 'AED', 'SAR', 'EUR', 'GBP'];
+// CURRENCIES imported from tenant.config — PKR is the default
 
 // ─── Schema ───────────────────────────────────────────────────────────────────
 
@@ -115,7 +116,7 @@ export default function ExpenseForm({ open, onOpenChange, expense }: ExpenseForm
       category: '',
       customCategory: '',
       amount: '' as unknown as string,
-      currency: 'PKR',
+      currency: CURRENCY,
       date: new Date().toISOString().slice(0, 10),
       status: 'pending',
       recurring: 'none',
@@ -149,7 +150,7 @@ export default function ExpenseForm({ open, onOpenChange, expense }: ExpenseForm
         category: '',
         customCategory: '',
         amount: '' as unknown as string,
-        currency: 'PKR',
+        currency: CURRENCY,
         date: new Date().toISOString().slice(0, 10),
         status: 'pending',
         recurring: 'none',
@@ -286,7 +287,7 @@ export default function ExpenseForm({ open, onOpenChange, expense }: ExpenseForm
                 </SelectTrigger>
                 <SelectContent>
                   {CURRENCIES.map((c) => (
-                    <SelectItem key={c} value={c}>{c}</SelectItem>
+                    <SelectItem key={c.value} value={c.value}>{c.value}</SelectItem>
                   ))}
                 </SelectContent>
               </Select>

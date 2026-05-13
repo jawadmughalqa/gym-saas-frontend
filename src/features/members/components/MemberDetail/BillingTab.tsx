@@ -37,6 +37,7 @@ import { PaymentHistoryList } from '@/features/billing/components/PaymentHistory
 import { StatusBadge } from '@/features/billing/components/StatusBadge';
 import { MultiInvoicePaymentDialog } from '@/features/billing/components/MultiInvoicePaymentDialog';
 import InvoiceForm from '@/features/billing/components/InvoiceForm';
+import { CURRENCY } from '@/config/tenant.config';
 
 // ─── BillingTabProps ──────────────────────────────────────────────────────────
 
@@ -89,7 +90,7 @@ export function BillingTab({ memberId, branchId, memberName }: BillingTabProps) 
       amountDue: inv.amountDue ?? 0,
       amountPaid: inv.amountPaid ?? 0,
       total: inv.total ?? 0,
-      currency: inv.currency ?? 'PKR',
+      currency: inv.currency ?? CURRENCY,
       dueDate: inv.dueDate,
       lineItems: (inv.lineItems ?? []).map((li: any) => ({
         description: li.description ?? '',
@@ -109,7 +110,7 @@ export function BillingTab({ memberId, branchId, memberName }: BillingTabProps) 
 
   // Selected invoices (for multi-pay dialog)
   const selectedInvoices = outstandingInvoices.filter((inv) => selectedIds.has(inv._id));
-  const currency = outstandingInvoices[0]?.currency ?? 'PKR';
+  const currency = outstandingInvoices[0]?.currency ?? CURRENCY;
 
   // ── Handlers ───────────────────────────────────────────────────────────────
 
@@ -274,7 +275,7 @@ export function BillingTab({ memberId, branchId, memberName }: BillingTabProps) 
                 <CollectPaymentForm
                   invoiceId={activeInvoice._id}
                   amountDue={activeInvoice.amountDue}
-                  currency={activeInvoice.currency || 'PKR'}
+                  currency={activeInvoice.currency || CURRENCY}
                   onSuccess={handlePaymentSuccess}
                 />
               </div>

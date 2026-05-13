@@ -1,5 +1,6 @@
 import { Input }    from '@/components/ui/input';
 import { Label }    from '@/components/ui/label';
+import { PHONE } from '@/config/tenant.config';
 import { Textarea } from '@/components/ui/textarea';
 import {
   Select,
@@ -92,7 +93,7 @@ export function PersonalInfoSection({
         <Input
           id="phone"
           type="tel"
-          placeholder="+92 300 0000000"
+          placeholder={PHONE.placeholder}
           disabled={isPending}
           className={errors.phone ? 'border-destructive' : ''}
           {...register('phone')}

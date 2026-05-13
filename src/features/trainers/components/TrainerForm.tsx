@@ -48,6 +48,7 @@ import { toast } from "@/hooks/use-toast";
 import { getErrorMessage } from "@/utils/error";
 import type { TrainerProfile, TrainerStatus } from "@/types/trainer.types";
 import { useQueryClient } from "@tanstack/react-query";
+import { CURRENCY, CURRENCIES } from "@/config/tenant.config";
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 
@@ -61,8 +62,7 @@ const DAY_NAMES = [
   "Saturday",
 ];
 
-// PKR first — this is a Pakistani gym product
-const CURRENCIES = ["PKR", "USD", "AED", "SAR", "EUR", "GBP"];
+// CURRENCIES imported from tenant.config — PKR is the default
 
 const SPECIALIZATION_SUGGESTIONS = [
   "weight loss",
@@ -344,7 +344,7 @@ export default function TrainerForm({
       experienceYears: "",
       maxClients: "",
       monthlyRate: "",
-      currency: "PKR", // ← default PKR
+      currency: CURRENCY,
       status: "active",
       availability: [],
     },
@@ -377,7 +377,7 @@ export default function TrainerForm({
           (trainer as any).monthlyRate !== undefined
             ? String((trainer as any).monthlyRate)
             : "",
-        currency: trainer.currency ?? "PKR",
+        currency: trainer.currency ?? CURRENCY,
         status: trainer.status ?? "active",
         availability: trainer.availability ?? [],
       });
@@ -394,7 +394,7 @@ export default function TrainerForm({
         experienceYears: "",
         maxClients: "",
         monthlyRate: "",
-        currency: "PKR",
+        currency: CURRENCY,
         status: "active",
         availability: [],
       });
@@ -441,7 +441,7 @@ export default function TrainerForm({
           experienceYears: values.experienceYears as number | undefined,
           maxClients: values.maxClients as number | undefined,
           monthlyRate: values.monthlyRate as number | undefined,
-          currency: values.currency || "PKR",
+          currency: values.currency || CURRENCY,
           availability: values.availability,
         },
       });
@@ -656,16 +656,16 @@ export default function TrainerForm({
             <div className="space-y-1.5">
               <Label>Currency</Label>
               <Select
-                value={watch("currency") ?? "PKR"}
+                value={watch("currency") ?? CURRENCY}
                 onValueChange={(v) => setValue("currency", v)}
               >
                 <SelectTrigger>
-                  <SelectValue placeholder="PKR" />
+                  <SelectValue placeholder={CURRENCY} />
                 </SelectTrigger>
                 <SelectContent>
                   {CURRENCIES.map((c) => (
-                    <SelectItem key={c} value={c}>
-                      {c}
+                    <SelectItem key={c.value} value={c.value}>
+                      {c.value}
                     </SelectItem>
                   ))}
                 </SelectContent>

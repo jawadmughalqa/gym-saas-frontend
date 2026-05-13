@@ -11,6 +11,7 @@ import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import { formatCurrency, formatDate } from '@/utils/format';
 import { useGetInvoices } from '@/api/generated/invoices/invoices';
+import { CURRENCY } from '@/config/tenant.config';
 import { Skeleton } from '@/components/ui/skeleton';
 import { cn } from '@/lib/utils';
 
@@ -49,7 +50,7 @@ export function MemberBillingPopup({ open, onOpenChange, memberId, memberName }:
         {/* Total Pending Amount */}
         <div className="p-4 text-center rounded-lg bg-orange-50 dark:bg-orange-950/20">
           <p className="text-sm text-muted-foreground">Total Pending Amount</p>
-          <p className="text-2xl font-bold text-orange-600">{formatCurrency(pendingTotal, 'PKR')}</p>
+          <p className="text-2xl font-bold text-orange-600">{formatCurrency(pendingTotal, CURRENCY)}</p>
         </div>
 
         {/* Outstanding Fees List */}

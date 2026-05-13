@@ -20,6 +20,7 @@ import {
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { CURRENCY } from '@/config/tenant.config';
 import {
   Select,
   SelectContent,
@@ -64,7 +65,7 @@ export function MultiInvoicePaymentDialog({
   open,
   onOpenChange,
   invoices,
-  currency = 'PKR',
+  currency = CURRENCY,
   onSuccess,
 }: MultiInvoicePaymentDialogProps) {
   const queryClient = useQueryClient();

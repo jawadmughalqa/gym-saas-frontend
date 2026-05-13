@@ -50,6 +50,7 @@ import InvoiceForm from './components/InvoiceForm';
 import { MemberBillingDialog } from './components/MemberBillingDialog';
 import { InvoicePaymentModal } from './components/InvoicePaymentModal';
 import type { GetBillingRecentTransactions200DataItem } from '@/api/generated/schemas';
+import { CURRENCY } from '@/config/tenant.config';
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 
@@ -210,7 +211,7 @@ export default function BillingDashboard() {
       { query: { staleTime: 1000 * 60 } },
     );
   const stats    = dashData?.data;
-  const currency = stats?.currency ?? 'PKR';
+  const currency = stats?.currency ?? CURRENCY;
 
   // ── Due invoices ───────────────────────────────────────────────────────────
   const invoiceParams = {

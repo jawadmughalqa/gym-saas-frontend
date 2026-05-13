@@ -21,6 +21,7 @@ import { useQueryClient } from '@tanstack/react-query';
 import { toast } from '@/hooks/use-toast';
 import { getErrorMessage } from '@/utils/error';
 import type { Equipment } from '@/api/generated/schemas/equipment';
+import { CURRENCY, CURRENCIES } from '@/config/tenant.config';
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 
@@ -29,7 +30,7 @@ const CATEGORIES = [
   'group fitness', 'recovery', 'other',
 ];
 
-const CURRENCIES = ['USD', 'EUR', 'GBP', 'PKR', 'AED', 'SAR', 'CAD', 'AUD'];
+// CURRENCIES imported from tenant.config — PKR is the default
 
 // ─── Schema ───────────────────────────────────────────────────────────────────
 
@@ -115,7 +116,7 @@ export default function EquipmentForm({ open, onOpenChange, equipment }: Equipme
     defaultValues: {
       category: 'cardio',
       condition: 'good',
-      currency: 'USD',
+      currency: CURRENCY,
       status: 'operational',
     },
   });
@@ -131,7 +132,7 @@ export default function EquipmentForm({ open, onOpenChange, equipment }: Equipme
         assetTag: equipment.assetTag ?? '',
         purchaseDate: equipment.purchaseDate?.slice(0, 10) ?? '',
         purchasePrice: equipment.purchasePrice != null ? String(equipment.purchasePrice) : '',
-        currency: equipment.currency ?? 'USD',
+        currency: equipment.currency ?? CURRENCY,
         warrantyExpiresAt: equipment.warrantyExpiresAt?.slice(0, 10) ?? '',
         vendor: equipment.vendor ?? '',
         condition: (equipment.condition as EquipmentFormValues['condition']) ?? 'good',
@@ -144,7 +145,7 @@ export default function EquipmentForm({ open, onOpenChange, equipment }: Equipme
       reset({
         category: 'cardio',
         condition: 'good',
-        currency: 'USD',
+        currency: CURRENCY,
         status: 'operational',
       });
     }
@@ -312,13 +313,13 @@ export default function EquipmentForm({ open, onOpenChange, equipment }: Equipme
             <div className="space-y-1.5">
               <Label>Currency</Label>
               <Select
-                value={watch('currency') ?? 'USD'}
+                value={watch('currency') ?? CURRENCY}
                 onValueChange={(v) => setValue('currency', v)}
               >
                 <SelectTrigger><SelectValue /></SelectTrigger>
                 <SelectContent>
                   {CURRENCIES.map((c) => (
-                    <SelectItem key={c} value={c}>{c}</SelectItem>
+                    <SelectItem key={c.value} value={c.value}>{c.value}</SelectItem>
                   ))}
                 </SelectContent>
               </Select>

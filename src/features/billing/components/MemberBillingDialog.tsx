@@ -31,6 +31,7 @@ import { OutstandingFeesList } from './OutstandingFeesList';
 import { CollectPaymentForm } from './CollectPaymentForm';
 import { PaymentHistoryList } from './PaymentHistoryList';
 import InvoiceForm from './InvoiceForm';
+import { CURRENCY } from '@/config/tenant.config';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -159,7 +160,7 @@ export function MemberBillingDialog({
                         totalOutstanding > 0 ? 'text-red-600' : 'text-emerald-600',
                       )}
                     >
-                      {formatCurrency(totalOutstanding, 'PKR')}
+                      {formatCurrency(totalOutstanding, CURRENCY)}
                     </p>
                     {outstandingInvoices.length > 0 && (
                       <p className="text-xs text-muted-foreground mt-0.5">
@@ -192,7 +193,7 @@ export function MemberBillingDialog({
                         <CollectPaymentForm
                           invoiceId={activeInvoice._id}
                           amountDue={activeInvoice.amountDue}
-                          currency={activeInvoice.currency || 'PKR'}
+                          currency={activeInvoice.currency || CURRENCY}
                           onSuccess={handlePaymentSuccess}
                         />
                       </div>

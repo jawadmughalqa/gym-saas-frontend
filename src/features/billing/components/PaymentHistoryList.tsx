@@ -17,6 +17,7 @@ import { Receipt, ChevronDown, ChevronUp, FileText } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
 import { formatCurrency } from '@/lib/utils';
 import { useGetInvoices } from '@/api/generated/invoices/invoices';
+import { CURRENCY } from '@/config/tenant.config';
 import { useQueryClient } from '@tanstack/react-query';
 import { StatusBadge } from './StatusBadge';
 import { InvoicePaymentTimeline } from './InvoicePaymentTimeline';
@@ -93,7 +94,7 @@ export function PaymentHistoryList({ memberId }: PaymentHistoryListProps) {
         <div className="space-y-1.5">
           {paidInvoices.map((inv: any) => {
             const isExpanded = expandedInvoiceId === inv._id;
-            const currency = inv.currency || 'PKR';
+            const currency = inv.currency || CURRENCY;
             const isSettled = inv.amountDue <= 0.01;
 
             // Summarise the invoice: first line item or invoice number

@@ -7,6 +7,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import DataTable, { type ColumnDef } from "@/components/shared/DataTable";
 import EmptyState from "@/components/shared/EmptyState";
 import { formatDate } from "@/utils/format";
+import { CURRENCY } from "@/config/tenant.config";
 import {
   useGetInvoices,
   useGetPayments,
@@ -168,7 +169,7 @@ export function PaymentsTab({ memberId }: PaymentsTabProps) {
             <div className="flex items-center gap-2">
               <Receipt className="h-4 w-4 text-muted-foreground" />
               <span className="text-2xl font-bold">
-                PKR {totalInvoiced.toFixed(2)}
+                {CURRENCY} {totalInvoiced.toFixed(2)}
               </span>
             </div>
           </CardContent>
@@ -184,7 +185,7 @@ export function PaymentsTab({ memberId }: PaymentsTabProps) {
             <div className="flex items-center gap-2">
               <CreditCard className="h-4 w-4 text-green-600" />
               <span className="text-2xl font-bold text-green-600">
-                PKR {totalPaid.toFixed(2)}
+                {CURRENCY} {totalPaid.toFixed(2)}
               </span>
             </div>
           </CardContent>
@@ -200,7 +201,7 @@ export function PaymentsTab({ memberId }: PaymentsTabProps) {
             <div className="flex items-center gap-2">
               <DollarSign className="h-4 w-4 text-red-600" />
               <span className="text-2xl font-bold text-red-600">
-                PKR {outstandingBalance.toFixed(2)}
+                {CURRENCY} {outstandingBalance.toFixed(2)}
               </span>
             </div>
           </CardContent>

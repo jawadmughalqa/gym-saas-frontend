@@ -14,6 +14,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { formatCurrency, formatDateTime } from '@/lib/utils';
 import { useInvoicePayments } from '../hooks/useInvoicePayments';
 import { StatusBadge } from './StatusBadge';
+import { CURRENCY } from '@/config/tenant.config';
 
 // ─── Props ────────────────────────────────────────────────────────────────────
 
@@ -35,7 +36,7 @@ const METHOD_LABELS: Record<string, string> = {
 
 // ─── Component ────────────────────────────────────────────────────────────────
 
-export function InvoicePaymentTimeline({ invoiceId, currency = 'PKR' }: InvoicePaymentTimelineProps) {
+export function InvoicePaymentTimeline({ invoiceId, currency = CURRENCY }: InvoicePaymentTimelineProps) {
   const { data, isLoading, isError } = useInvoicePayments(invoiceId);
 
   if (isLoading) {

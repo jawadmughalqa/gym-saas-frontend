@@ -48,6 +48,7 @@ import {
 } from "@/api/generated/invoices/invoices";
 import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "@/hooks/use-toast";
+import { CURRENCY } from "@/config/tenant.config";
 
 // ─── Charge presets ───────────────────────────────────────────────────────────
 // Maps line item type → default description label.
@@ -111,7 +112,7 @@ const lineItemSchema = z.object({
 const formSchema = z.object({
   memberId: z.string().min(1, "Member is required"),
   branchId: z.string().min(1, "Branch is required"),
-  currency: z.string().default("PKR"),
+  currency: z.string().default(CURRENCY),
   dueDate: z.string().optional(),
   discountCode: z.string().optional(),
   invoiceLevelDiscountAmount: z.coerce.number().min(0).optional(),
@@ -336,7 +337,7 @@ export default function InvoiceForm({
     defaultValues: {
       memberId: defaultMemberId ?? "",
       branchId: defaultBranchId ?? "",
-      currency: "PKR",
+      currency: CURRENCY,
       issueImmediately: false,
       lineItems: [
         {
@@ -600,7 +601,7 @@ export default function InvoiceForm({
                 <Label htmlFor="currency">Currency</Label>
                 <Input
                   id="currency"
-                  placeholder="PKR"
+                  placeholder={CURRENCY}
                   disabled={isPending}
                   {...register("currency")}
                 />

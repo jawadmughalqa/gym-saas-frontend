@@ -38,6 +38,7 @@ import { useGetBranches, getGetBranchesQueryKey }  from '@/api/generated/branche
 import { useQueryClient }  from '@tanstack/react-query';
 import { useToast }        from '@/hooks/use-toast';
 import type { Member }     from '@/types/member.types';
+import { CURRENCY } from '@/config/tenant.config';
 
 import { memberFormSchema, memberFormDefaults, type MemberFormValues } from './types';
 import { PersonalInfoSection }      from './PersonalInfoSection';
@@ -230,7 +231,7 @@ export default function MemberForm({
                 customLabel:            m.customLabel!,
                 customPrice:            Number(m.customPrice),
                 customBillingFrequency: (m.customBillingFrequency as 'monthly') ?? 'monthly',
-                currency:               'PKR',
+                currency:               CURRENCY,
                 discountAmount:         Number(m.discountAmount) || 0,
                 startDate:              m.startDate || undefined,
                 autoCreateInvoice:      true,

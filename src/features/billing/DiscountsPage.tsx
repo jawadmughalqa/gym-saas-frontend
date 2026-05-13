@@ -29,6 +29,7 @@ import DiscountForm from "./components/DiscountForm";
 import { EditDiscountSheet } from "./components/EditDiscountSheet";
 import type { Discount } from "@/types/billing.types";
 import { toast } from "@/hooks/use-toast";
+import { CURRENCY } from "@/config/tenant.config";
 
 // ─── Status helper ────────────────────────────────────────────────────────────
 
@@ -242,7 +243,7 @@ export default function DiscountsPage() {
         <span className="font-semibold text-sm">
           {row.discountType === "percentage"
             ? `${row.value}%`
-            : formatCurrency(row.value ?? 0, "PKR")}
+            : formatCurrency(row.value ?? 0, CURRENCY)}
         </span>
       ),
     },

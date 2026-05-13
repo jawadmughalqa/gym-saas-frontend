@@ -62,6 +62,7 @@ import {
   useGetDiscounts,
 } from '@/api/generated/discounts/discounts';
 import { getGetBillingRecentTransactionsQueryKey } from '@/api/generated/billing/billing';
+import { PHONE } from '@/config/tenant.config';
 import type { Invoice, InvoiceLineItem } from '@/types/billing.types';
 
 // ─── Constants ─────────────────────────────────────────────────────────────────
@@ -324,7 +325,7 @@ function MethodExtraFields({
       <div className="grid grid-cols-2 gap-3">
         <div className="space-y-1.5">
           <Label className="text-xs">{label} Mobile Number</Label>
-          <Input placeholder="03XX-XXXXXXX" disabled={disabled} className="h-9" {...register('mobileNumber')} />
+          <Input placeholder={PHONE.placeholder} disabled={disabled} className="h-9" {...register('mobileNumber')} />
         </div>
         <div className="space-y-1.5">
           <Label className="text-xs">Transaction ID</Label>

@@ -16,6 +16,7 @@ import {
 } from '@/components/ui/select';
 import { formatCurrency } from '@/lib/utils';
 import { usePostPayments } from '@/api/generated/payments/payments';
+import { CURRENCY } from '@/config/tenant.config';
 import { getGetInvoicesQueryKey } from '@/api/generated/invoices/invoices';
 import { toast } from '@/hooks/use-toast';
 
@@ -37,7 +38,7 @@ interface CollectPaymentFormProps {
 export function CollectPaymentForm({
   invoiceId,
   amountDue,
-  currency = 'PKR',
+  currency = CURRENCY,
   onSuccess,
 }: CollectPaymentFormProps) {
   const queryClient = useQueryClient();

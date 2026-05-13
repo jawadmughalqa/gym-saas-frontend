@@ -2,6 +2,7 @@ import { CheckCircle2, CreditCard, ChevronDown, ChevronUp, Ban } from 'lucide-re
 import { useState } from 'react';
 import { formatCurrency, formatDate } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
+import { CURRENCY } from '@/config/tenant.config';
 import { Checkbox } from '@/components/ui/checkbox';
 import { StatusBadge } from './StatusBadge';
 import { cn } from '@/lib/utils';
@@ -91,7 +92,7 @@ export function OutstandingFeesList({
             onClick={() => onPaySelected(Array.from(selectedIds!))}
           >
             <CreditCard className="h-3 w-3 mr-1.5" />
-            Pay {selectedCount} Selected ({formatCurrency(selectedTotal, invoices[0]?.currency || 'PKR')})
+            Pay {selectedCount} Selected ({formatCurrency(selectedTotal, invoices[0]?.currency || CURRENCY)})
           </Button>
         )}
       </div>
@@ -147,8 +148,8 @@ export function OutstandingFeesList({
                 </p>
                 {isPartiallyPaid && (
                   <p className="text-xs text-orange-600 mt-0.5">
-                    Paid: {formatCurrency(invoice.amountPaid, invoice.currency || 'PKR')} —{' '}
-                    Remaining: {formatCurrency(invoice.amountDue, invoice.currency || 'PKR')}
+                    Paid: {formatCurrency(invoice.amountPaid, invoice.currency || CURRENCY)} —{' '}
+                    Remaining: {formatCurrency(invoice.amountDue, invoice.currency || CURRENCY)}
                   </p>
                 )}
               </div>
@@ -156,7 +157,7 @@ export function OutstandingFeesList({
               {/* Right: amount + buttons */}
               <div className="ml-2 flex flex-col items-end gap-2 shrink-0">
                 <p className="font-semibold text-red-600">
-                  {formatCurrency(invoice.amountDue, invoice.currency || 'PKR')}
+                  {formatCurrency(invoice.amountDue, invoice.currency || CURRENCY)}
                 </p>
                 <div className="flex items-center gap-1">
                   {hasMultipleItems && (
@@ -212,7 +213,7 @@ export function OutstandingFeesList({
                         )}
                       </span>
                       <span className="font-medium shrink-0">
-                        {formatCurrency(item.total ?? item.unitPrice * item.quantity, invoice.currency || 'PKR')}
+                        {formatCurrency(item.total ?? item.unitPrice * item.quantity, invoice.currency || CURRENCY)}
                       </span>
                     </div>
                   ))}

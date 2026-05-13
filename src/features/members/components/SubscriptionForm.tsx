@@ -29,6 +29,7 @@ import { useGetMembershipPlans } from '@/api/generated/membership-plans/membersh
 import type { MembershipPlan }   from '@/api/generated/schemas';
 import { useQueryClient }        from '@tanstack/react-query';
 import { useToast }              from '@/hooks/use-toast';
+import { CURRENCY }              from '@/config/tenant.config';
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 
@@ -61,7 +62,7 @@ const customSchema = z.object({
     'daily', 'weekly', 'monthly', 'quarterly',
     'semi_annual', 'annual', 'one_time',
   ]),
-  currency:          z.string().length(3).default('PKR'),
+  currency:          z.string().length(3).default(CURRENCY),
   discountAmount:    z.coerce.number().min(0).default(0),
   durationDays:      z.coerce.number().int().min(1).optional().or(z.literal('')),
   startDate:         z.string().optional(),
@@ -153,7 +154,7 @@ export default function SubscriptionForm({
       customLabel:            '',
       customPrice:            0,
       customBillingFrequency: 'monthly',
-      currency:               'PKR',
+      currency:               CURRENCY,
       discountAmount:         0,
       durationDays:           '',
       startDate:              '',
@@ -171,7 +172,7 @@ export default function SubscriptionForm({
       });
       customForm.reset({
         pricingType: 'custom', customLabel: '', customPrice: 0,
-        customBillingFrequency: 'monthly', currency: 'PKR',
+        customBillingFrequency: 'monthly', currency: CURRENCY,
         discountAmount: 0, durationDays: '', startDate: '',
         notes: '', autoCreateInvoice: true,
       });
@@ -462,7 +463,7 @@ export default function SubscriptionForm({
                   <Label htmlFor="currency">Currency</Label>
                   <Input
                     id="currency"
-                    placeholder="PKR"
+                    placeholder={CURRENCY}
                     maxLength={3}
                     disabled={isPending}
                     {...customForm.register('currency')}
@@ -529,7 +530,7 @@ export default function SubscriptionForm({
               <div className="rounded-lg border border-primary/20 bg-primary/5 px-4 py-3 flex items-center justify-between">
                 <span className="text-sm font-medium">Final Amount</span>
                 <span className="text-lg font-bold text-primary">
-                  {customForm.watch('currency') || 'PKR'} {customFinalPrice.toFixed(2)}
+                  {customForm.watch('currency') || CURRENCY} {customFinalPrice.toFixed(2)}
                 </span>
               </div>
 

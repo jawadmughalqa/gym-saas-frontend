@@ -17,6 +17,7 @@ import {
 } from '@/api/generated/members/members';
 import SubscriptionForm from '@/features/members/components/SubscriptionForm';
 import { FreezeDialog } from './FreezeDialog';
+import { CURRENCY } from '@/config/tenant.config';
 
 // ─── Props ────────────────────────────────────────────────────────────────────
 
@@ -80,7 +81,7 @@ export function SubscriptionsTab({ memberId, branchId }: SubscriptionsTabProps) 
       header: 'Amount',
       cell:   (row) => {
         const price    = (row as { finalPrice?: number }).finalPrice;
-        const currency = (row as { currency?: string }).currency ?? 'PKR';
+        const currency = (row as { currency?: string }).currency ?? CURRENCY;
         return price != null ? `${currency} ${price.toFixed(2)}` : '—';
       },
     },

@@ -24,6 +24,7 @@ import {
   getGetMembersMemberIdSubscriptionsQueryKey,
   getGetMembersMemberIdQueryKey,
 } from '@/api/generated/members/members';
+import { getGetInvoicesQueryKey } from '@/api/generated/invoices/invoices';
 import { useGetMembershipPlans } from '@/api/generated/membership-plans/membership-plans';
 import type { MembershipPlan }   from '@/api/generated/schemas';
 import { useQueryClient }        from '@tanstack/react-query';
@@ -111,6 +112,10 @@ export default function SubscriptionForm({
         });
         void queryClient.invalidateQueries({
           queryKey: getGetMembersMemberIdQueryKey(memberId),
+        });
+        // Invalidate invoices so BillingTab immediately shows the auto-created invoice
+        void queryClient.invalidateQueries({
+          queryKey: getGetInvoicesQueryKey({ memberId }),
         });
         toast({
           title:       'Subscription assigned',

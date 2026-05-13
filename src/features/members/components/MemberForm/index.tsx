@@ -34,7 +34,7 @@ import {
   usePostMembersMemberIdSubscriptions,
 } from '@/api/generated/members/members';
 import { usePostTrainersTrainerIdAssignments } from '@/api/generated/trainers/trainers';
-import { useGetBranches }  from '@/api/generated/branches/branches';
+import { useGetBranches, getGetBranchesQueryKey }  from '@/api/generated/branches/branches';
 import { useQueryClient }  from '@tanstack/react-query';
 import { useToast }        from '@/hooks/use-toast';
 import type { Member }     from '@/types/member.types';
@@ -144,9 +144,17 @@ export default function MemberForm({
 
     // ── EDIT path ─────────────────────────────────────────────────────────
     if (isEdit) {
+      // Detect branch change so we only send it when it actually changed
+      const originalBranchId =
+        typeof member!.branchId === 'object' && member!.branchId !== null
+          ? (member!.branchId as any)._id
+          : member!.branchId;
+      const branchChanged = values.branchId && values.branchId !== originalBranchId;
+
       await updateMutation.mutateAsync({
         memberId: member!._id,
         data: {
+          ...(branchChanged ? { branchId: values.branchId } : {}),
           firstName:        values.firstName,
           lastName:         values.lastName,
           phone:            values.phone,
@@ -162,6 +170,10 @@ export default function MemberForm({
       await queryClient.invalidateQueries({
         queryKey: getGetMembersMemberIdQueryKey(member!._id),
       });
+      // If branch changed, refresh branch list so memberCount updates everywhere
+      if (branchChanged) {
+        await queryClient.invalidateQueries({ queryKey: getGetBranchesQueryKey() });
+      }
 
       toast({ title: 'Member updated', description: 'Profile saved successfully.' });
       onOpenChange(false);

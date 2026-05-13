@@ -102,36 +102,34 @@ export function PersonalInfoSection({
         )}
       </div>
 
-      {/* Branch — create only */}
-      {!isEdit && (
-        <div className="space-y-1.5">
-          <Label htmlFor="branchId">Branch *</Label>
-          <Select
-            value={watch('branchId')}
-            onValueChange={(v) => setValue('branchId', v, { shouldValidate: true })}
-            disabled={isPending || branchesLoading}
+      {/* Branch — available in both create and edit */}
+      <div className="space-y-1.5">
+        <Label htmlFor="branchId">Branch *</Label>
+        <Select
+          value={watch('branchId')}
+          onValueChange={(v) => setValue('branchId', v, { shouldValidate: true })}
+          disabled={isPending || branchesLoading}
+        >
+          <SelectTrigger
+            id="branchId"
+            className={errors.branchId ? 'border-destructive' : ''}
           >
-            <SelectTrigger
-              id="branchId"
-              className={errors.branchId ? 'border-destructive' : ''}
-            >
-              <SelectValue
-                placeholder={branchesLoading ? 'Loading branches…' : 'Select a branch'}
-              />
-            </SelectTrigger>
-            <SelectContent>
-              {branches.map((b) => (
-                <SelectItem key={b._id} value={b._id}>
-                  {b.name}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-          {errors.branchId && (
-            <p className="text-xs text-destructive">{errors.branchId.message}</p>
-          )}
-        </div>
-      )}
+            <SelectValue
+              placeholder={branchesLoading ? 'Loading branches…' : 'Select a branch'}
+            />
+          </SelectTrigger>
+          <SelectContent>
+            {branches.map((b) => (
+              <SelectItem key={b._id} value={b._id}>
+                {b.name}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+        {errors.branchId && (
+          <p className="text-xs text-destructive">{errors.branchId.message}</p>
+        )}
+      </div>
 
       {/* DOB + Gender */}
       <div className="grid grid-cols-2 gap-3">

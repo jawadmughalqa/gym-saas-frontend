@@ -17,7 +17,16 @@ import { useQueryClient } from '@tanstack/react-query';
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
 import { Skeleton } from '@/components/ui/skeleton';
-import { useGetInvoices, getGetInvoicesQueryKey } from '@/api/generated/invoices/invoices';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from '@/components/ui/dialog';
+import { useGetInvoices, getGetInvoicesQueryKey, usePostInvoicesInvoiceIdVoid } from '@/api/generated/invoices/invoices';
 import { getGetPaymentsQueryKey } from '@/api/generated/payments/payments';
 import { formatCurrency } from '@/lib/utils';
 import { cn } from '@/lib/utils';
@@ -52,6 +61,11 @@ export function BillingTab({ memberId, branchId, memberName }: BillingTabProps) 
   const [multiPayOpen, setMultiPayOpen] = useState(false);
 
   const [newInvoiceOpen, setNewInvoiceOpen] = useState(false);
+
+  // Void state
+  const [voidInvoiceId, setVoidInvoiceId] = useState<string | null>(null);
+  const [voidReason, setVoidReason] = useState('');
+  const voidMutation = usePostInvoicesInvoiceIdVoid();
 
   // ── Fetch invoices for this member ─────────────────────────────────────────
   const { data: invoicesData, isLoading, refetch } = useGetInvoices(
@@ -129,6 +143,28 @@ export function BillingTab({ memberId, branchId, memberName }: BillingTabProps) 
     // Also invalidate any expanded per-invoice payment timelines
     queryClient.invalidateQueries({ queryKey: ['invoices'] });
     refetch();
+  }
+
+  function handleVoidClick(invoiceId: string) {
+    setVoidInvoiceId(invoiceId);
+    setVoidReason('');
+  }
+
+  async function handleVoidConfirm() {
+    if (!voidInvoiceId || !voidReason.trim()) return;
+    try {
+      await voidMutation.mutateAsync({
+        invoiceId: voidInvoiceId,
+        data: { reason: voidReason.trim() },
+      });
+      setVoidInvoiceId(null);
+      setVoidReason('');
+      queryClient.invalidateQueries({ queryKey: getGetInvoicesQueryKey({ memberId }) });
+      queryClient.invalidateQueries({ queryKey: ['invoices'] });
+      refetch();
+    } catch (err) {
+      // Error toast handled by mutation
+    }
   }
 
   // ─── Render ───────────────────────────────────────────────────────────────
@@ -216,6 +252,7 @@ export function BillingTab({ memberId, branchId, memberName }: BillingTabProps) 
             selectedIds={can('payment.create') && outstandingInvoices.length > 1 ? selectedIds : undefined}
             onToggleSelect={can('payment.create') && outstandingInvoices.length > 1 ? handleToggleSelect : undefined}
             onPaySelected={can('payment.create') ? handlePaySelected : undefined}
+            onVoid={can('invoice.void') ? handleVoidClick : undefined}
           />
 
           {/* ── Inline single-invoice payment form ───────────────────────── */}
@@ -269,6 +306,52 @@ export function BillingTab({ memberId, branchId, memberName }: BillingTabProps) 
         defaultMemberId={memberId}
         defaultBranchId={branchId}
       />
+
+      {/* Void invoice confirmation dialog */}
+      <Dialog
+        open={!!voidInvoiceId}
+        onOpenChange={(open) => {
+          if (!open) { setVoidInvoiceId(null); setVoidReason(''); }
+        }}
+      >
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Void Invoice</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-3 py-2">
+            <p className="text-sm text-muted-foreground">
+              This will permanently void the invoice and remove it from outstanding fees.
+              This action cannot be undone.
+            </p>
+            <div className="space-y-1.5">
+              <Label htmlFor="voidReason">Reason *</Label>
+              <Input
+                id="voidReason"
+                placeholder="e.g. Created by mistake, duplicate invoice…"
+                value={voidReason}
+                onChange={(e) => setVoidReason(e.target.value)}
+                disabled={voidMutation.isPending}
+              />
+            </div>
+          </div>
+          <DialogFooter className="gap-2">
+            <Button
+              variant="outline"
+              onClick={() => { setVoidInvoiceId(null); setVoidReason(''); }}
+              disabled={voidMutation.isPending}
+            >
+              Cancel
+            </Button>
+            <Button
+              variant="destructive"
+              onClick={handleVoidConfirm}
+              disabled={!voidReason.trim() || voidMutation.isPending}
+            >
+              {voidMutation.isPending ? 'Voiding…' : 'Void Invoice'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

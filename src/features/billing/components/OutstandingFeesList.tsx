@@ -1,4 +1,4 @@
-import { CheckCircle2, CreditCard, ChevronDown, ChevronUp } from 'lucide-react';
+import { CheckCircle2, CreditCard, ChevronDown, ChevronUp, Ban } from 'lucide-react';
 import { useState } from 'react';
 import { formatCurrency, formatDate } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
@@ -38,6 +38,8 @@ interface OutstandingFeesListProps {
   onToggleSelect?: (invoiceId: string) => void;
   /** Called when "Pay Selected" is clicked */
   onPaySelected?: (invoiceIds: string[]) => void;
+  /** Called when the user clicks the void button on an invoice */
+  onVoid?: (invoiceId: string) => void;
 }
 
 export function OutstandingFeesList({
@@ -47,6 +49,7 @@ export function OutstandingFeesList({
   selectedIds,
   onToggleSelect,
   onPaySelected,
+  onVoid,
 }: OutstandingFeesListProps) {
   const [expandedIds, setExpandedIds] = useState<Set<string>>(new Set());
 
@@ -179,6 +182,17 @@ export function OutstandingFeesList({
                     >
                       <CreditCard className="h-3 w-3 mr-1" />
                       {isActive ? 'Cancel' : 'Collect'}
+                    </Button>
+                  )}
+                  {onVoid && !multiSelectMode && invoice.amountPaid === 0 && (
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="h-6 text-xs px-1.5 text-muted-foreground hover:text-destructive hover:bg-destructive/10"
+                      onClick={() => onVoid(invoice._id)}
+                      title="Void invoice"
+                    >
+                      <Ban className="h-3 w-3" />
                     </Button>
                   )}
                 </div>

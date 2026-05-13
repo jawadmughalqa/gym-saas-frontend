@@ -5,6 +5,20 @@ import { useAuthStore } from '@/stores/auth.store';
 import { toast } from '@/hooks/use-toast';
 import { getErrorMessage } from '@/utils/error';
 
+// ─── Helpers ──────────────────────────────────────────────────────────────────
+
+/**
+ * Routes that are role-gated. Never bounce a newly-logged-in user back to
+ * these paths if they landed on /login from there (e.g. superadmin tab left open,
+ * then gym owner signs in → would hit /super-admin's allowedRoles guard → 403).
+ */
+const ROLE_GATED_PREFIXES = ['/super-admin', '/unauthorized'];
+
+function getSafeRedirect(from: string): string {
+  const isGated = ROLE_GATED_PREFIXES.some((prefix) => from.startsWith(prefix));
+  return isGated ? '/dashboard' : from;
+}
+
 // ─── Login ────────────────────────────────────────────────────────────────────
 
 export function useLogin() {
@@ -19,7 +33,15 @@ export function useLogin() {
     mutationFn: loginApi,
     onSuccess: (data) => {
       setAuth(data.user, data.accessToken);
-      navigate(from, { replace: true });
+
+      // First-time login: must change password before accessing the app
+      if (data.user.forcePasswordChange) {
+        navigate('/settings/change-password', { replace: true });
+        return;
+      }
+
+      // Sanitize redirect — prevent sending a gym_owner to /super-admin, etc.
+      navigate(getSafeRedirect(from), { replace: true });
     },
     onError: (error) => {
       // Error is surfaced inline on the login form — toast is redundant here,

@@ -177,7 +177,7 @@ export default function ExpenseForm({ open, onOpenChange, expense }: ExpenseForm
 
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
-      <SheetContent className="w-full sm:max-w-xl overflow-y-auto">
+      <SheetContent className="w-full px-4 sm:max-w-xl overflow-y-auto">
         <SheetHeader className="pb-4">
           <SheetTitle>{isEditing ? 'Edit Expense' : 'Record Expense'}</SheetTitle>
           <SheetDescription>

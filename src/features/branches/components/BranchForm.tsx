@@ -162,7 +162,7 @@ export default function BranchForm({ open, onOpenChange, branch }: BranchFormPro
 
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
-      <SheetContent className="w-full sm:max-w-lg overflow-y-auto">
+      <SheetContent className="w-full px-4 sm:max-w-lg overflow-y-auto">
         <SheetHeader className="mb-6">
           <SheetTitle>{isEdit ? 'Edit Branch' : 'New Branch'}</SheetTitle>
           <SheetDescription>

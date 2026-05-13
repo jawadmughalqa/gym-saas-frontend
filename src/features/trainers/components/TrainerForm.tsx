@@ -453,7 +453,7 @@ export default function TrainerForm({
   // ── Render ────────────────────────────────────────────────────────────────
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
-      <SheetContent side="right" className="w-full sm:max-w-xl overflow-y-auto">
+      <SheetContent side="right" className="w-full px-4 sm:max-w-xl overflow-y-auto">
         <SheetHeader>
           <SheetTitle>{isEdit ? "Edit Trainer" : "Add Trainer"}</SheetTitle>
           <SheetDescription>

@@ -3,6 +3,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { Eye, EyeOff, Loader2 } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -14,6 +15,7 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { usePostAuthPasswordChange } from "@/api/generated/auth/auth";
+import { useToast } from "@/hooks/use-toast";
 
 const schema = z
   .object({
@@ -77,7 +79,9 @@ function PasswordField({
 }
 
 export default function ChangePasswordPage() {
-  // ✅ Hook called at component top-level — never inside an event handler
+  const navigate = useNavigate();
+  const { toast } = useToast();
+
   const { mutate, isPending, isError, error } = usePostAuthPasswordChange();
 
   const {
@@ -97,7 +101,18 @@ export default function ChangePasswordPage() {
           newPassword: values.newPassword,
         },
       },
-      { onSuccess: () => reset() },
+      {
+        onSuccess: () => {
+          reset();
+          toast({
+            title: "Password updated",
+            description: "Your password has been changed successfully.",
+          });
+          // Redirect to dashboard — handles both the forced first-login flow
+          // and regular password changes from the Settings menu
+          navigate("/dashboard", { replace: true });
+        },
+      },
     );
   }
 

@@ -122,7 +122,7 @@ export default function CreateTenantForm({ open, onOpenChange, onSuccess }: Crea
 
   return (
     <Sheet open={open} onOpenChange={handleClose}>
-      <SheetContent className="w-full sm:max-w-lg overflow-y-auto">
+      <SheetContent className="w-full px-4 sm:max-w-lg overflow-y-auto">
         <SheetHeader className="mb-6">
           <SheetTitle>Provision New Tenant</SheetTitle>
           <SheetDescription>

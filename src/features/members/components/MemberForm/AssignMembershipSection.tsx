@@ -95,7 +95,12 @@ export function AssignMembershipSection({ control, errors, isPending, currency =
     setExpanded(next);
     // Mark enabled/disabled so the parent knows whether to submit membership
     enabledField.onChange(next);
-    if (!next) {
+    if (next) {
+      // Pre-fill start date with today when section opens (if not already set)
+      if (!startDateField.value) {
+        startDateField.onChange(new Date().toISOString().slice(0, 10));
+      }
+    } else {
       // Clear all fields when collapsed so parent doesn't submit stale data
       planIdField.onChange('');
       discountField.onChange(0);
@@ -110,7 +115,7 @@ export function AssignMembershipSection({ control, errors, isPending, currency =
   // ── Mode switch ───────────────────────────────────────────────────────────
   function handleModeSwitch(mode: 'plan' | 'custom') {
     setPricingMode(mode);
-    // Reset fields when switching modes
+    // Reset plan/custom fields when switching modes — keep startDate intact
     planIdField.onChange('');
     discountField.onChange(0);
     labelField.onChange('');
@@ -336,30 +341,31 @@ export function AssignMembershipSection({ control, errors, isPending, currency =
             </div>
           )}
 
-          {/* ── Shared: start date + final price preview ─────────────────── */}
-          {(selectedPlan || (pricingMode === 'custom' && Number(priceField.value) > 0)) && (
-            <>
-              <div className="space-y-1.5">
-                <Label htmlFor="membershipStartDate">Start Date</Label>
-                <Input
-                  id="membershipStartDate"
-                  type="date"
-                  disabled={isPending}
-                  value={startDateField.value as string}
-                  onChange={(e) => startDateField.onChange(e.target.value)}
-                />
-                <p className="text-xs text-muted-foreground">
-                  Leave blank to start today.
-                </p>
-              </div>
+          {/* ── Shared: start date (always shown when expanded) ──────────── */}
+          <div className="space-y-1.5">
+            <Label htmlFor="membershipStartDate">
+              Start Date <span className="text-destructive">*</span>
+            </Label>
+            <Input
+              id="membershipStartDate"
+              type="date"
+              disabled={isPending}
+              value={startDateField.value as string}
+              onChange={(e) => startDateField.onChange(e.target.value)}
+            />
+            <p className="text-xs text-muted-foreground">
+              Defaults to today. Change if the membership starts on a different date.
+            </p>
+          </div>
 
-              <div className="rounded-lg border border-primary/20 bg-primary/5 px-4 py-3 flex items-center justify-between">
-                <span className="text-sm font-medium">Final Amount</span>
-                <span className="text-lg font-bold text-primary">
-                  {displayCurrency} {finalPrice.toFixed(2)}
-                </span>
-              </div>
-            </>
+          {/* ── Final price preview — shown once plan/price is selected ──── */}
+          {(selectedPlan || (pricingMode === 'custom' && Number(priceField.value) > 0)) && (
+            <div className="rounded-lg border border-primary/20 bg-primary/5 px-4 py-3 flex items-center justify-between">
+              <span className="text-sm font-medium">Final Amount</span>
+              <span className="text-lg font-bold text-primary">
+                {displayCurrency} {finalPrice.toFixed(2)}
+              </span>
+            </div>
           )}
         </div>
       )}

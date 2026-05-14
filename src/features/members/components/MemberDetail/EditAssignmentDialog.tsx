@@ -39,9 +39,23 @@ interface Props {
   onSuccess:    () => void;
 }
 
+// ─── Helpers ─────────────────────────────────────────────────────────────────
+
+/** Returns the trainer's default monthlyRate from the populated trainerId object, if available. */
+function getTrainerDefaultRate(assignment: TrainerAssignment): number | undefined {
+  if (typeof assignment.trainerId === 'object' && assignment.trainerId !== null) {
+    // Model stores it as 'hourlyRate' — fall back to 'monthlyRate' for legacy data
+    return (assignment.trainerId as any).hourlyRate ?? (assignment.trainerId as any).monthlyRate ?? undefined;
+  }
+  return undefined;
+}
+
 // ─── Component ────────────────────────────────────────────────────────────────
 
 export function EditAssignmentDialog({ open, onOpenChange, assignment, onSuccess }: Props) {
+  // If the assignment has no monthlyCharge yet, fall back to the trainer's default rate
+  const defaultCharge = assignment.monthlyCharge ?? getTrainerDefaultRate(assignment);
+
   const {
     register,
     handleSubmit,
@@ -52,7 +66,7 @@ export function EditAssignmentDialog({ open, onOpenChange, assignment, onSuccess
   } = useForm<FormValues>({
     resolver: zodResolver(schema),
     defaultValues: {
-      monthlyCharge:           assignment.monthlyCharge,
+      monthlyCharge:           defaultCharge,
       currency:                assignment.currency ?? CURRENCY,
       goal:                    assignment.goal ?? '',
       sessionFrequencyPerWeek: assignment.sessionFrequencyPerWeek,
@@ -82,8 +96,9 @@ export function EditAssignmentDialog({ open, onOpenChange, assignment, onSuccess
 
   useEffect(() => {
     if (open) {
+      const charge = assignment.monthlyCharge ?? getTrainerDefaultRate(assignment);
       reset({
-        monthlyCharge:           assignment.monthlyCharge,
+        monthlyCharge:           charge,
         currency:                assignment.currency ?? CURRENCY,
         goal:                    assignment.goal ?? '',
         sessionFrequencyPerWeek: assignment.sessionFrequencyPerWeek,

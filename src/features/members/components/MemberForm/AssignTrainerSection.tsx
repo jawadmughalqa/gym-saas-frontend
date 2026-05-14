@@ -59,18 +59,20 @@ export function AssignTrainerSection({ control, errors, isPending, branchId }: P
   const trainers = trainersData?.data ?? [];
 
   // ── Pre-fill monthlyCharge from trainer's monthlyRate when trainer changes ─
+  // Runs whenever the selected trainerId changes OR the trainers list finishes loading.
+  // Always sets the charge (even to undefined) so stale values don't persist.
   useEffect(() => {
     if (!trainerField.value) {
       chargeField.onChange(undefined);
       return;
     }
     const t = trainers.find((tr) => tr._id === trainerField.value);
-    const rate = (t as any)?.monthlyRate;
-    if (rate != null) {
-      chargeField.onChange(rate);
-    }
+    // API stores the rate as 'hourlyRate' (the field was named in the model as hourlyRate)
+    const rate = (t as any)?.hourlyRate ?? (t as any)?.monthlyRate;
+    chargeField.onChange(rate != null ? rate : undefined);
+  // chargeField is stable — safe to omit from deps
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [trainerField.value, trainers.length]);
+  }, [trainerField.value, trainers]);
 
   // ── Toggle ────────────────────────────────────────────────────────────────
   function handleToggle() {
@@ -157,7 +159,7 @@ export function AssignTrainerSection({ control, errors, isPending, branchId }: P
                     : trainer._id;
                   const specs: string[] = (trainer as any).specializations ?? [];
                   const slots = (trainer as any).maxClients - (trainer as any).currentClientCount;
-                  const rate  = (trainer as any).monthlyRate;
+                  const rate  = (trainer as any).hourlyRate ?? (trainer as any).monthlyRate;
                   return (
                     <SelectItem key={trainer._id} value={trainer._id ?? ''}>
                       <div className="flex items-center justify-between w-full gap-4">

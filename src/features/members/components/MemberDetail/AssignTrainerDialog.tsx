@@ -69,7 +69,8 @@ export default function AssignTrainerDialog({
       return;
     }
     const t = trainers.find((tr) => tr._id === selectedTrainerId);
-    const rate = (t as any)?.monthlyRate;
+    // API stores the rate as 'hourlyRate' (model field name)
+    const rate = (t as any)?.hourlyRate ?? (t as any)?.monthlyRate;
     setMonthlyCharge(rate != null ? String(rate) : "");
   }, [selectedTrainerId, trainers]);
 
@@ -187,7 +188,7 @@ export default function AssignTrainerDialog({
                   const slots =
                     (trainer as any)?.maxClients -
                     (trainer as any)?.currentClientCount;
-                  const rate = (trainer as any)?.monthlyRate;
+                  const rate = (trainer as any)?.hourlyRate ?? (trainer as any)?.monthlyRate;
                   return (
                     <SelectItem key={trainer._id} value={trainer._id ?? ""}>
                       <div className="flex items-center justify-between w-full gap-4">

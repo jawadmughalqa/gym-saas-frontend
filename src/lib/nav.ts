@@ -75,12 +75,12 @@ export const NAV_ITEMS: NavItem[] = [
     icon: Package,
     permission: 'equipment.read',
   },
-  {
-    to: '/work-orders',
-    label: 'Work Orders',
-    icon: ClipboardList,
-    permission: 'work_order.read',
-  },
+  // {
+  //   to: '/work-orders',
+  //   label: 'Work Orders',
+  //   icon: ClipboardList,
+  //   permission: 'work_order.read',
+  // },
   {
     to: '/membership-plans',
     label: 'Membership Plans',
@@ -184,12 +184,12 @@ export const NAV_GROUPS: NavGroup[] = [
         icon: Package,
         permission: 'equipment.read',
       },
-      {
-        to: '/work-orders',
-        label: 'Work Orders',
-        icon: ClipboardList,
-        permission: 'work_order.read',
-      },
+      // {
+      //   to: '/work-orders',
+      //   label: 'Work Orders',
+      //   icon: ClipboardList,
+      //   permission: 'work_order.read',
+      // },
       {
         to: '/membership-plans',
         label: 'Membership Plans',

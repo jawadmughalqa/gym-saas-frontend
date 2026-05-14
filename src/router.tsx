@@ -189,11 +189,11 @@ const router = createBrowserRouter([
           },
 
           // ── Work Orders ───────────────────────────────────────────────
-          {
-            path: "work-orders",
-            element: <Lazy><WorkOrdersPage /></Lazy>,
-            handle: { crumb: "Work Orders" },
-          },
+          // {
+          //   path: "work-orders",
+          //   element: <Lazy><WorkOrdersPage /></Lazy>,
+          //   handle: { crumb: "Work Orders" },
+          // },
 
           // ── Reports ───────────────────────────────────────────────────
           {

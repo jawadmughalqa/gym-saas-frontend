@@ -203,12 +203,12 @@ export default function TrainersPage() {
           <span className="text-muted-foreground text-sm">—</span>
         ),
     },
-    {
-      key: "ratingAvg",
-      header: "Rating",
-      sortable: true,
-      cell: (row) => <StarRating avg={row.ratingAvg} count={row.ratingCount} />,
-    },
+    // {
+    //   key: "ratingAvg",
+    //   header: "Rating",
+    //   sortable: true,
+    //   cell: (row) => <StarRating avg={row.ratingAvg} count={row.ratingCount} />,
+    // },
     {
       key: "currentClientCount",
       header: "Clients",

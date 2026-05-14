@@ -130,12 +130,12 @@ export const NAV_ITEMS: NavItem[] = [
     icon: Bell,
     permission: 'notification.read',
   },
-  {
-    to: '/roles',
-    label: 'Roles',
-    icon: Shield,
-    permission: 'role.read',
-  },
+  // {
+  //   to: '/roles',
+  //   label: 'Roles',
+  //   icon: Shield,
+  //   permission: 'role.read',
+  // },
 ];
 
 // ─── Grouped (used by grouped sidebar implementations) ────────────────────────
@@ -249,12 +249,12 @@ export const NAV_GROUPS: NavGroup[] = [
         icon: Bell,
         permission: 'notification.read',
       },
-      {
-        to: '/roles',
-        label: 'Roles',
-        icon: Shield,
-        permission: 'role.read',
-      },
+      // {
+      //   to: '/roles',
+      //   label: 'Roles',
+      //   icon: Shield,
+      //   permission: 'role.read',
+      // },
     ],
   },
 ];

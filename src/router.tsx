@@ -224,11 +224,11 @@ const router = createBrowserRouter([
           },
 
           // ── Roles ─────────────────────────────────────────────────────
-          {
-            path: "roles",
-            element: <Lazy><RolesPage /></Lazy>,
-            handle: { crumb: "Roles & Permissions" },
-          },
+          // {
+          //   path: "roles",
+          //   element: <Lazy><RolesPage /></Lazy>,
+          //   handle: { crumb: "Roles & Permissions" },
+          // },
 
         ],
       },

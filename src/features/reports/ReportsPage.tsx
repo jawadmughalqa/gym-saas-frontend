@@ -162,7 +162,7 @@ function DashboardTab() {
       {/* ── Members ───────────────────────────────────────────────────────── */}
       <section>
         <SectionTitle>Members</SectionTitle>
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-7">
           <StatCard
             title="Total Members"
             value={isLoading ? '—' : String(members.total ?? 0)}
@@ -185,6 +185,12 @@ function DashboardTab() {
             value={isLoading ? '—' : String(members.frozen ?? 0)}
             icon={Snowflake}
             iconClassName="bg-blue-500/10"
+          />
+          <StatCard
+            title="Suspended"
+            value={isLoading ? '—' : String(members.suspended ?? 0)}
+            icon={AlertTriangle}
+            iconClassName="bg-orange-500/10"
           />
           <StatCard
             title="New This Month"

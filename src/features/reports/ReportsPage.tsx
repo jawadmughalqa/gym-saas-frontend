@@ -18,6 +18,7 @@ import {
 import PageHeader from '@/components/layout/PageHeader';
 import PageShell from '@/components/layout/PageShell';
 import StatCard from '@/components/shared/StatCard';
+import { CURRENCY } from '@/config/tenant.config';
 import {
   useGetReportsDashboard,
   useGetReportsRevenue,
@@ -38,16 +39,16 @@ const DAY_NAMES    = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 
 const fmt = (d: Date) => format(d, 'yyyy-MM-dd');
 
-/** Compact PKR formatter for stat cards and chart axes */
+/** Compact currency formatter for stat cards and chart axes */
 const pkr = (value: number): string => {
-  if (value >= 1_000_000) return `PKR ${(value / 1_000_000).toFixed(1)}M`;
-  if (value >= 1_000)     return `PKR ${(value / 1_000).toFixed(1)}K`;
-  return `PKR ${Math.round(value).toLocaleString()}`;
+  if (value >= 1_000_000) return `${CURRENCY} ${(value / 1_000_000).toFixed(1)}M`;
+  if (value >= 1_000)     return `${CURRENCY} ${(value / 1_000).toFixed(1)}K`;
+  return `${CURRENCY} ${Math.round(value).toLocaleString()}`;
 };
 
-/** Full PKR formatter for tooltips */
+/** Full currency formatter for tooltips */
 const pkrFull = (value: number): string =>
-  `PKR ${Math.round(value).toLocaleString()}`;
+  `${CURRENCY} ${Math.round(value).toLocaleString()}`;
 
 /** Growth badge: +12.5% or -3.0% or N/A */
 function GrowthBadge({ pct }: { pct: number | null | undefined }) {

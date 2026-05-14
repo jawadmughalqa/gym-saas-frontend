@@ -1,6 +1,5 @@
-import { useState } from "react";
-import { useController, type Control, type FieldErrors } from "react-hook-form";
-import { ChevronDown, ChevronUp, Plus, User } from "lucide-react";
+import { useState, useEffect } from "react";
+import { User } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
@@ -13,7 +12,6 @@ import {
 import { toast } from "@/hooks/use-toast";
 import { useGetTrainers } from "@/api/generated/trainers/trainers";
 import { usePostTrainersTrainerIdAssignments } from "@/api/generated/trainers/trainers";
-import type { MemberFormValues } from "../MemberForm/types";
 import type { TrainerAssignment } from "./TrainerTab";
 import {
   Button,
@@ -24,6 +22,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui";
+import { CURRENCY } from "@/config/tenant.config";
 
 // ─── Props ────────────────────────────────────────────────────────────────────
 
@@ -46,10 +45,10 @@ export default function AssignTrainerDialog({
   currentAssignment,
   onSuccess,
 }: Props) {
-  const [expanded, setExpanded] = useState(false);
   const [selectedTrainerId, setSelectedTrainerId] = useState<string>("");
   const [goal, setGoal] = useState("");
   const [sessionsPerWeek, setSessionsPerWeek] = useState<number | undefined>();
+  const [monthlyCharge, setMonthlyCharge] = useState<string>("");
 
   // ── Fetch trainers ─────────────────────────────────────────────────────────
   const { data: trainersData, isLoading: loadingTrainers } = useGetTrainers(
@@ -63,15 +62,28 @@ export default function AssignTrainerDialog({
   );
   const trainers = trainersData?.data ?? [];
 
+  // ── Pre-fill monthlyCharge from trainer's monthlyRate when trainer changes ─
+  useEffect(() => {
+    if (!selectedTrainerId) {
+      setMonthlyCharge("");
+      return;
+    }
+    const t = trainers.find((tr) => tr._id === selectedTrainerId);
+    const rate = (t as any)?.monthlyRate;
+    setMonthlyCharge(rate != null ? String(rate) : "");
+  }, [selectedTrainerId, trainers]);
+
   // ── Mutation ───────────────────────────────────────────────────────────────
   const assignMutation = usePostTrainersTrainerIdAssignments({
     mutation: {
       onSuccess: () => {
+        const t = trainers.find((tr) => tr._id === selectedTrainerId);
+        const name = t
+          ? `${(t as any).userId?.firstName ?? ""} ${(t as any).userId?.lastName ?? ""}`.trim()
+          : "Trainer";
         toast({
           title: "Trainer assigned",
-          description: selectedTrainer
-            ? `${selectedTrainer.name} has been assigned as the personal trainer.`
-            : "Trainer assigned successfully.",
+          description: `${name} has been assigned. PT fee invoice created.`,
         });
         resetForm();
         onOpenChange(false);
@@ -97,18 +109,7 @@ export default function AssignTrainerDialog({
     setSelectedTrainerId("");
     setGoal("");
     setSessionsPerWeek(undefined);
-    setExpanded(false);
-  }
-
-  function handleToggle() {
-    if (!expanded && currentAssignment) {
-      // If there's an existing assignment, warn that it will be replaced
-      const confirmReplace = window.confirm(
-        "This member already has an active trainer. Assigning a new trainer will end the current assignment. Continue?",
-      );
-      if (!confirmReplace) return;
-    }
-    setExpanded(!expanded);
+    setMonthlyCharge("");
   }
 
   function handleSubmit() {
@@ -121,6 +122,15 @@ export default function AssignTrainerDialog({
       return;
     }
 
+    if (currentAssignment) {
+      const confirmReplace = window.confirm(
+        "This member already has an active trainer. Assigning a new trainer will end the current assignment. Continue?",
+      );
+      if (!confirmReplace) return;
+    }
+
+    const charge = monthlyCharge ? Number(monthlyCharge) : undefined;
+
     assignMutation.mutate({
       trainerId: selectedTrainerId,
       data: {
@@ -128,6 +138,8 @@ export default function AssignTrainerDialog({
         branchId,
         goal: goal || undefined,
         sessionFrequencyPerWeek: sessionsPerWeek,
+        monthlyCharge: charge,
+        currency: CURRENCY,
       },
     });
   }
@@ -138,8 +150,8 @@ export default function AssignTrainerDialog({
         <DialogHeader>
           <DialogTitle>Assign Trainer</DialogTitle>
           <DialogDescription>
-            Select a personal trainer for this member. If a trainer is already
-            assigned, they will be replaced.
+            Select a personal trainer for this member. A PT fee invoice will be
+            created automatically if a monthly charge is set.
           </DialogDescription>
         </DialogHeader>
 
@@ -171,11 +183,11 @@ export default function AssignTrainerDialog({
                   const name = user
                     ? `${user?.firstName ?? ""} ${user?.lastName ?? ""}`.trim()
                     : trainer._id;
-                  const specs: string[] =
-                    (trainer as any)?.specializations ?? [];
+                  const specs: string[] = (trainer as any)?.specializations ?? [];
                   const slots =
                     (trainer as any)?.maxClients -
                     (trainer as any)?.currentClientCount;
+                  const rate = (trainer as any)?.monthlyRate;
                   return (
                     <SelectItem key={trainer._id} value={trainer._id ?? ""}>
                       <div className="flex items-center justify-between w-full gap-4">
@@ -188,9 +200,16 @@ export default function AssignTrainerDialog({
                             </span>
                           )}
                         </div>
-                        <span className="text-xs text-muted-foreground shrink-0">
-                          {slots} slot{slots !== 1 ? "s" : ""} left
-                        </span>
+                        <div className="flex items-center gap-2 shrink-0">
+                          {rate != null && (
+                            <span className="text-xs text-muted-foreground">
+                              {CURRENCY} {Number(rate).toLocaleString()}/mo
+                            </span>
+                          )}
+                          <span className="text-xs text-muted-foreground">
+                            {slots} slot{slots !== 1 ? "s" : ""}
+                          </span>
+                        </div>
                       </div>
                     </SelectItem>
                   );
@@ -202,6 +221,26 @@ export default function AssignTrainerDialog({
           {/* Show rest of fields only after trainer is selected */}
           {selectedTrainerId && (
             <>
+              {/* Monthly PT charge */}
+              <div className="space-y-1.5">
+                <Label htmlFor="monthlyCharge">
+                  PT Charge / Month ({CURRENCY})
+                </Label>
+                <Input
+                  id="monthlyCharge"
+                  type="number"
+                  min="0"
+                  placeholder="e.g. 5000"
+                  disabled={assignMutation.isPending}
+                  value={monthlyCharge}
+                  onChange={(e) => setMonthlyCharge(e.target.value)}
+                />
+                <p className="text-xs text-muted-foreground">
+                  A PT fee invoice will be created automatically when set.
+                  Pre-filled from trainer's default rate — override as needed.
+                </p>
+              </div>
+
               {/* Goal */}
               <div className="space-y-1.5">
                 <Label htmlFor="trainerGoal">Goal</Label>
@@ -212,9 +251,6 @@ export default function AssignTrainerDialog({
                   value={goal}
                   onChange={(e) => setGoal(e.target.value)}
                 />
-                <p className="text-xs text-muted-foreground">
-                  What does the member want to achieve with this trainer?
-                </p>
               </div>
 
               {/* Sessions per week */}
@@ -248,7 +284,9 @@ export default function AssignTrainerDialog({
                     {selectedTrainerName}
                   </p>
                   <p className="text-xs text-muted-foreground">
-                    Will be assigned immediately
+                    {monthlyCharge && Number(monthlyCharge) > 0
+                      ? `PT fee invoice of ${CURRENCY} ${Number(monthlyCharge).toLocaleString()} will be created`
+                      : "No PT fee invoice (charge not set)"}
                   </p>
                 </div>
               </div>

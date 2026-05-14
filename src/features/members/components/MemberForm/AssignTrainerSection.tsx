@@ -2,15 +2,14 @@
  * AssignTrainerSection
  *
  * Collapsible section shown during member CREATION only.
- * Lets staff optionally pick a trainer and set a goal + sessions/week.
+ * Lets staff optionally pick a trainer, set a monthly PT charge (pre-filled
+ * from the trainer's default rate), goal, and sessions/week.
  *
- * On submit the parent fires:
- *   POST /trainers/:trainerId/assignments  { memberId, branchId, goal, sessionFrequencyPerWeek }
- *
- * This component only manages form state — the API call lives in MemberForm/index.tsx.
+ * When a trainer + charge are provided the backend will auto-create a
+ * personal_training invoice on assignment.
  */
 
-import { useState } from 'react';
+import { useEffect } from 'react';
 import { useController, type Control, type FieldErrors } from 'react-hook-form';
 import { ChevronDown, ChevronUp, Plus, User } from 'lucide-react';
 import { Input }  from '@/components/ui/input';
@@ -23,6 +22,7 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { useGetTrainers } from '@/api/generated/trainers/trainers';
+import { CURRENCY } from '@/config/tenant.config';
 import type { MemberFormValues } from './types';
 
 // ─── Props ────────────────────────────────────────────────────────────────────
@@ -31,13 +31,20 @@ interface Props {
   control:   Control<MemberFormValues>;
   errors:    FieldErrors<MemberFormValues>;
   isPending: boolean;
-  branchId?: string; // filter trainers by selected branch
+  branchId?: string;
 }
 
 // ─── Component ────────────────────────────────────────────────────────────────
 
 export function AssignTrainerSection({ control, errors, isPending, branchId }: Props) {
-  const [expanded, setExpanded] = useState(false);
+  // ── Controlled fields ─────────────────────────────────────────────────────
+  const { field: enabledField }  = useController({ control, name: 'trainer.enabled' });
+  const { field: trainerField }  = useController({ control, name: 'trainer.trainerId' });
+  const { field: goalField }     = useController({ control, name: 'trainer.goal' });
+  const { field: sessionsField } = useController({ control, name: 'trainer.sessionFrequencyPerWeek' });
+  const { field: chargeField }   = useController({ control, name: 'trainer.monthlyCharge' });
+
+  const expanded = !!enabledField.value;
 
   // ── Fetch trainers only when section is opened ────────────────────────────
   const { data: trainersData, isLoading: loadingTrainers } = useGetTrainers(
@@ -51,21 +58,29 @@ export function AssignTrainerSection({ control, errors, isPending, branchId }: P
   );
   const trainers = trainersData?.data ?? [];
 
-  // ── Controlled fields ─────────────────────────────────────────────────────
-  const { field: enabledField }  = useController({ control, name: 'trainer.enabled' });
-  const { field: trainerField }  = useController({ control, name: 'trainer.trainerId' });
-  const { field: goalField }     = useController({ control, name: 'trainer.goal' });
-  const { field: sessionsField } = useController({ control, name: 'trainer.sessionFrequencyPerWeek' });
+  // ── Pre-fill monthlyCharge from trainer's monthlyRate when trainer changes ─
+  useEffect(() => {
+    if (!trainerField.value) {
+      chargeField.onChange(undefined);
+      return;
+    }
+    const t = trainers.find((tr) => tr._id === trainerField.value);
+    const rate = (t as any)?.monthlyRate;
+    if (rate != null) {
+      chargeField.onChange(rate);
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [trainerField.value, trainers.length]);
 
   // ── Toggle ────────────────────────────────────────────────────────────────
   function handleToggle() {
     const next = !expanded;
-    setExpanded(next);
     enabledField.onChange(next);
     if (!next) {
       trainerField.onChange('');
       goalField.onChange('');
       sessionsField.onChange(undefined);
+      chargeField.onChange(undefined);
     }
   }
 
@@ -74,6 +89,8 @@ export function AssignTrainerSection({ control, errors, isPending, branchId }: P
   const trainerName = selectedTrainer
     ? `${(selectedTrainer as any).userId?.firstName ?? ''} ${(selectedTrainer as any).userId?.lastName ?? ''}`.trim()
     : null;
+
+  const chargeVal = chargeField.value as number | undefined;
 
   return (
     <section className="space-y-3">
@@ -95,7 +112,7 @@ export function AssignTrainerSection({ control, errors, isPending, branchId }: P
             </p>
             {!expanded && (
               <p className="text-xs opacity-70">
-                Assign a personal trainer during registration
+                Assign a personal trainer — PT fee invoice auto-created
               </p>
             )}
           </div>
@@ -140,6 +157,7 @@ export function AssignTrainerSection({ control, errors, isPending, branchId }: P
                     : trainer._id;
                   const specs: string[] = (trainer as any).specializations ?? [];
                   const slots = (trainer as any).maxClients - (trainer as any).currentClientCount;
+                  const rate  = (trainer as any).monthlyRate;
                   return (
                     <SelectItem key={trainer._id} value={trainer._id ?? ''}>
                       <div className="flex items-center justify-between w-full gap-4">
@@ -152,9 +170,16 @@ export function AssignTrainerSection({ control, errors, isPending, branchId }: P
                             </span>
                           )}
                         </div>
-                        <span className="text-xs text-muted-foreground shrink-0">
-                          {slots} slot{slots !== 1 ? 's' : ''} left
-                        </span>
+                        <div className="flex items-center gap-2 shrink-0">
+                          {rate != null && (
+                            <span className="text-xs text-muted-foreground">
+                              {CURRENCY} {Number(rate).toLocaleString()}/mo
+                            </span>
+                          )}
+                          <span className="text-xs text-muted-foreground">
+                            {slots} slot{slots !== 1 ? 's' : ''}
+                          </span>
+                        </div>
                       </div>
                     </SelectItem>
                   );
@@ -171,6 +196,25 @@ export function AssignTrainerSection({ control, errors, isPending, branchId }: P
           {/* Show rest of fields only after trainer is selected */}
           {trainerField.value && (
             <>
+              {/* Monthly PT charge */}
+              <div className="space-y-1.5">
+                <Label htmlFor="ptCharge">PT Charge / Month ({CURRENCY})</Label>
+                <Input
+                  id="ptCharge"
+                  type="number"
+                  min="0"
+                  placeholder="e.g. 5000"
+                  disabled={isPending}
+                  value={chargeVal ?? ''}
+                  onChange={(e) =>
+                    chargeField.onChange(e.target.value ? Number(e.target.value) : undefined)
+                  }
+                />
+                <p className="text-xs text-muted-foreground">
+                  Pre-filled from trainer's default rate. A PT fee invoice is created automatically when set.
+                </p>
+              </div>
+
               {/* Goal */}
               <div className="space-y-1.5">
                 <Label htmlFor="trainerGoal">Goal</Label>
@@ -181,9 +225,6 @@ export function AssignTrainerSection({ control, errors, isPending, branchId }: P
                   value={goalField.value as string}
                   onChange={(e) => goalField.onChange(e.target.value)}
                 />
-                <p className="text-xs text-muted-foreground">
-                  What does the member want to achieve with this trainer?
-                </p>
               </div>
 
               {/* Sessions per week */}
@@ -213,7 +254,9 @@ export function AssignTrainerSection({ control, errors, isPending, branchId }: P
                 <div>
                   <p className="text-sm font-medium text-primary">{trainerName}</p>
                   <p className="text-xs text-muted-foreground">
-                    Will be assigned after member is created
+                    {chargeVal && chargeVal > 0
+                      ? `PT fee invoice of ${CURRENCY} ${chargeVal.toLocaleString()} will be created`
+                      : 'No PT fee invoice (charge not set)'}
                   </p>
                 </div>
               </div>

@@ -50,11 +50,13 @@ export const memberFormSchema = z.object({
     trainerId:                z.string().optional(),
     goal:                     z.string().max(300).optional(),
     sessionFrequencyPerWeek:  z.coerce.number().min(1).max(7).optional(),
+    monthlyCharge:            z.coerce.number().min(0).optional(),
   }).default({
     enabled:   false,
     trainerId: '',
     goal:      '',
-    sessionFrequencyPerWeek: 1,
+    sessionFrequencyPerWeek: undefined,
+    monthlyCharge:           undefined,
   }),
 });
 
@@ -90,5 +92,6 @@ export const memberFormDefaults: MemberFormValues = {
     trainerId:               '',
     goal:                    '',
     sessionFrequencyPerWeek: undefined,
+    monthlyCharge:           undefined,
   },
 };

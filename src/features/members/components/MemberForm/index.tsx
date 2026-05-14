@@ -267,8 +267,10 @@ export default function MemberForm({
           data: {
             memberId:                newMemberId,
             branchId:                values.branchId,
-            goal:                    t.goal           || undefined,
+            goal:                    t.goal                    || undefined,
             sessionFrequencyPerWeek: t.sessionFrequencyPerWeek || undefined,
+            monthlyCharge:           t.monthlyCharge            || undefined,
+            currency:                CURRENCY,
           },
         });
       } catch {

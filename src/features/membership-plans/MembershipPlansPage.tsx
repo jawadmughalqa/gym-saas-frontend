@@ -14,6 +14,7 @@ import {
   usePostMembershipPlans,
   usePatchMembershipPlansPlanId,
   useDeleteMembershipPlansPlanId,
+  usePostMembershipPlansPlanIdRestore,
   getGetMembershipPlansQueryKey,
 } from "@/api/generated/membership-plans/membership-plans";
 import type {
@@ -42,6 +43,7 @@ import {
 
 import { useToast } from "@/hooks/use-toast";
 import { usePermission } from "@/hooks/use-permission";
+import { CURRENCY } from "@/config/tenant.config";
 import { PlanFormDialog } from "./components/PlanFormDialog";
 import { ArchivePlanDialog } from "./components/ArchivePlanDialog";
 import RestorePlanDialog from "./components/RestorePlanDialog";
@@ -155,7 +157,7 @@ function PlanCard({
       <CardContent className="space-y-3 pb-3">
         <div className="flex items-baseline gap-1">
           <span className="text-2xl font-bold">
-            {plan.currency ?? "PKR"} {(plan.basePrice ?? 0).toFixed(2)}
+            {plan.currency ?? CURRENCY} {(plan.basePrice ?? 0).toFixed(2)}
           </span>
           <span className="text-sm text-muted-foreground">
             / {label.toLowerCase()}
@@ -329,7 +331,7 @@ export default function MembershipPlansPage() {
     },
   });
 
-  const restoreMutation = usePatchMembershipPlansPlanId({
+  const restoreMutation = usePostMembershipPlansPlanIdRestore({
     mutation: {
       onSuccess: () => {
         void queryClient.invalidateQueries({
@@ -371,13 +373,7 @@ export default function MembershipPlansPage() {
 
   const handleRestore = () => {
     if (!restorePlan?._id) return;
-    restoreMutation.mutate({
-      planId: restorePlan._id,
-      data: {
-        isArchived: false,
-        isActive: true,
-      },
-    });
+    restoreMutation.mutate({ planId: restorePlan._id });
   };
 
   return (

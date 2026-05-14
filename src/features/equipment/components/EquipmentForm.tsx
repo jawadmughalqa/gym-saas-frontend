@@ -16,6 +16,8 @@ import { useGetBranches } from '@/api/generated/branches/branches';
 import {
   usePostEquipment,
   usePatchEquipmentEquipmentId,
+  getGetEquipmentQueryKey,
+  getGetEquipmentEquipmentIdQueryKey,
 } from '@/api/generated/equipment/equipment';
 import { useQueryClient } from '@tanstack/react-query';
 import { toast } from '@/hooks/use-toast';
@@ -83,7 +85,7 @@ export default function EquipmentForm({ open, onOpenChange, equipment }: Equipme
   const createEquipment = usePostEquipment({
     mutation: {
       onSuccess: () => {
-        qc.invalidateQueries({ queryKey: ['equipment'] });
+        void qc.invalidateQueries({ queryKey: getGetEquipmentQueryKey() });
         toast({ title: 'Equipment added' });
         onOpenChange(false);
       },
@@ -93,8 +95,9 @@ export default function EquipmentForm({ open, onOpenChange, equipment }: Equipme
 
   const updateEquipment = usePatchEquipmentEquipmentId({
     mutation: {
-      onSuccess: () => {
-        qc.invalidateQueries({ queryKey: ['equipment'] });
+      onSuccess: (_data, variables) => {
+        void qc.invalidateQueries({ queryKey: getGetEquipmentQueryKey() });
+        void qc.invalidateQueries({ queryKey: getGetEquipmentEquipmentIdQueryKey(variables.equipmentId) });
         toast({ title: 'Equipment updated' });
         onOpenChange(false);
       },

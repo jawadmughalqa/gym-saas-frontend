@@ -6,6 +6,7 @@ import {
   Archive,
   RotateCcw,
   CheckCircle2,
+  Users,
 } from "lucide-react";
 import { useQueryClient } from "@tanstack/react-query";
 
@@ -72,8 +73,11 @@ const FREQUENCY_COLORS: Record<string, string> = {
 
 // ─── Plan Card Component ──────────────────────────────────────────────────────
 
+// Backend returns activeSubscriptionCount as an extra field not in the generated schema
+type PlanWithCount = MembershipPlan & { activeSubscriptionCount?: number };
+
 interface PlanCardProps {
-  plan: MembershipPlan;
+  plan: PlanWithCount;
   canUpdate: boolean;
   canArchive: boolean;
   canMutate: boolean;
@@ -95,6 +99,7 @@ function PlanCard({
   const label = FREQUENCY_LABELS[freq] ?? freq;
   const color = FREQUENCY_COLORS[freq] ?? "bg-gray-100 text-gray-700";
   const isArchived = plan.isArchived;
+  const activeCount = plan.activeSubscriptionCount ?? 0;
 
   return (
     <Card className={isArchived ? "opacity-70 bg-muted/30" : ""}>
@@ -213,15 +218,25 @@ function PlanCard({
       </CardContent>
 
       <CardFooter className="pt-0">
-        <div className="flex items-center gap-1.5">
-          <div
-            className={`h-2 w-2 rounded-full ${
-              !isArchived && plan.isActive ? "bg-green-500" : "bg-gray-300"
-            }`}
-          />
-          <span className="text-xs text-muted-foreground">
-            {isArchived ? "Archived" : plan.isActive ? "Active" : "Inactive"}
-          </span>
+        <div className="flex items-center justify-between w-full">
+          <div className="flex items-center gap-1.5">
+            <div
+              className={`h-2 w-2 rounded-full ${
+                !isArchived && plan.isActive ? "bg-green-500" : "bg-gray-300"
+              }`}
+            />
+            <span className="text-xs text-muted-foreground">
+              {isArchived ? "Archived" : plan.isActive ? "Active" : "Inactive"}
+            </span>
+          </div>
+          {!isArchived && (
+            <div className={`flex items-center gap-1 text-xs font-medium ${
+              activeCount > 0 ? "text-primary" : "text-muted-foreground"
+            }`}>
+              <Users className="h-3 w-3" />
+              <span>{activeCount} active</span>
+            </div>
+          )}
         </div>
       </CardFooter>
     </Card>
@@ -242,9 +257,9 @@ export default function MembershipPlansPage() {
 
   const [showArchived, setShowArchived] = useState(false);
   const [createOpen, setCreateOpen] = useState(false);
-  const [editPlan, setEditPlan] = useState<MembershipPlan | null>(null);
-  const [archivePlan, setArchivePlan] = useState<MembershipPlan | null>(null);
-  const [restorePlan, setRestorePlan] = useState<MembershipPlan | null>(null);
+  const [editPlan, setEditPlan] = useState<PlanWithCount | null>(null);
+  const [archivePlan, setArchivePlan] = useState<PlanWithCount | null>(null);
+  const [restorePlan, setRestorePlan] = useState<PlanWithCount | null>(null);
 
   const {
     data: listResponse,
@@ -252,7 +267,7 @@ export default function MembershipPlansPage() {
     isError,
   } = useGetMembershipPlans({ includeArchived: true });
 
-  const allPlans: MembershipPlan[] = listResponse?.data ?? [];
+  const allPlans: PlanWithCount[] = (listResponse?.data ?? []) as PlanWithCount[];
 
   const plans = allPlans.filter((plan) =>
     showArchived ? plan.isArchived === true : plan.isArchived !== true,
@@ -497,6 +512,7 @@ export default function MembershipPlansPage() {
       <ArchivePlanDialog
         open={!!archivePlan}
         planName={archivePlan?.name ?? ""}
+        activeSubscriptionCount={archivePlan?.activeSubscriptionCount ?? 0}
         isSubmitting={archiveMutation.isPending}
         onConfirm={handleArchive}
         onCancel={() => setArchivePlan(null)}

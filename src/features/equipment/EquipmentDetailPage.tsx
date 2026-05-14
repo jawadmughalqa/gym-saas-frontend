@@ -33,13 +33,18 @@ import {
   useGetEquipmentEquipmentIdMaintenance,
   usePostEquipmentEquipmentIdMaintenance,
   useDeleteEquipmentEquipmentId,
+  getGetEquipmentEquipmentIdQueryKey,
+  getGetEquipmentEquipmentIdMaintenanceQueryKey,
+  getGetEquipmentQueryKey,
 } from '@/api/generated/equipment/equipment';
 import {
   useGetWorkOrders,
   usePostWorkOrders,
   usePostWorkOrdersWorkOrderIdResolve,
   usePostWorkOrdersWorkOrderIdCancel,
+  getGetWorkOrdersQueryKey,
 } from '@/api/generated/work-orders/work-orders';
+import { useQueryClient } from '@tanstack/react-query';
 import type { MaintenanceLog } from '@/api/generated/schemas/maintenanceLog';
 import type { WorkOrder } from '@/api/generated/schemas/workOrder';
 import EquipmentForm from './components/EquipmentForm';
@@ -125,15 +130,19 @@ const WO_STATUS_LABEL: Record<string, string> = {
 // ─── LogMaintenanceDialog ─────────────────────────────────────────────────────
 
 function LogMaintenanceDialog({
-  open, onOpenChange, equipmentId,
+  open, onOpenChange, equipmentId, onSuccess,
 }: {
   open: boolean;
   onOpenChange: (v: boolean) => void;
   equipmentId: string;
+  onSuccess: () => void;
 }) {
   const logMaintenance = usePostEquipmentEquipmentIdMaintenance({
     mutation: {
-      onSuccess: () => onOpenChange(false),
+      onSuccess: () => {
+        onOpenChange(false);
+        onSuccess();
+      },
       onError: (err) => toast({ variant: 'destructive', title: 'Failed to log maintenance', description: getErrorMessage(err) }),
     },
   });
@@ -266,16 +275,20 @@ function LogMaintenanceDialog({
 // ─── CreateWorkOrderDialog ────────────────────────────────────────────────────
 
 function CreateWorkOrderDialog({
-  open, onOpenChange, equipmentId, branchId,
+  open, onOpenChange, equipmentId, branchId, onSuccess,
 }: {
   open: boolean;
   onOpenChange: (v: boolean) => void;
   equipmentId: string;
   branchId: string;
+  onSuccess: () => void;
 }) {
   const createWO = usePostWorkOrders({
     mutation: {
-      onSuccess: () => onOpenChange(false),
+      onSuccess: () => {
+        onOpenChange(false);
+        onSuccess();
+      },
       onError: (err) => toast({ variant: 'destructive', title: 'Failed to create work order', description: getErrorMessage(err) }),
     },
   });
@@ -352,15 +365,19 @@ function CreateWorkOrderDialog({
 // ─── ResolveWorkOrderDialog ───────────────────────────────────────────────────
 
 function ResolveWorkOrderDialog({
-  open, onOpenChange, workOrderId,
+  open, onOpenChange, workOrderId, onSuccess,
 }: {
   open: boolean;
   onOpenChange: (v: boolean) => void;
   workOrderId: string;
+  onSuccess: () => void;
 }) {
   const resolve = usePostWorkOrdersWorkOrderIdResolve({
     mutation: {
-      onSuccess: () => onOpenChange(false),
+      onSuccess: () => {
+        onOpenChange(false);
+        onSuccess();
+      },
       onError: (err) => toast({ variant: 'destructive', title: 'Failed to resolve work order', description: getErrorMessage(err) }),
     },
   });
@@ -413,15 +430,29 @@ export default function EquipmentDetailPage() {
   const { equipmentId } = useParams<{ equipmentId: string }>();
   const navigate = useNavigate();
   const { can } = usePermission();
+  const qc = useQueryClient();
 
   const [editOpen, setEditOpen] = useState(false);
   const [logMaintenanceOpen, setLogMaintenanceOpen] = useState(false);
   const [createWOOpen, setCreateWOOpen] = useState(false);
   const [resolvingWO, setResolvingWO] = useState<string | null>(null);
 
+  // ── Shared invalidation helper ──────────────────────────────────────────────
+  function invalidateEquipmentDetail() {
+    void qc.invalidateQueries({ queryKey: getGetEquipmentEquipmentIdQueryKey(equipmentId ?? '') });
+    void qc.invalidateQueries({ queryKey: getGetEquipmentEquipmentIdMaintenanceQueryKey(equipmentId ?? '') });
+    void qc.invalidateQueries({ queryKey: getGetWorkOrdersQueryKey({ equipmentId: equipmentId ?? '' }) });
+    // Also invalidate the list so status/condition changes show there too
+    void qc.invalidateQueries({ queryKey: getGetEquipmentQueryKey() });
+  }
+
   const { confirm, confirmProps } = useConfirm();
   const cancelWO = usePostWorkOrdersWorkOrderIdCancel({
     mutation: {
+      onSuccess: () => {
+        void qc.invalidateQueries({ queryKey: getGetWorkOrdersQueryKey({ equipmentId: equipmentId ?? '' }) });
+        toast({ title: 'Work order cancelled' });
+      },
       onError: (err) => toast({ variant: 'destructive', title: 'Failed to cancel work order', description: getErrorMessage(err) }),
     },
   });
@@ -740,6 +771,7 @@ export default function EquipmentDetailPage() {
         open={logMaintenanceOpen}
         onOpenChange={setLogMaintenanceOpen}
         equipmentId={equipmentId ?? ''}
+        onSuccess={invalidateEquipmentDetail}
       />
 
       <CreateWorkOrderDialog
@@ -747,6 +779,7 @@ export default function EquipmentDetailPage() {
         onOpenChange={setCreateWOOpen}
         equipmentId={equipmentId ?? ''}
         branchId={eq.branchId ?? ''}
+        onSuccess={invalidateEquipmentDetail}
       />
 
       {resolvingWO && (
@@ -754,6 +787,7 @@ export default function EquipmentDetailPage() {
           open={!!resolvingWO}
           onOpenChange={(v) => { if (!v) setResolvingWO(null); }}
           workOrderId={resolvingWO}
+          onSuccess={invalidateEquipmentDetail}
         />
       )}
 

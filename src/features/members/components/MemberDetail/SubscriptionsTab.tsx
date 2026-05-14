@@ -216,10 +216,12 @@ export function SubscriptionsTab({ memberId, branchId }: SubscriptionsTabProps) 
       {/* Assign plan sheet */}
       <SubscriptionForm
         open={subFormOpen}
-        onOpenChange={setSubFormOpen}
+        onOpenChange={(o) => {
+          setSubFormOpen(o);
+          if (!o) handleMutationSuccess();
+        }}
         memberId={memberId}
         defaultBranchId={branchId}
-        onSuccess={handleMutationSuccess}
       />
 
       {/* Freeze dialog */}

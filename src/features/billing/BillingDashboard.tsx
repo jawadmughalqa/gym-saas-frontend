@@ -373,7 +373,7 @@ export default function BillingDashboard() {
       </div>
 
       {/* ── Stat cards ───────────────────────────────────────────────────── */}
-      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
+      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-3   gap-3">
         {loadingStats
           ? Array.from({ length: 5 }).map((_, i) => <StatCardSkeleton key={i} />)
           : (
@@ -399,20 +399,7 @@ export default function BillingDashboard() {
                 iconClassName="bg-blue-100 text-blue-700"
                 subtitle="Received today"
               />
-              <StatCard
-                title="Salary Distributed"
-                value={formatCurrency(stats?.salaryDistributed ?? 0, currency)}
-                icon={TrendingDown}
-                iconClassName="bg-purple-100 text-purple-700"
-                subtitle="This period"
-              />
-              <StatCard
-                title="Due Salaries"
-                value={formatCurrency(stats?.dueSalaries ?? 0, currency)}
-                icon={AlertTriangle}
-                iconClassName={(stats?.dueSalaries ?? 0) > 0 ? 'bg-red-100 text-red-600' : 'bg-muted text-muted-foreground'}
-                subtitle="Unpaid"
-              />
+          
             </>
           )
         }

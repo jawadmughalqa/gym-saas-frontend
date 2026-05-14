@@ -62,7 +62,7 @@ const planFormSchema = z.object({
   basePrice: z.coerce
     .number({ invalid_type_error: 'Price must be a number' })
     .min(0, 'Price cannot be negative'),
-  currency: z.string().length(3).default('USD'),
+  currency: z.string().length(3).default('PKR'),
   features: z
     .array(z.object({ value: z.string().max(100) }))
     .max(20)
@@ -122,7 +122,7 @@ export function PlanFormDialog({
       billingFrequency:   'monthly',
       durationDays:       '',
       basePrice:          0,
-      currency:           'USD',
+      currency:           'PKR',
       maxFreezes:         2,
       freezeDurationDays: 30,
       features:           [],
@@ -154,7 +154,7 @@ export function PlanFormDialog({
           billingFrequency:   (defaultValues.billingFrequency as typeof BILLING_FREQUENCIES[number]) ?? 'monthly',
           durationDays:       defaultValues.durationDays ?? '',
           basePrice:          defaultValues.basePrice ?? 0,
-          currency:           defaultValues.currency ?? 'USD',
+          currency:           defaultValues.currency ?? 'PKR',
           maxFreezes:         defaultValues.maxFreezes ?? 2,
           freezeDurationDays: defaultValues.freezeDurationDays ?? 30,
           features:           (defaultValues.features ?? []).map((v) => ({ value: v })),
@@ -170,7 +170,7 @@ export function PlanFormDialog({
           billingFrequency:   'monthly',
           durationDays:       '',
           basePrice:          0,
-          currency:           'USD',
+          currency:           'PKR',
           maxFreezes:         2,
           freezeDurationDays: 30,
           features:           [],
@@ -289,7 +289,7 @@ export function PlanFormDialog({
                     <FormItem>
                       <FormLabel>Currency</FormLabel>
                       <FormControl>
-                        <Input placeholder="USD" maxLength={3} {...field} />
+                        <Input placeholder="PK" maxLength={3} {...field} />
                       </FormControl>
                       <FormMessage />
                     </FormItem>

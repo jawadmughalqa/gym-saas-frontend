@@ -891,6 +891,90 @@ export const usePostMembersMemberIdSubscriptionsSubscriptionIdCancel = <TError =
       > => {
       return useMutation(getPostMembersMemberIdSubscriptionsSubscriptionIdCancelMutationOptions(options), queryClient);
     }
+
+// ─── Change Plan (manually added — matches POST /members/:memberId/subscriptions/:subscriptionId/change-plan) ───
+
+export interface ChangePlanBody {
+  newPlanId: string;
+  discountAmount?: number;
+  autoCreateInvoice?: boolean;
+  notes?: string;
+}
+
+export const postMembersMemberIdSubscriptionsSubscriptionIdChangePlan = (
+  memberId: string,
+  subscriptionId: string,
+  data: ChangePlanBody,
+  signal?: AbortSignal,
+) => {
+  return orvalMutator<void>({
+    url: `/members/${memberId}/subscriptions/${subscriptionId}/change-plan`,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    data,
+    signal,
+  });
+};
+
+export const getPostMembersMemberIdSubscriptionsSubscriptionIdChangePlanMutationOptions = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof postMembersMemberIdSubscriptionsSubscriptionIdChangePlan>>,
+    TError,
+    { memberId: string; subscriptionId: string; data: BodyType<ChangePlanBody> },
+    TContext
+  >;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof postMembersMemberIdSubscriptionsSubscriptionIdChangePlan>>,
+  TError,
+  { memberId: string; subscriptionId: string; data: BodyType<ChangePlanBody> },
+  TContext
+> => {
+  const mutationKey = ['postMembersMemberIdSubscriptionsSubscriptionIdChangePlan'];
+  const { mutation: mutationOptions } = options
+    ? options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey } };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof postMembersMemberIdSubscriptionsSubscriptionIdChangePlan>>,
+    { memberId: string; subscriptionId: string; data: BodyType<ChangePlanBody> }
+  > = (props) => {
+    const { memberId, subscriptionId, data } = props ?? {};
+    return postMembersMemberIdSubscriptionsSubscriptionIdChangePlan(memberId, subscriptionId, data);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export const usePostMembersMemberIdSubscriptionsSubscriptionIdChangePlan = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(
+  options?: {
+    mutation?: UseMutationOptions<
+      Awaited<ReturnType<typeof postMembersMemberIdSubscriptionsSubscriptionIdChangePlan>>,
+      TError,
+      { memberId: string; subscriptionId: string; data: BodyType<ChangePlanBody> },
+      TContext
+    >;
+  },
+  queryClient?: QueryClient,
+): UseMutationResult<
+  Awaited<ReturnType<typeof postMembersMemberIdSubscriptionsSubscriptionIdChangePlan>>,
+  TError,
+  { memberId: string; subscriptionId: string; data: BodyType<ChangePlanBody> },
+  TContext
+> => {
+  return useMutation(
+    getPostMembersMemberIdSubscriptionsSubscriptionIdChangePlanMutationOptions(options),
+    queryClient,
+  );
+};
+
     /**
  * @summary Get check-in history for a member
  */

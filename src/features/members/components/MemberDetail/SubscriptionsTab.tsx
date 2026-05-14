@@ -4,19 +4,18 @@ import { Button }      from '@/components/ui/button';
 import { useQueryClient } from '@tanstack/react-query';
 import DataTable, { type ColumnDef } from '@/components/shared/DataTable';
 import EmptyState    from '@/components/shared/EmptyState';
-import ConfirmDialog from '@/components/shared/ConfirmDialog';
 import { SubscriptionStatusBadge } from '@/components/shared/StatusBadge';
-import { useConfirm }    from '@/hooks/use-confirm';
 import { usePermission } from '@/hooks/use-permission';
 import { formatDate }    from '@/utils/format';
 import {
   useGetMembersMemberIdSubscriptions,
-  usePostMembersMemberIdSubscriptionsSubscriptionIdCancel,
   getGetMembersMemberIdSubscriptionsQueryKey,
   getGetMembersMemberIdQueryKey,
 } from '@/api/generated/members/members';
 import SubscriptionForm from '@/features/members/components/SubscriptionForm';
-import { FreezeDialog } from './FreezeDialog';
+import { FreezeDialog }              from './FreezeDialog';
+import { CancelSubscriptionDialog }  from './CancelSubscriptionDialog';
+import { ChangePlanDialog }          from './ChangePlanDialog';
 import { CURRENCY } from '@/config/tenant.config';
 
 // ─── Props ────────────────────────────────────────────────────────────────────
@@ -29,29 +28,29 @@ interface SubscriptionsTabProps {
 // ─── Component ────────────────────────────────────────────────────────────────
 
 export function SubscriptionsTab({ memberId, branchId }: SubscriptionsTabProps) {
-  const { can }         = usePermission();
-  const queryClient     = useQueryClient();
-  const { confirm, confirmProps } = useConfirm();
+  const { can }     = usePermission();
+  const queryClient = useQueryClient();
 
   const { data: subResponse, isLoading } = useGetMembersMemberIdSubscriptions(memberId);
   const subscriptions = subResponse?.data ?? [];
 
-  const cancelMutation = usePostMembersMemberIdSubscriptionsSubscriptionIdCancel({
-    mutation: {
-      onSuccess: () => {
-        void queryClient.invalidateQueries({
-          queryKey: getGetMembersMemberIdSubscriptionsQueryKey(memberId),
-        });
-        void queryClient.invalidateQueries({
-          queryKey: getGetMembersMemberIdQueryKey(memberId),
-        });
-      },
-    },
-  });
-
+  // ── Dialog state ──────────────────────────────────────────────────────────
   const [subFormOpen,      setSubFormOpen]      = useState(false);
   const [freezeDialogOpen, setFreezeDialogOpen] = useState(false);
+  const [cancelDialogOpen, setCancelDialogOpen] = useState(false);
+  const [changePlanOpen,   setChangePlanOpen]   = useState(false);
   const [selectedSubId,    setSelectedSubId]    = useState<string | null>(null);
+  const [selectedPlanName, setSelectedPlanName] = useState('');
+
+  // ── Shared success handler — refetch subscriptions list ───────────────────
+  function handleMutationSuccess() {
+    void queryClient.invalidateQueries({
+      queryKey: getGetMembersMemberIdSubscriptionsQueryKey(memberId),
+    });
+    void queryClient.invalidateQueries({
+      queryKey: getGetMembersMemberIdQueryKey(memberId),
+    });
+  }
 
   // ── Column definitions ────────────────────────────────────────────────────
   type Sub = (typeof subscriptions)[0];
@@ -97,22 +96,34 @@ export function SubscriptionsTab({ memberId, branchId }: SubscriptionsTabProps) 
       cell:         (row) => (row.startDate ? formatDate(row.startDate) : '—'),
     },
     {
-      key:          'endDate',
-      header:       'End',
+      key:          'nextRenewalDate',
+      header:       'Next Renewal',
       hideOnMobile: true,
-      cell:         (row) => (row.endDate ? formatDate(row.endDate) : 'Ongoing'),
+      cell:         (row) => {
+        const d = (row as { nextRenewalDate?: string }).nextRenewalDate;
+        return d ? formatDate(d) : 'Ongoing';
+      },
     },
     {
       key:    'actions',
       header: '',
-      width:  'w-32',
-      cell:   (row) =>
-        row.status === 'active' ? (
-          <div className="flex items-center gap-1 justify-end">
-            {can('subscription.freeze') && (
+      width:  'w-40',
+      cell:   (row) => {
+        if (row.status !== 'active' && row.status !== 'frozen') return null;
+
+        const planName =
+          row.planSnapshot?.name ??
+          (row as { customLabel?: string }).customLabel ??
+          'Membership';
+
+        return (
+          <div className="flex items-center gap-1 justify-end flex-wrap">
+            {/* Freeze — only for active */}
+            {can('subscription.freeze') && row.status === 'active' && (
               <Button
                 variant="ghost"
                 size="sm"
+                className="h-7 text-xs"
                 onClick={(e) => {
                   e.stopPropagation();
                   setSelectedSubId(row._id ?? null);
@@ -122,34 +133,45 @@ export function SubscriptionsTab({ memberId, branchId }: SubscriptionsTabProps) 
                 Freeze
               </Button>
             )}
+
+            {/* Change Plan — only plan-based active subscriptions */}
+            {can('subscription.cancel') &&
+              row.status === 'active' &&
+              (row as { pricingType?: string }).pricingType === 'plan' && (
+              <Button
+                variant="ghost"
+                size="sm"
+                className="h-7 text-xs"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setSelectedSubId(row._id ?? null);
+                  setSelectedPlanName(planName);
+                  setChangePlanOpen(true);
+                }}
+              >
+                Change Plan
+              </Button>
+            )}
+
+            {/* Cancel */}
             {can('subscription.cancel') && (
               <Button
                 variant="ghost"
                 size="sm"
-                className="text-destructive hover:text-destructive"
+                className="h-7 text-xs text-destructive hover:text-destructive"
                 onClick={(e) => {
                   e.stopPropagation();
-                  confirm(
-                    {
-                      title:        'Cancel subscription?',
-                      description:  'This will cancel the subscription immediately.',
-                      variant:      'destructive',
-                      confirmLabel: 'Cancel Subscription',
-                    },
-                    () =>
-                      cancelMutation.mutate({
-                        memberId,
-                        subscriptionId: row._id ?? '',
-                        data: { reason: 'Cancelled by staff' },
-                      }),
-                  );
+                  setSelectedSubId(row._id ?? null);
+                  setSelectedPlanName(planName);
+                  setCancelDialogOpen(true);
                 }}
               >
                 Cancel
               </Button>
             )}
           </div>
-        ) : null,
+        );
+      },
     },
   ];
 
@@ -197,6 +219,7 @@ export function SubscriptionsTab({ memberId, branchId }: SubscriptionsTabProps) 
         onOpenChange={setSubFormOpen}
         memberId={memberId}
         defaultBranchId={branchId}
+        onSuccess={handleMutationSuccess}
       />
 
       {/* Freeze dialog */}
@@ -212,8 +235,35 @@ export function SubscriptionsTab({ memberId, branchId }: SubscriptionsTabProps) 
         />
       )}
 
-      {/* Cancel confirm */}
-      <ConfirmDialog {...confirmProps} loading={cancelMutation.isPending} />
+      {/* Cancel subscription dialog */}
+      {cancelDialogOpen && selectedSubId && (
+        <CancelSubscriptionDialog
+          open={cancelDialogOpen}
+          onOpenChange={(o) => {
+            setCancelDialogOpen(o);
+            if (!o) setSelectedSubId(null);
+          }}
+          memberId={memberId}
+          subscriptionId={selectedSubId}
+          planName={selectedPlanName}
+          onSuccess={handleMutationSuccess}
+        />
+      )}
+
+      {/* Change plan dialog */}
+      {changePlanOpen && selectedSubId && (
+        <ChangePlanDialog
+          open={changePlanOpen}
+          onOpenChange={(o) => {
+            setChangePlanOpen(o);
+            if (!o) setSelectedSubId(null);
+          }}
+          memberId={memberId}
+          subscriptionId={selectedSubId}
+          currentPlanName={selectedPlanName}
+          onSuccess={handleMutationSuccess}
+        />
+      )}
     </div>
   );
 }

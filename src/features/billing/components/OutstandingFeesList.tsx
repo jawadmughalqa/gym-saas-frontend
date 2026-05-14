@@ -185,7 +185,7 @@ export function OutstandingFeesList({
                       {isActive ? 'Cancel' : 'Collect'}
                     </Button>
                   )}
-                  {onVoid && !multiSelectMode && invoice.amountPaid === 0 && (
+                  {onVoid && invoice.amountPaid === 0 && (
                     <Button
                       variant="ghost"
                       size="sm"

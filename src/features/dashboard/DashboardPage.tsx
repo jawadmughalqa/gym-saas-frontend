@@ -1,21 +1,336 @@
-import { Users, CreditCard, Dumbbell, TrendingUp, Activity, ArrowRight } from 'lucide-react';
+import { useState, useMemo } from 'react';
+import { format, startOfMonth, endOfMonth, startOfYear, endOfYear, subDays } from 'date-fns';
+import {
+  BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
+} from 'recharts';
+import {
+  Users, CreditCard, Dumbbell, TrendingUp, ArrowRight,
+  CheckCircle2, AlertCircle, CalendarDays, SlidersHorizontal,
+} from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
 import { Badge } from '@/components/ui/badge';
+import { Label } from '@/components/ui/label';
+import {
+  Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
+} from '@/components/ui/select';
 import PageHeader from '@/components/layout/PageHeader';
 import PageShell from '@/components/layout/PageShell';
 import StatCard from '@/components/shared/StatCard';
 import { useAuthStore } from '@/stores/auth.store';
+import { useGetReportsDashboard } from '@/api/generated/reports/reports';
+import { useGetBillingDashboard } from '@/api/generated/billing/billing';
+import { useGetReportsRevenue } from '@/api/generated/reports/reports';
+import { useGetBranches } from '@/api/generated/branches/branches';
+import { CURRENCY } from '@/config/tenant.config';
 
-// ─── Quick-action links ───────────────────────────────────────────────────────
+// ─── Constants ────────────────────────────────────────────────────────────────
+
+const CURRENT_YEAR = new Date().getFullYear();
+const CURRENT_MONTH = new Date().getMonth() + 1; // 1-based
+
+const YEARS = [CURRENT_YEAR, CURRENT_YEAR - 1, CURRENT_YEAR - 2, CURRENT_YEAR - 3];
+
+const MONTHS = [
+  { value: '0',  label: 'Full Year' },
+  { value: '1',  label: 'January' },
+  { value: '2',  label: 'February' },
+  { value: '3',  label: 'March' },
+  { value: '4',  label: 'April' },
+  { value: '5',  label: 'May' },
+  { value: '6',  label: 'June' },
+  { value: '7',  label: 'July' },
+  { value: '8',  label: 'August' },
+  { value: '9',  label: 'September' },
+  { value: '10', label: 'October' },
+  { value: '11', label: 'November' },
+  { value: '12', label: 'December' },
+];
 
 const QUICK_LINKS = [
-  { label: 'View Members',   href: '/members',    icon: Users },
-  { label: 'View Trainers',  href: '/trainers',   icon: Dumbbell },
-  { label: 'View Billing',   href: '/billing',    icon: CreditCard },
-  { label: 'View Reports',   href: '/reports',    icon: TrendingUp },
+  { label: 'View Members',  href: '/members',  icon: Users },
+  { label: 'View Trainers', href: '/trainers', icon: Dumbbell },
+  { label: 'View Billing',  href: '/billing',  icon: CreditCard },
+  { label: 'View Reports',  href: '/reports',  icon: TrendingUp },
 ];
+
+// ─── Helpers ──────────────────────────────────────────────────────────────────
+
+const fmt = (d: Date) => format(d, 'yyyy-MM-dd');
+
+function formatCurrency(amount: number) {
+  if (amount >= 1_000_000) return `${CURRENCY} ${(amount / 1_000_000).toFixed(1)}M`;
+  if (amount >= 1_000) return `${CURRENCY} ${(amount / 1_000).toFixed(0)}K`;
+  return `${CURRENCY} ${Math.round(amount).toLocaleString()}`;
+}
+
+/** Given year + month (1-based, or 0 = full year), return ISO dateFrom/dateTo strings */
+function getDateRange(year: number, month: number): { dateFrom: string; dateTo: string } {
+  if (month === 0) {
+    // Full year
+    return {
+      dateFrom: fmt(startOfYear(new Date(year, 0, 1))),
+      dateTo: fmt(endOfYear(new Date(year, 0, 1))),
+    };
+  }
+  const d = new Date(year, month - 1, 1);
+  return { dateFrom: fmt(startOfMonth(d)), dateTo: fmt(endOfMonth(d)) };
+}
+
+// ─── PaymentSummaryCard ───────────────────────────────────────────────────────
+
+function PaymentSummaryCard() {
+  const [year, setYear]       = useState<number>(CURRENT_YEAR);
+  const [month, setMonth]     = useState<string>(String(CURRENT_MONTH));
+  const [branchId, setBranchId] = useState<string>('all');
+  const [customMode, setCustomMode] = useState(false);
+  const [customFrom, setCustomFrom] = useState<string>(fmt(subDays(new Date(), 30)));
+  const [customTo, setCustomTo]   = useState<string>(fmt(new Date()));
+
+  const { data: branchesData } = useGetBranches({ limit: 100 });
+  const branches = branchesData?.data ?? [];
+
+  // Compute date range
+  const { dateFrom, dateTo } = useMemo(() => {
+    if (customMode) return { dateFrom: customFrom, dateTo: customTo };
+    return getDateRange(year, parseInt(month, 10));
+  }, [customMode, customFrom, customTo, year, month]);
+
+  // Billing dashboard totals
+  const billingParams = {
+    dateFrom,
+    dateTo,
+    ...(branchId !== 'all' ? { branchId } : {}),
+  };
+
+  const { data: billingData, isLoading: billingLoading } =
+    useGetBillingDashboard(billingParams, { query: { staleTime: 60_000 } });
+
+  const billing = billingData?.data;
+
+  // Revenue time series for chart — monthly granularity
+  const revenueParams = {
+    dateFrom,
+    dateTo,
+    granularity: 'month' as const,
+    ...(branchId !== 'all' ? { branchId } : {}),
+  };
+
+  const { data: revenueData, isLoading: chartLoading } =
+    useGetReportsRevenue(revenueParams, { query: { staleTime: 60_000 } });
+
+  const timeSeries = ((revenueData?.data as any)?.timeSeries ?? []) as Array<{
+    period: string;
+    totalRevenue: number;
+    paymentCount: number;
+  }>;
+
+  const chartData = timeSeries.map((row) => ({
+    name: row.period?.slice(0, 7) ?? '',          // "2026-05"
+    label: row.period
+      ? format(new Date(row.period), 'MMM yy')
+      : row.period,
+    total: row.totalRevenue ?? 0,
+  }));
+
+  // When a single month is selected and there's no time-series data yet,
+  // synthesise a single bar from the billing total
+  const displayChart =
+    chartData.length > 0
+      ? chartData
+      : billing?.totalRevenue != null && billing.totalRevenue > 0
+      ? [{ name: dateFrom.slice(0, 7), label: format(new Date(dateFrom), 'MMM yy'), total: billing.totalRevenue }]
+      : [];
+
+  const periodLabel = customMode
+    ? `${dateFrom} → ${dateTo}`
+    : parseInt(month, 10) === 0
+    ? `Full Year ${year}`
+    : `${MONTHS.find((m) => m.value === month)?.label} ${year}`;
+
+  return (
+    <Card className="lg:col-span-2">
+      <CardHeader className="pb-3">
+        <div className="flex items-center justify-between">
+          <CardTitle className="text-base font-semibold">Payment Summary</CardTitle>
+          <span className="text-xs text-muted-foreground">{periodLabel}</span>
+        </div>
+      </CardHeader>
+      <Separator />
+
+      {/* ── Filters ── */}
+      <div className="px-6 pt-4 pb-2 flex flex-wrap gap-3 items-end">
+        {!customMode ? (
+          <>
+            {/* Year */}
+            <div className="space-y-1">
+              <Label className="text-xs text-muted-foreground uppercase tracking-wide">Year</Label>
+              <Select value={String(year)} onValueChange={(v) => setYear(Number(v))}>
+                <SelectTrigger className="w-24 h-8 text-sm">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {YEARS.map((y) => (
+                    <SelectItem key={y} value={String(y)}>{y}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            {/* Month */}
+            <div className="space-y-1">
+              <Label className="text-xs text-muted-foreground uppercase tracking-wide">Month</Label>
+              <Select value={month} onValueChange={setMonth}>
+                <SelectTrigger className="w-36 h-8 text-sm">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {MONTHS.map((m) => (
+                    <SelectItem key={m.value} value={m.value}>{m.label}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          </>
+        ) : (
+          <>
+            {/* Custom From */}
+            <div className="space-y-1">
+              <Label className="text-xs text-muted-foreground uppercase tracking-wide">From</Label>
+              <input
+                type="date"
+                value={customFrom}
+                max={customTo}
+                onChange={(e) => setCustomFrom(e.target.value)}
+                className="h-8 rounded-md border border-input bg-background px-3 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
+              />
+            </div>
+            {/* Custom To */}
+            <div className="space-y-1">
+              <Label className="text-xs text-muted-foreground uppercase tracking-wide">To</Label>
+              <input
+                type="date"
+                value={customTo}
+                min={customFrom}
+                onChange={(e) => setCustomTo(e.target.value)}
+                className="h-8 rounded-md border border-input bg-background px-3 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
+              />
+            </div>
+          </>
+        )}
+
+        {/* Branch */}
+        <div className="space-y-1">
+          <Label className="text-xs text-muted-foreground uppercase tracking-wide">Branch</Label>
+          <Select value={branchId} onValueChange={setBranchId}>
+            <SelectTrigger className="w-40 h-8 text-sm">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All Branches</SelectItem>
+              {branches.map((b) => (
+                <SelectItem key={b._id} value={b._id}>{b.name}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+
+        {/* Custom range toggle */}
+        <Button
+          variant={customMode ? 'secondary' : 'outline'}
+          size="sm"
+          className="h-8 gap-1.5 text-xs"
+          onClick={() => setCustomMode((v) => !v)}
+        >
+          <SlidersHorizontal className="h-3.5 w-3.5" />
+          {customMode ? 'Custom On' : 'Custom Range'}
+        </Button>
+      </div>
+
+      <CardContent className="pt-2 space-y-5">
+        {/* ── Stat numbers ── */}
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+          {/* Total Collected */}
+          <div className="rounded-lg border bg-emerald-50 dark:bg-emerald-950/20 border-emerald-200 dark:border-emerald-800 p-4">
+            <div className="flex items-center gap-2 mb-1">
+              <CheckCircle2 className="h-4 w-4 text-emerald-600 shrink-0" />
+              <span className="text-xs font-medium text-emerald-700 dark:text-emerald-400">
+                Total Collected
+              </span>
+            </div>
+            <p className="text-2xl font-bold tabular-nums text-emerald-700 dark:text-emerald-300">
+              {billingLoading ? '—' : formatCurrency(billing?.totalRevenue ?? 0)}
+            </p>
+            <p className="text-xs text-muted-foreground mt-0.5">Payments received</p>
+          </div>
+
+          {/* Total Due */}
+          <div className="rounded-lg border bg-red-50 dark:bg-red-950/20 border-red-200 dark:border-red-800 p-4">
+            <div className="flex items-center gap-2 mb-1">
+              <AlertCircle className="h-4 w-4 text-red-600 shrink-0" />
+              <span className="text-xs font-medium text-red-700 dark:text-red-400">
+                Total Due
+              </span>
+            </div>
+            <p className="text-2xl font-bold tabular-nums text-red-700 dark:text-red-300">
+              {billingLoading ? '—' : formatCurrency(billing?.pendingFees ?? 0)}
+            </p>
+            <p className="text-xs text-muted-foreground mt-0.5">Outstanding invoices</p>
+          </div>
+
+          {/* Today's Collection */}
+          <div className="rounded-lg border bg-blue-50 dark:bg-blue-950/20 border-blue-200 dark:border-blue-800 p-4">
+            <div className="flex items-center gap-2 mb-1">
+              <CalendarDays className="h-4 w-4 text-blue-600 shrink-0" />
+              <span className="text-xs font-medium text-blue-700 dark:text-blue-400">
+                Today's Collection
+              </span>
+            </div>
+            <p className="text-2xl font-bold tabular-nums text-blue-700 dark:text-blue-300">
+              {billingLoading ? '—' : formatCurrency(billing?.todayCollection ?? 0)}
+            </p>
+            <p className="text-xs text-muted-foreground mt-0.5">Received today</p>
+          </div>
+        </div>
+
+        {/* ── Bar chart ── */}
+        {chartLoading ? (
+          <div className="h-44 rounded-lg bg-muted animate-pulse" />
+        ) : displayChart.length === 0 ? (
+          <div className="flex flex-col items-center justify-center h-44 text-sm text-muted-foreground gap-2">
+            <CreditCard className="h-8 w-8 opacity-20" />
+            No payment data for this period
+          </div>
+        ) : (
+          <ResponsiveContainer width="100%" height={180}>
+            <BarChart data={displayChart} margin={{ top: 4, right: 4, left: 0, bottom: 0 }}>
+              <CartesianGrid strokeDasharray="3 3" className="stroke-border" />
+              <XAxis
+                dataKey="label"
+                tick={{ fontSize: 11 }}
+                tickLine={false}
+                axisLine={false}
+              />
+              <YAxis
+                tickFormatter={(v: number) => formatCurrency(v)}
+                tick={{ fontSize: 11 }}
+                tickLine={false}
+                axisLine={false}
+                width={72}
+              />
+              <Tooltip
+                formatter={(v: number) => [`${CURRENCY} ${v.toLocaleString()}`, 'Collected']}
+                contentStyle={{ borderRadius: '8px', fontSize: '12px' }}
+              />
+              <Bar dataKey="total" fill="#10b981" radius={[4, 4, 0, 0]} />
+            </BarChart>
+          </ResponsiveContainer>
+        )}
+      </CardContent>
+    </Card>
+  );
+}
 
 // ─── DashboardPage ────────────────────────────────────────────────────────────
 
@@ -31,6 +346,16 @@ export default function DashboardPage() {
 
   const firstName = user?.name?.split(' ')[0] ?? 'there';
 
+  // Reports dashboard — KPI cards
+  const { data: dashData, isLoading: dashLoading } = useGetReportsDashboard(
+    undefined,
+    { query: { staleTime: 60_000 } },
+  );
+  const d = dashData?.data as Record<string, any> | undefined;
+  const members      = d?.members      ?? {};
+  const revenue      = d?.revenue      ?? {};
+  const trainers     = d?.trainers     ?? {};
+
   return (
     <PageShell>
       <PageHeader
@@ -38,62 +363,44 @@ export default function DashboardPage() {
         subtitle={today}
       />
 
-      {/* KPI strip — values will populate once dashboard API is wired */}
+      {/* ── KPI strip ── */}
       <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
         <StatCard
           title="Active Members"
-          value="—"
+          value={dashLoading ? '—' : String(members.active ?? 0)}
           icon={Users}
           iconClassName="bg-primary/10 text-primary"
           subtitle="Across all branches"
         />
         <StatCard
           title="Revenue This Month"
-          value="—"
+          value={dashLoading ? '—' : formatCurrency(revenue.thisMonth ?? 0)}
           icon={CreditCard}
           iconClassName="bg-emerald-500/10 text-emerald-600"
           subtitle="Invoices paid"
         />
         <StatCard
           title="Active Trainers"
-          value="—"
+          value={dashLoading ? '—' : String(trainers.active ?? 0)}
           icon={Dumbbell}
           iconClassName="bg-purple-500/10 text-purple-600"
           subtitle="Currently assigned"
         />
         <StatCard
-          title="Growth"
-          value="—"
+          title="New This Month"
+          value={dashLoading ? '—' : String(members.newThisMonth ?? 0)}
           icon={TrendingUp}
           iconClassName="bg-amber-500/10 text-amber-600"
-          subtitle="New members this month"
+          subtitle="New members"
         />
       </div>
 
-      {/* Two-column section */}
+      {/* ── Main body ── */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Recent activity placeholder */}
-        <Card className="lg:col-span-2">
-          <CardHeader className="pb-3">
-            <div className="flex items-center justify-between">
-              <CardTitle className="text-base font-semibold">Recent Activity</CardTitle>
-              <Activity className="h-4 w-4 text-muted-foreground" />
-            </div>
-          </CardHeader>
-          <Separator />
-          <CardContent className="pt-6">
-            <div className="flex flex-col items-center gap-3 py-8 text-center">
-              <div className="flex h-12 w-12 items-center justify-center rounded-full bg-muted">
-                <Activity className="h-5 w-5 text-muted-foreground" />
-              </div>
-              <p className="text-sm text-muted-foreground max-w-[18rem]">
-                Activity feed will appear here once the dashboard API is connected.
-              </p>
-            </div>
-          </CardContent>
-        </Card>
+        {/* Payment Summary — takes 2/3 width */}
+        <PaymentSummaryCard />
 
-        {/* Quick navigation */}
+        {/* Quick Access — takes 1/3 width */}
         <Card>
           <CardHeader className="pb-3">
             <CardTitle className="text-base font-semibold">Quick Access</CardTitle>
@@ -110,10 +417,51 @@ export default function DashboardPage() {
               </a>
             ))}
           </CardContent>
+
+          {/* Alerts strip */}
+          {!dashLoading && d?.alerts && (
+            <>
+              <Separator />
+              <CardContent className="pt-4 space-y-2">
+                <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-2">
+                  Alerts
+                </p>
+                {(d.alerts.overdueInvoices ?? 0) > 0 && (
+                  <div className="flex items-center justify-between text-sm">
+                    <span className="text-muted-foreground">Overdue invoices</span>
+                    <Badge variant="destructive" className="text-xs">
+                      {d.alerts.overdueInvoices}
+                    </Badge>
+                  </div>
+                )}
+                {(d.alerts.expiringSoon ?? d?.subscriptions?.expiringSoon ?? 0) > 0 && (
+                  <div className="flex items-center justify-between text-sm">
+                    <span className="text-muted-foreground">Expiring soon</span>
+                    <Badge variant="secondary" className="text-xs bg-amber-100 text-amber-700">
+                      {d.alerts.expiringSoon ?? d?.subscriptions?.expiringSoon}
+                    </Badge>
+                  </div>
+                )}
+                {(d.alerts.openWorkOrders ?? 0) > 0 && (
+                  <div className="flex items-center justify-between text-sm">
+                    <span className="text-muted-foreground">Open work orders</span>
+                    <Badge variant="outline" className="text-xs">
+                      {d.alerts.openWorkOrders}
+                    </Badge>
+                  </div>
+                )}
+                {(d.alerts.overdueInvoices ?? 0) === 0 &&
+                  (d.alerts.openWorkOrders ?? 0) === 0 &&
+                  (d.alerts.expiringSoon ?? d?.subscriptions?.expiringSoon ?? 0) === 0 && (
+                  <p className="text-xs text-muted-foreground">All clear — no alerts</p>
+                )}
+              </CardContent>
+            </>
+          )}
         </Card>
       </div>
 
-      {/* Role / plan info strip */}
+      {/* ── Role / session info ── */}
       {user && (
         <Card className="border-dashed bg-muted/20">
           <CardContent className="py-4">
@@ -125,7 +473,10 @@ export default function DashboardPage() {
               {user.tenantId && (
                 <>
                   <span className="opacity-40">·</span>
-                  <span>Tenant ID: <code className="text-xs bg-muted rounded px-1 py-0.5">{user.tenantId}</code></span>
+                  <span>
+                    Tenant ID:{' '}
+                    <code className="text-xs bg-muted rounded px-1 py-0.5">{user.tenantId}</code>
+                  </span>
                 </>
               )}
             </div>

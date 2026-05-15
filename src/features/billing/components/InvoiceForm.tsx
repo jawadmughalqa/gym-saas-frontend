@@ -338,7 +338,7 @@ export default function InvoiceForm({
       memberId: defaultMemberId ?? "",
       branchId: defaultBranchId ?? "",
       currency: CURRENCY,
-      issueImmediately: false,
+      issueImmediately: true,
       lineItems: [
         {
           displayType: "subscription",
@@ -737,7 +737,7 @@ export default function InvoiceForm({
                       <Input
                         type="number"
                         min="0.01"
-                        step="0.01"
+                        step="1"
                         className="h-8 text-xs"
                         disabled={isPending}
                         {...register(`lineItems.${index}.quantity`)}
@@ -748,7 +748,7 @@ export default function InvoiceForm({
                       <Input
                         type="number"
                         min="0"
-                        step="0.01"
+                        step="1"
                         className="h-8 text-xs"
                         disabled={isPending}
                         {...register(`lineItems.${index}.unitPrice`)}
@@ -760,7 +760,7 @@ export default function InvoiceForm({
                         type="number"
                         min="0"
                         max="100"
-                        step="0.01"
+                        step="1"
                         className="h-8 text-xs"
                         placeholder="0"
                         disabled={isPending}
@@ -876,7 +876,7 @@ export default function InvoiceForm({
                 id="invoiceLevelDiscountAmount"
                 type="number"
                 min="0"
-                step="0.01"
+                step="1"
                 placeholder="0.00"
                 disabled={isPending || discountValidation?.isValid}
                 value={manualDiscountAmt}

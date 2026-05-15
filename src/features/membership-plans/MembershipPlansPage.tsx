@@ -265,7 +265,10 @@ export default function MembershipPlansPage() {
     data: listResponse,
     isLoading,
     isError,
-  } = useGetMembershipPlans({ includeArchived: true });
+  } = useGetMembershipPlans(
+    { includeArchived: true },
+    { query: { staleTime: 0 } },
+  );
 
   const allPlans: PlanWithCount[] = (listResponse?.data ?? []) as PlanWithCount[];
 

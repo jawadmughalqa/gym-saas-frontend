@@ -48,6 +48,8 @@ import { usePermission } from '@/hooks/use-permission';
 import { formatCurrency, formatDate } from '@/utils/format';
 import { cn } from '@/lib/utils';
 
+import { useMutation } from '@tanstack/react-query';
+import { orvalMutator } from '@/lib/orval-mutator';
 import {
   useGetInvoicesInvoiceId,
   usePostInvoicesInvoiceIdDiscount,
@@ -617,11 +619,35 @@ function DiscountSection({
         toast({
           variant: 'destructive',
           title: 'Failed to apply discount',
-          description: err?.message,
+          description: err?.response?.data?.message ?? err?.message,
         });
       },
     },
   });
+
+  const applyManualDiscount = useMutation({
+    mutationFn: (data: { amount: number; reason?: string }) =>
+      orvalMutator<unknown>({
+        url: `/invoices/${invoiceId}/manual-discount`,
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        data,
+      }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: getGetInvoicesInvoiceIdQueryKey(invoiceId) });
+      toast({ title: 'Manual discount applied' });
+      onApplied();
+    },
+    onError: (err: any) => {
+      toast({
+        variant: 'destructive',
+        title: 'Failed to apply discount',
+        description: err?.response?.data?.message ?? err?.message,
+      });
+    },
+  });
+
+  const isPendingAny = applyDiscount.isPending || applyManualDiscount.isPending;
 
   function handleApply() {
     if (mode === 'coupon') {
@@ -636,9 +662,9 @@ function DiscountSection({
       const finalAmount = manualType === 'percent'
         ? (invoiceTotal * amt) / 100
         : amt;
-      applyDiscount.mutate({
-        invoiceId,
-        data: { discountCode: `MANUAL:${finalAmount}:${manualReason || 'Staff discount'}` },
+      applyManualDiscount.mutate({
+        amount: finalAmount,
+        reason: manualReason || undefined,
       });
     }
   }
@@ -708,10 +734,10 @@ function DiscountSection({
             type="button"
             size="sm"
             className="h-9 shrink-0"
-            disabled={!selectedCode || applyDiscount.isPending || disabled}
+            disabled={!selectedCode || isPendingAny || disabled}
             onClick={handleApply}
           >
-            {applyDiscount.isPending ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : 'Apply'}
+            {isPendingAny ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : 'Apply'}
           </Button>
         </div>
       ) : (
@@ -769,10 +795,10 @@ function DiscountSection({
             type="button"
             size="sm"
             className="w-full h-9"
-            disabled={!manualAmount || parseFloat(manualAmount) <= 0 || applyDiscount.isPending || disabled}
+            disabled={!manualAmount || parseFloat(manualAmount) <= 0 || isPendingAny || disabled}
             onClick={handleApply}
           >
-            {applyDiscount.isPending ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : 'Apply Manual Discount'}
+            {isPendingAny ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : 'Apply Manual Discount'}
           </Button>
         </div>
       )}

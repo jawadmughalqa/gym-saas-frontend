@@ -5,15 +5,7 @@
  * REST API for the SaaS Gym Management System. Built with Node.js, Express, MongoDB, and TypeScript.
  * OpenAPI spec version: 1.0.0
  */
-
-export type GetBillingRecentTransactions200DataItemInvoiceStatus = typeof GetBillingRecentTransactions200DataItemInvoiceStatus[keyof typeof GetBillingRecentTransactions200DataItemInvoiceStatus];
-
-// eslint-disable-next-line @typescript-eslint/no-redeclare
-export const GetBillingRecentTransactions200DataItemInvoiceStatus = {
-  fully_paid:   'fully_paid',
-  partial_paid: 'partial_paid',
-  pending:      'pending',
-} as const;
+import type { GetBillingRecentTransactions200DataItemInvoiceStatus } from './getBillingRecentTransactions200DataItemInvoiceStatus';
 
 export type GetBillingRecentTransactions200DataItem = {
   _id?: string;
@@ -26,9 +18,7 @@ export type GetBillingRecentTransactions200DataItem = {
   invoiceAmountDue?: number;
   invoiceStatus?: GetBillingRecentTransactions200DataItemInvoiceStatus;
   method?: string;
-  /** Amount of this specific (latest) payment */
   latestPaymentAmount?: number;
-  /** Sum of all payments recorded against this invoice */
   totalPaymentsAmount?: number;
   currency?: string;
   paidAt?: string;

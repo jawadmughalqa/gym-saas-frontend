@@ -162,7 +162,7 @@ function DashboardTab() {
       {/* ── Members ───────────────────────────────────────────────────────── */}
       <section>
         <SectionTitle>Members</SectionTitle>
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-7">
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-3">
           <StatCard
             title="Total Members"
             value={isLoading ? '—' : String(members.total ?? 0)}
@@ -174,12 +174,12 @@ function DashboardTab() {
             icon={UserCheck}
             iconClassName="bg-emerald-500/10"
           />
-          <StatCard
+          {/* <StatCard
             title="Inactive"
             value={isLoading ? '—' : String(members.inactive ?? 0)}
             icon={UserX}
             iconClassName="bg-slate-500/10"
-          />
+          /> */}
           <StatCard
             title="Frozen"
             value={isLoading ? '—' : String(members.frozen ?? 0)}
@@ -249,7 +249,7 @@ function DashboardTab() {
       </section>
 
       {/* ── Check-ins ─────────────────────────────────────────────────────── */}
-      <section>
+      {/* <section>
         <SectionTitle>Check-Ins</SectionTitle>
         <div className="grid gap-4 sm:grid-cols-3">
           <StatCard
@@ -271,7 +271,7 @@ function DashboardTab() {
             iconClassName="bg-purple-500/10"
           />
         </div>
-      </section>
+      </section> */}
 
       {/* ── Subscriptions & Trainers ──────────────────────────────────────── */}
       <section>
@@ -304,7 +304,7 @@ function DashboardTab() {
             </Badge>
           )}
         </div>
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-2">
           <StatCard
             title="Overdue Invoices"
             value={isLoading ? '—' : String(alerts.overdueInvoices ?? 0)}
@@ -317,7 +317,7 @@ function DashboardTab() {
             icon={CreditCard}
             iconClassName={(alerts.outstandingInvoices ?? 0) > 0 ? 'bg-amber-500/10' : undefined}
           />
-          <StatCard
+          {/* <StatCard
             title="Open Work Orders"
             value={isLoading ? '—' : String(alerts.openWorkOrders ?? 0)}
             icon={Wrench}
@@ -328,7 +328,7 @@ function DashboardTab() {
             value={isLoading ? '—' : String(alerts.failedPaymentsThisMonth ?? 0)}
             icon={AlertTriangle}
             iconClassName={(alerts.failedPaymentsThisMonth ?? 0) > 0 ? 'bg-red-500/10' : undefined}
-          />
+          /> */}
         </div>
       </section>
 
@@ -940,8 +940,8 @@ export default function ReportsPage() {
           <TabsTrigger value="dashboard">Dashboard</TabsTrigger>
           <TabsTrigger value="revenue">Revenue</TabsTrigger>
           <TabsTrigger value="members">Members</TabsTrigger>
-          <TabsTrigger value="attendance">Attendance</TabsTrigger>
-          <TabsTrigger value="trainers">Trainers</TabsTrigger>
+          {/* <TabsTrigger value="attendance">Attendance</TabsTrigger> */}
+          {/* <TabsTrigger value="trainers">Trainers</TabsTrigger> */}
         </TabsList>
 
         <TabsContent value="dashboard" className="mt-6">
@@ -953,12 +953,12 @@ export default function ReportsPage() {
         <TabsContent value="members" className="mt-6">
           <MembersTab />
         </TabsContent>
-        <TabsContent value="attendance" className="mt-6">
+        {/* <TabsContent value="attendance" className="mt-6">
           <AttendanceTab />
         </TabsContent>
         <TabsContent value="trainers" className="mt-6">
           <TrainersTab />
-        </TabsContent>
+        </TabsContent> */}
       </Tabs>
     </PageShell>
   );

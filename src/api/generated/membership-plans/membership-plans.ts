@@ -419,82 +419,65 @@ export const useDeleteMembershipPlansPlanId = <TError = ErrorType<BadRequestResp
       > => {
       return useMutation(getDeleteMembershipPlansPlanIdMutationOptions(options), queryClient);
     }
-
-// ─── Restore Plan (manually added — POST /membership-plans/:planId/restore) ──
-
-export const postMembershipPlansPlanIdRestore = (
-  planId: string,
-  signal?: AbortSignal,
-) => {
-  return orvalMutator<MembershipPlanResponse>({
-    url: `/membership-plans/${planId}/restore`,
-    method: 'POST',
-    signal,
-  });
-};
-
-export const getPostMembershipPlansPlanIdRestoreMutationOptions = <
-  TError = ErrorType<BadRequestResponse | UnauthorizedResponse | ForbiddenResponse | NotFoundResponse>,
-  TContext = unknown,
->(options?: {
-  mutation?: UseMutationOptions<
-    Awaited<ReturnType<typeof postMembershipPlansPlanIdRestore>>,
-    TError,
-    { planId: string },
-    TContext
-  >;
-}): UseMutationOptions<
-  Awaited<ReturnType<typeof postMembershipPlansPlanIdRestore>>,
-  TError,
-  { planId: string },
-  TContext
-> => {
-  const mutationKey = ['postMembershipPlansPlanIdRestore'];
-  const { mutation: mutationOptions } = options
-    ? options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey
-      ? options
-      : { ...options, mutation: { ...options.mutation, mutationKey } }
-    : { mutation: { mutationKey } };
-
-  const mutationFn: MutationFunction<
-    Awaited<ReturnType<typeof postMembershipPlansPlanIdRestore>>,
-    { planId: string }
-  > = (props) => {
-    const { planId } = props ?? {};
-    return postMembershipPlansPlanIdRestore(planId);
-  };
-
-  return { mutationFn, ...mutationOptions };
-};
-
-export type PostMembershipPlansPlanIdRestoreMutationResult = NonNullable<
-  Awaited<ReturnType<typeof postMembershipPlansPlanIdRestore>>
->;
-export type PostMembershipPlansPlanIdRestoreMutationError = ErrorType<
-  BadRequestResponse | UnauthorizedResponse | ForbiddenResponse | NotFoundResponse
->;
-
-/**
+    /**
+ * Unarchives the plan and sets it back to active so it can be used for new subscriptions.
  * @summary Restore an archived membership plan
  */
-export const usePostMembershipPlansPlanIdRestore = <
-  TError = ErrorType<BadRequestResponse | UnauthorizedResponse | ForbiddenResponse | NotFoundResponse>,
-  TContext = unknown,
->(
-  options?: {
-    mutation?: UseMutationOptions<
-      Awaited<ReturnType<typeof postMembershipPlansPlanIdRestore>>,
-      TError,
-      { planId: string },
-      TContext
-    >;
-  },
-  queryClient?: QueryClient,
-): UseMutationResult<
-  Awaited<ReturnType<typeof postMembershipPlansPlanIdRestore>>,
-  TError,
-  { planId: string },
-  TContext
-> => {
-  return useMutation(getPostMembershipPlansPlanIdRestoreMutationOptions(options), queryClient);
-};
+export const postMembershipPlansPlanIdRestore = (
+    planId: string,
+ signal?: AbortSignal
+) => {
+
+
+      return orvalMutator<MembershipPlanResponse>(
+      {url: `/membership-plans/${planId}/restore`, method: 'POST', signal
+    },
+      );
+    }
+
+
+
+export const getPostMembershipPlansPlanIdRestoreMutationOptions = <TError = ErrorType<BadRequestResponse | UnauthorizedResponse | ForbiddenResponse | NotFoundResponse>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof postMembershipPlansPlanIdRestore>>, TError,{planId: string}, TContext>, }
+): UseMutationOptions<Awaited<ReturnType<typeof postMembershipPlansPlanIdRestore>>, TError,{planId: string}, TContext> => {
+
+const mutationKey = ['postMembershipPlansPlanIdRestore'];
+const {mutation: mutationOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof postMembershipPlansPlanIdRestore>>, {planId: string}> = (props) => {
+          const {planId} = props ?? {};
+
+          return  postMembershipPlansPlanIdRestore(planId,)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type PostMembershipPlansPlanIdRestoreMutationResult = NonNullable<Awaited<ReturnType<typeof postMembershipPlansPlanIdRestore>>>
+
+    export type PostMembershipPlansPlanIdRestoreMutationError = ErrorType<BadRequestResponse | UnauthorizedResponse | ForbiddenResponse | NotFoundResponse>
+
+    /**
+ * @summary Restore an archived membership plan
+ */
+export const usePostMembershipPlansPlanIdRestore = <TError = ErrorType<BadRequestResponse | UnauthorizedResponse | ForbiddenResponse | NotFoundResponse>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof postMembershipPlansPlanIdRestore>>, TError,{planId: string}, TContext>, }
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof postMembershipPlansPlanIdRestore>>,
+        TError,
+        {planId: string},
+        TContext
+      > => {
+      return useMutation(getPostMembershipPlansPlanIdRestoreMutationOptions(options), queryClient);
+    }

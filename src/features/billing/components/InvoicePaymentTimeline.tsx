@@ -9,12 +9,17 @@
  * - Shows a progress bar: paid vs. remaining
  * - "Fully settled" green banner when amountDue = 0
  */
+import { useState } from 'react';
 import { Receipt, FileText, CheckCircle2, Clock } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
+import { Button } from '@/components/ui/button';
 import { formatCurrency, formatDateTime } from '@/lib/utils';
-import { useInvoicePayments } from '../hooks/useInvoicePayments';
+import { useInvoicePayments, INVOICE_PAYMENTS_KEY } from '../hooks/useInvoicePayments';
 import { StatusBadge } from './StatusBadge';
 import { CURRENCY } from '@/config/tenant.config';
+import { usePermission } from '@/hooks/use-permission';
+import { RefundDialog } from '@/features/refunds/components/RefundDialog';
+import { useQueryClient } from '@tanstack/react-query';
 
 // ─── Props ────────────────────────────────────────────────────────────────────
 
@@ -37,7 +42,16 @@ const METHOD_LABELS: Record<string, string> = {
 // ─── Component ────────────────────────────────────────────────────────────────
 
 export function InvoicePaymentTimeline({ invoiceId, currency = CURRENCY }: InvoicePaymentTimelineProps) {
+  const { can } = usePermission();
+  const qc = useQueryClient();
   const { data, isLoading, isError } = useInvoicePayments(invoiceId);
+
+  const [refundTarget, setRefundTarget] = useState<{
+    paymentId: string;
+    amount: number;
+    totalRefunded: number;
+    currency: string;
+  } | null>(null);
 
   if (isLoading) {
     return (
@@ -63,6 +77,7 @@ export function InvoicePaymentTimeline({ invoiceId, currency = CURRENCY }: Invoi
   const isSettled = invoice.amountDue <= 0.01;
 
   return (
+    <>
     <div className="bg-muted/30 border-t px-4 py-3 space-y-4">
       {/* ── What was this invoice for? ───────────────────────────────────── */}
       <div>
@@ -192,6 +207,27 @@ export function InvoicePaymentTimeline({ invoiceId, currency = CURRENCY }: Invoi
                           </p>
                         )}
                       </div>
+
+                      {/* Refund button — only for completed/partially-refunded payments */}
+                      {can('payment.refund') &&
+                        (payment.status === 'completed' || payment.status === 'partially_refunded') &&
+                        payment.amount - (payment.totalRefunded ?? 0) > 0.01 && (
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            className="text-xs h-6 px-2 text-muted-foreground hover:text-foreground shrink-0"
+                            onClick={() =>
+                              setRefundTarget({
+                                paymentId: payment._id,
+                                amount: payment.amount,
+                                totalRefunded: payment.totalRefunded ?? 0,
+                                currency: payment.currency || curr,
+                              })
+                            }
+                          >
+                            Refund
+                          </Button>
+                        )}
                     </div>
                   </div>
                 </div>
@@ -201,5 +237,21 @@ export function InvoicePaymentTimeline({ invoiceId, currency = CURRENCY }: Invoi
         </div>
       )}
     </div>
+
+      {/* ── Refund dialog ──────────────────────────────────────────────── */}
+      {refundTarget && (
+        <RefundDialog
+          open={!!refundTarget}
+          onOpenChange={(o) => { if (!o) setRefundTarget(null); }}
+          paymentId={refundTarget.paymentId}
+          paymentAmount={refundTarget.amount}
+          alreadyRefunded={refundTarget.totalRefunded}
+          currency={refundTarget.currency}
+          onSuccess={() => {
+            void qc.invalidateQueries({ queryKey: INVOICE_PAYMENTS_KEY(invoiceId) });
+          }}
+        />
+      )}
+    </>
   );
 }

@@ -16,7 +16,8 @@ import {
   Receipt,
   TrendingDown,
   UserCog,
-  TrendingUp, // ← Add this
+  TrendingUp,
+  RotateCcw,
   type LucideIcon,
 } from 'lucide-react';
 import type { UserRole } from '@/types/api.types';
@@ -117,6 +118,12 @@ export const NAV_ITEMS: NavItem[] = [
     label: 'Expense Analytics',
     icon: TrendingDown,
     permission: 'expense.read',
+  },
+  {
+    to: '/refunds',
+    label: 'Refunds',
+    icon: RotateCcw,
+    permission: 'payment.refund',
   },
   {
     to: '/reports',
@@ -221,6 +228,12 @@ export const NAV_GROUPS: NavGroup[] = [
         icon: Receipt,
         permission: 'expense.read',
       },
+      {
+        to: '/refunds',
+        label: 'Refunds',
+        icon: RotateCcw,
+        permission: 'payment.refund',
+      },
     ],
   },
   {
@@ -262,12 +275,12 @@ export const NAV_GROUPS: NavGroup[] = [
 // ─── Bottom nav (settings, super admin) ──────────────────────────────────────
 
 export const BOTTOM_NAV_ITEMS: NavItem[] = [
-  {
-    to: '/settings',
-    label: 'Settings',
-    icon: Settings,
-    roles: ['gym_owner', 'branch_manager'],
-  },
+  // {
+  //   to: '/settings',
+  //   label: 'Settings',
+  //   icon: Settings,
+  //   roles: ['gym_owner', 'branch_manager'],
+  // },
   {
     to: '/super-admin',
     label: 'Super Admin',

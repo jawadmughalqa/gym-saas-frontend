@@ -34,6 +34,7 @@ const MembershipPlansPage   = lazy(() => import("@/features/membership-plans/Mem
 const ExpensesPage          = lazy(() => import("@/features/expenses/ExpensesPage"));
 const ExpenseAnalyticsPage  = lazy(() => import("@/features/expenses/ExpenseAnalyticsPage"));
 const StaffPage             = lazy(() => import("@/features/staff/StaffPage"));
+const RefundsPage           = lazy(() => import("@/features/refunds/RefundsPage"));
 
 // ─── Suspense wrapper ─────────────────────────────────────────────────────────
 
@@ -79,17 +80,17 @@ const router = createBrowserRouter([
           },
 
           // ── Auth self-service ────────────────────────────────────────
-          {
-            path: "settings",
-            handle: { crumb: "Settings" },
-            children: [
-              {
-                path: "change-password",
-                element: <Lazy><ChangePasswordPage /></Lazy>,
-                handle: { crumb: "Change Password" },
-              },
-            ],
-          },
+          // {
+          //   path: "settings",
+          //   handle: { crumb: "Settings" },
+          //   children: [
+          //     {
+          //       path: "change-password",
+          //       element: <Lazy><ChangePasswordPage /></Lazy>,
+          //       handle: { crumb: "Change Password" },
+          //     },
+          //   ],
+          // },
 
           // ── Members ──────────────────────────────────────────────────
           {
@@ -151,6 +152,13 @@ const router = createBrowserRouter([
             path: "expense-analytics",
             element: <Lazy><ExpenseAnalyticsPage /></Lazy>,
             handle: { crumb: "Expense Analytics" },
+          },
+
+          // ── Refunds ──────────────────────────────────────────────────
+          {
+            path: "refunds",
+            element: <Lazy><RefundsPage /></Lazy>,
+            handle: { crumb: "Refunds" },
           },
 
           // ── Staff ────────────────────────────────────────────────────

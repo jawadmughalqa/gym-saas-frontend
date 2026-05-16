@@ -7,6 +7,7 @@ import NotFoundPage from "@/components/shared/NotFoundPage";
 import UnauthorizedPage from "@/components/shared/UnauthorizedPage";
 import LoginPage from "@/features/auth/LoginPage";
 import DashboardPage from "@/features/dashboard/DashboardPage";
+import { useAuthStore } from "@/stores/auth.store";
 
 // ─── Lazy pages ───────────────────────────────────────────────────────────────
 
@@ -35,6 +36,17 @@ const ExpensesPage          = lazy(() => import("@/features/expenses/ExpensesPag
 const ExpenseAnalyticsPage  = lazy(() => import("@/features/expenses/ExpenseAnalyticsPage"));
 const StaffPage             = lazy(() => import("@/features/staff/StaffPage"));
 const RefundsPage           = lazy(() => import("@/features/refunds/RefundsPage"));
+const MemberHomePage        = lazy(() => import("@/features/member-portal/MemberHomePage"));
+const MemberPlanPage        = lazy(() => import("@/features/member-portal/MemberPlanPage"));
+const MemberInvoicesPage    = lazy(() => import("@/features/member-portal/MemberInvoicesPage"));
+const MemberTrainerPage     = lazy(() => import("@/features/member-portal/MemberTrainerPage"));
+
+// ─── Root redirect ────────────────────────────────────────────────────────────
+
+function RootRedirect() {
+  const role = useAuthStore((s) => s.user?.role);
+  return <Navigate to={role === 'member' ? '/member/home' : '/dashboard'} replace />;
+}
 
 // ─── Suspense wrapper ─────────────────────────────────────────────────────────
 
@@ -69,8 +81,8 @@ const router = createBrowserRouter([
         element: <AppShell />,
         children: [
 
-          // Root redirect
-          { index: true, element: <Navigate to="/dashboard" replace /> },
+          // Root redirect — members go to /member/home, others to /dashboard
+          { index: true, element: <RootRedirect /> },
 
           // Dashboard
           {
@@ -215,6 +227,34 @@ const router = createBrowserRouter([
             path: "notifications",
             element: <Lazy><NotificationsPage /></Lazy>,
             handle: { crumb: "Notifications" },
+          },
+
+          // ── Member portal ─────────────────────────────────────────────
+          {
+            path: "member",
+            children: [
+              { index: true, element: <Navigate to="/member/home" replace /> },
+              {
+                path: "home",
+                element: <Lazy><MemberHomePage /></Lazy>,
+                handle: { crumb: "Home" },
+              },
+              {
+                path: "plan",
+                element: <Lazy><MemberPlanPage /></Lazy>,
+                handle: { crumb: "My Plan" },
+              },
+              {
+                path: "invoices",
+                element: <Lazy><MemberInvoicesPage /></Lazy>,
+                handle: { crumb: "My Invoices" },
+              },
+              {
+                path: "trainer",
+                element: <Lazy><MemberTrainerPage /></Lazy>,
+                handle: { crumb: "My Trainer" },
+              },
+            ],
           },
 
           // ── Branches ─────────────────────────────────────────────────

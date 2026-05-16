@@ -18,7 +18,7 @@
  *   - Membership section is hidden (use the Subscriptions tab instead)
  */
 
-import { useEffect }      from 'react';
+import { useEffect, useState } from 'react';
 import { useForm }        from 'react-hook-form';
 import { zodResolver }    from '@hookform/resolvers/zod';
 import { Loader2 }        from 'lucide-react';
@@ -46,6 +46,7 @@ import { EmergencyContactSection }  from './EmergencyContactSection';
 import { ConsentSection }           from './ConsentSection';
 import { AssignMembershipSection }  from './AssignMembershipSection';
 import { AssignTrainerSection }     from './AssignTrainerSection';
+import { MemberCredentialsDialog }  from '../MemberCredentialsDialog';
 
 // ─── Props ────────────────────────────────────────────────────────────────────
 
@@ -67,6 +68,13 @@ export default function MemberForm({
   const isEdit      = !!member;
   const queryClient = useQueryClient();
   const { toast }   = useToast();
+
+  // ── Credentials dialog state (shown after create) ─────────────────────────
+  const [credentials, setCredentials] = useState<{
+    memberName: string;
+    loginEmail: string;
+    tempPassword: string;
+  } | null>(null);
 
   // ── API mutations ─────────────────────────────────────────────────────────
   const createMutation       = usePostMembers();
@@ -198,8 +206,9 @@ export default function MemberForm({
       },
     });
 
-    // created.data is the new member object from the API
-    const newMemberId = (created as unknown as { data: { _id: string } }).data._id;
+    // created.data is the new member object from the API (includes loginEmail + tempPassword)
+    const createdData = (created as unknown as { data: { _id: string; loginEmail?: string; tempPassword?: string } }).data;
+    const newMemberId = createdData._id;
 
     await queryClient.invalidateQueries({ queryKey: getGetMembersQueryKey() });
 
@@ -282,11 +291,30 @@ export default function MemberForm({
       }
     }
 
+    // Show credentials dialog so gym owner can give them to the member directly
+    if (createdData.loginEmail && createdData.tempPassword) {
+      setCredentials({
+        memberName: `${values.firstName} ${values.lastName}`,
+        loginEmail: createdData.loginEmail,
+        tempPassword: createdData.tempPassword,
+      });
+    }
+
     onOpenChange(false);
   }
 
   // ─── Render ───────────────────────────────────────────────────────────────
   return (
+    <>
+    {credentials && (
+      <MemberCredentialsDialog
+        open={!!credentials}
+        onOpenChange={(o) => { if (!o) setCredentials(null); }}
+        memberName={credentials.memberName}
+        loginEmail={credentials.loginEmail}
+        tempPassword={credentials.tempPassword}
+      />
+    )}
     <Sheet open={open} onOpenChange={onOpenChange}>
       <SheetContent side="right" className="w-full sm:max-w-lg overflow-y-auto p-0">
 
@@ -372,5 +400,6 @@ export default function MemberForm({
         </form>
       </SheetContent>
     </Sheet>
+    </>
   );
 }

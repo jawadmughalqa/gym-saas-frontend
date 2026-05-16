@@ -18,6 +18,8 @@ import {
   UserCog,
   TrendingUp,
   RotateCcw,
+  Home,
+  BadgeCheck,
   type LucideIcon,
 } from 'lucide-react';
 import type { UserRole } from '@/types/api.types';
@@ -58,12 +60,12 @@ export const NAV_ITEMS: NavItem[] = [
     icon: Dumbbell,
     permission: 'trainer.read',
   },
-  // {
-  //   to: '/staff',
-  //   label: 'Staff',
-  //   icon: UserCog,
-  //   permission: 'role.read',
-  // },
+  {
+    to: '/staff',
+    label: 'Staff',
+    icon: UserCog,
+    permission: 'role.read',
+  },
   {
     to: '/branches',
     label: 'Branches',
@@ -149,12 +151,22 @@ export const NAV_ITEMS: NavItem[] = [
 
 export const NAV_GROUPS: NavGroup[] = [
   {
+    label: 'My Account',
+    items: [
+      { to: '/member/home',     label: 'Home',       icon: Home,       roles: ['member'] },
+      { to: '/member/plan',     label: 'My Plan',    icon: BadgeCheck, roles: ['member'] },
+      { to: '/member/invoices', label: 'Invoices',   icon: Receipt,    roles: ['member'] },
+      { to: '/member/trainer',  label: 'My Trainer', icon: Dumbbell,   roles: ['member'] },
+    ],
+  },
+  {
     label: 'Overview',
     items: [
       {
         to: '/dashboard',
         label: 'Dashboard',
         icon: LayoutDashboard,
+        roles: ['super_admin', 'gym_owner', 'branch_manager', 'staff', 'trainer'],
       },
     ],
   },
@@ -173,12 +185,12 @@ export const NAV_GROUPS: NavGroup[] = [
         icon: Dumbbell,
         permission: 'trainer.read',
       },
-      // {
-      //   to: '/staff',
-      //   label: 'Staff',
-      //   icon: UserCog,
-      //   permission: 'role.read',
-      // },
+      {
+        to: '/staff',
+        label: 'Staff',
+        icon: UserCog,
+        permission: 'role.read',
+      },
       {
         to: '/branches',
         label: 'Branches',

@@ -58,8 +58,14 @@ api.interceptors.response.use(
       return Promise.reject(error);
     }
 
-    // Don't intercept the refresh call itself — that would cause an infinite loop
-    if (original.url?.includes('/auth/refresh')) {
+    // Don't intercept auth endpoints — a 401 on login means wrong credentials
+    // (not an expired token), and a 401 on refresh means the session is gone.
+    // Retrying either with a token refresh would cause an infinite loop or a
+    // hard page reload that wipes the error message before the user sees it.
+    if (
+      original.url?.includes('/auth/refresh') ||
+      original.url?.includes('/auth/login')
+    ) {
       return Promise.reject(error);
     }
 

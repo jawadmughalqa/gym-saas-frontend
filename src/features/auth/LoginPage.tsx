@@ -8,6 +8,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { useLogin } from './hooks/use-auth';
+import { getErrorMessage } from '@/utils/error';
 
 // ─── Schema (unchanged) ───────────────────────────────────────────────────────
 
@@ -68,9 +69,7 @@ export default function LoginPage() {
             {login.isError && (
               <Alert variant="destructive">
                 <AlertDescription>
-                  {login.error instanceof Error
-                    ? login.error.message
-                    : 'Login failed. Please try again.'}
+                  {getErrorMessage(login.error)}
                 </AlertDescription>
               </Alert>
             )}

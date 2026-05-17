@@ -142,6 +142,11 @@ export function PaymentHistoryList({ memberId }: PaymentHistoryListProps) {
                           of {formatCurrency(inv.total, currency)}
                         </span>
                       )}
+                      {(inv.discountTotal ?? 0) > 0 && (
+                        <span className="text-xs text-emerald-600 font-medium">
+                          −{formatCurrency(inv.discountTotal, currency)} discount
+                        </span>
+                      )}
                       <StatusBadge status={inv.status} />
                     </div>
                   </div>

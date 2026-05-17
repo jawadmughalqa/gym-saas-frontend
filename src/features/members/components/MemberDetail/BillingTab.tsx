@@ -90,13 +90,17 @@ export function BillingTab({ memberId, branchId, memberName }: BillingTabProps) 
       amountDue: inv.amountDue ?? 0,
       amountPaid: inv.amountPaid ?? 0,
       total: inv.total ?? 0,
+      subtotal: inv.subtotal ?? undefined,
+      discountTotal: inv.discountTotal ?? 0,
       currency: inv.currency ?? CURRENCY,
       dueDate: inv.dueDate,
       lineItems: (inv.lineItems ?? []).map((li: any) => ({
         description: li.description ?? '',
         quantity: li.quantity ?? 1,
         unitPrice: li.unitPrice ?? 0,
-        total: li.total ?? li.subtotal ?? 0,
+        subtotal: li.subtotal ?? undefined,
+        discountAmount: li.discountAmount ?? 0,
+        total: li.total ?? 0,
         type: li.type ?? 'other',
       })),
     }));

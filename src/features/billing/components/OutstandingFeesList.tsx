@@ -13,6 +13,8 @@ export interface OutstandingLineItem {
   unitPrice: number;
   total: number;
   type: string;
+  discountAmount?: number; // per-line discount in currency
+  subtotal?: number;       // unitPrice × quantity before discount
 }
 
 export interface OutstandingInvoice {
@@ -22,6 +24,8 @@ export interface OutstandingInvoice {
   amountDue: number;
   amountPaid: number;
   total: number;
+  subtotal?: number;       // pre-discount total
+  discountTotal?: number;  // sum of all line discounts
   currency: string;
   dueDate?: string;
   lineItems?: OutstandingLineItem[];
@@ -146,6 +150,11 @@ export function OutstandingFeesList({
                 <p className="text-xs text-muted-foreground mt-0.5">
                   Due: {invoice.dueDate ? formatDate(invoice.dueDate) : 'No due date'}
                 </p>
+                {(invoice.discountTotal ?? 0) > 0 && (
+                  <p className="text-xs text-emerald-600 font-medium mt-0.5">
+                    Discount: −{formatCurrency(invoice.discountTotal!, invoice.currency || CURRENCY)}
+                  </p>
+                )}
                 {isPartiallyPaid && (
                   <p className="text-xs text-orange-600 mt-0.5">
                     Paid: {formatCurrency(invoice.amountPaid, invoice.currency || CURRENCY)} —{' '}
@@ -156,6 +165,12 @@ export function OutstandingFeesList({
 
               {/* Right: amount + buttons */}
               <div className="ml-2 flex flex-col items-end gap-2 shrink-0">
+                {/* Show original price struck through when a discount was applied */}
+                {(invoice.discountTotal ?? 0) > 0 && (
+                  <p className="text-xs text-muted-foreground line-through">
+                    {formatCurrency(invoice.subtotal ?? (invoice.total + (invoice.discountTotal ?? 0)), invoice.currency || CURRENCY)}
+                  </p>
+                )}
                 <p className="font-semibold text-red-600">
                   {formatCurrency(invoice.amountDue, invoice.currency || CURRENCY)}
                 </p>
@@ -203,20 +218,48 @@ export function OutstandingFeesList({
             {/* Expanded line items breakdown */}
             {(isExpanded || lineItems.length === 1) && lineItems.length > 0 && (
               <div className="px-3 pb-3 pt-0 border-t mx-3 mb-3">
-                <div className="space-y-1 pt-2">
-                  {lineItems.map((item, idx) => (
-                    <div key={idx} className="flex items-center justify-between text-xs">
-                      <span className="text-muted-foreground truncate flex-1 mr-2">
-                        {item.description || 'Item'}
-                        {item.quantity > 1 && (
-                          <span className="ml-1 text-muted-foreground/70">×{item.quantity}</span>
+                <div className="space-y-1.5 pt-2">
+                  {lineItems.map((item, idx) => {
+                    const originalTotal = item.subtotal ?? item.unitPrice * item.quantity;
+                    const lineDiscount = item.discountAmount ?? 0;
+                    const lineTotal = item.total ?? (originalTotal - lineDiscount);
+                    return (
+                      <div key={idx} className="text-xs">
+                        <div className="flex items-center justify-between">
+                          <span className="text-muted-foreground truncate flex-1 mr-2">
+                            {item.description || 'Item'}
+                            {item.quantity > 1 && (
+                              <span className="ml-1 text-muted-foreground/70">×{item.quantity}</span>
+                            )}
+                          </span>
+                          <div className="flex items-center gap-1.5 shrink-0">
+                            {lineDiscount > 0 && (
+                              <span className="text-muted-foreground line-through">
+                                {formatCurrency(originalTotal, invoice.currency || CURRENCY)}
+                              </span>
+                            )}
+                            <span className="font-medium">
+                              {formatCurrency(lineTotal, invoice.currency || CURRENCY)}
+                            </span>
+                          </div>
+                        </div>
+                        {lineDiscount > 0 && (
+                          <p className="text-emerald-600 mt-0.5 text-right">
+                            Discount: −{formatCurrency(lineDiscount, invoice.currency || CURRENCY)}
+                          </p>
                         )}
-                      </span>
-                      <span className="font-medium shrink-0">
-                        {formatCurrency(item.total ?? item.unitPrice * item.quantity, invoice.currency || CURRENCY)}
+                      </div>
+                    );
+                  })}
+                  {/* Invoice-level discount summary row */}
+                  {(invoice.discountTotal ?? 0) > 0 && lineItems.length > 1 && (
+                    <div className="flex items-center justify-between text-xs pt-1 border-t border-dashed">
+                      <span className="text-emerald-600 font-medium">Total Discount</span>
+                      <span className="text-emerald-600 font-medium">
+                        −{formatCurrency(invoice.discountTotal!, invoice.currency || CURRENCY)}
                       </span>
                     </div>
-                  ))}
+                  )}
                 </div>
               </div>
             )}

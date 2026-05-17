@@ -46,7 +46,9 @@ import type {
   TenantListResponse,
   UnauthorizedResponse,
   UpdateTenantRequest,
-  UpsertPlanRequest
+  UpsertPlanRequest,
+  CreatePlanRequest,
+  ResetOwnerPasswordResponse,
 } from '../schemas';
 
 import { orvalMutator } from '../../../lib/orval-mutator';
@@ -994,4 +996,102 @@ export const usePutSuperPlansPlanName = <TError = ErrorType<BadRequestResponse |
         TContext
       > => {
       return useMutation(getPutSuperPlansPlanNameMutationOptions(options), queryClient);
+    }
+
+// ─── POST /super/plans — Create a new plan ────────────────────────────────────
+
+/**
+ * @summary Create a new SaaS plan
+ */
+export const postSuperPlans = (
+    createPlanRequest: BodyType<CreatePlanRequest>,
+ signal?: AbortSignal
+) => {
+      return orvalMutator<PlanResponse>(
+      {url: `/super/plans`, method: 'POST',
+      headers: {'Content-Type': 'application/json', },
+      data: createPlanRequest, signal
+    },
+      );
+    }
+
+export const getPostSuperPlansMutationOptions = <TError = ErrorType<BadRequestResponse | UnauthorizedResponse | ForbiddenResponse | ConflictResponse>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof postSuperPlans>>, TError,{data: BodyType<CreatePlanRequest>}, TContext>, }
+): UseMutationOptions<Awaited<ReturnType<typeof postSuperPlans>>, TError,{data: BodyType<CreatePlanRequest>}, TContext> => {
+const mutationKey = ['postSuperPlans'];
+const {mutation: mutationOptions} = options ?? {};
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof postSuperPlans>>, {data: BodyType<CreatePlanRequest>}> = (props) => {
+          const {data} = props ?? {};
+
+          return  postSuperPlans(data,)
+        }
+
+        return { mutationKey, mutationFn, ...mutationOptions}
+      }
+
+    export type PostSuperPlansMutationResult = NonNullable<Awaited<ReturnType<typeof postSuperPlans>>>
+    export type PostSuperPlansMutationBody = BodyType<CreatePlanRequest>
+    export type PostSuperPlansMutationError = ErrorType<BadRequestResponse | UnauthorizedResponse | ForbiddenResponse | ConflictResponse>
+
+    /**
+ * @summary Create a new SaaS plan
+ */
+export const usePostSuperPlans = <TError = ErrorType<BadRequestResponse | UnauthorizedResponse | ForbiddenResponse | ConflictResponse>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof postSuperPlans>>, TError,{data: BodyType<CreatePlanRequest>}, TContext>, }
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof postSuperPlans>>,
+        TError,
+        {data: BodyType<CreatePlanRequest>},
+        TContext
+      > => {
+      return useMutation(getPostSuperPlansMutationOptions(options), queryClient);
+    }
+
+// ─── POST /super/tenants/:tenantId/reset-owner-password ───────────────────────
+
+/**
+ * @summary Reset gym owner's password
+ */
+export const postSuperTenantsTenantIdResetOwnerPassword = (
+    tenantId: string,
+ signal?: AbortSignal
+) => {
+      return orvalMutator<ResetOwnerPasswordResponse>(
+      {url: `/super/tenants/${tenantId}/reset-owner-password`, method: 'POST',
+      signal
+    },
+      );
+    }
+
+export const getPostSuperTenantsTenantIdResetOwnerPasswordMutationOptions = <TError = ErrorType<UnauthorizedResponse | ForbiddenResponse | NotFoundResponse>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof postSuperTenantsTenantIdResetOwnerPassword>>, TError,{tenantId: string}, TContext>, }
+): UseMutationOptions<Awaited<ReturnType<typeof postSuperTenantsTenantIdResetOwnerPassword>>, TError,{tenantId: string}, TContext> => {
+const mutationKey = ['postSuperTenantsTenantIdResetOwnerPassword'];
+const {mutation: mutationOptions} = options ?? {};
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof postSuperTenantsTenantIdResetOwnerPassword>>, {tenantId: string}> = (props) => {
+          const {tenantId} = props ?? {};
+
+          return  postSuperTenantsTenantIdResetOwnerPassword(tenantId,)
+        }
+
+        return { mutationKey, mutationFn, ...mutationOptions}
+      }
+
+    export type PostSuperTenantsTenantIdResetOwnerPasswordMutationResult = NonNullable<Awaited<ReturnType<typeof postSuperTenantsTenantIdResetOwnerPassword>>>
+    export type PostSuperTenantsTenantIdResetOwnerPasswordMutationError = ErrorType<UnauthorizedResponse | ForbiddenResponse | NotFoundResponse>
+
+    /**
+ * @summary Reset gym owner's password
+ */
+export const usePostSuperTenantsTenantIdResetOwnerPassword = <TError = ErrorType<UnauthorizedResponse | ForbiddenResponse | NotFoundResponse>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof postSuperTenantsTenantIdResetOwnerPassword>>, TError,{tenantId: string}, TContext>, }
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof postSuperTenantsTenantIdResetOwnerPassword>>,
+        TError,
+        {tenantId: string},
+        TContext
+      > => {
+      return useMutation(getPostSuperTenantsTenantIdResetOwnerPasswordMutationOptions(options), queryClient);
     }

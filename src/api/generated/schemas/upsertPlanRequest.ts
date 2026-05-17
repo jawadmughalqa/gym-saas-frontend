@@ -18,6 +18,13 @@ export interface UpsertPlanRequest {
      * @maxLength 3
      */
   currency?: string;
+  billingCycle?: 'monthly' | 'yearly';
+  /** @minimum 0 */
+  trialDays?: number;
   quotas: UpsertPlanRequestQuotas;
   featureFlags: UpsertPlanRequestFeatureFlags;
+}
+
+export interface CreatePlanRequest extends UpsertPlanRequest {
+  name: 'starter' | 'pro' | 'enterprise';
 }

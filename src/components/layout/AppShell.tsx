@@ -10,6 +10,7 @@ import { useGetNotificationsUnreadCount } from '@/api/generated/notifications/no
 import SidebarNav from './SidebarNav';
 import Breadcrumbs from './Breadcrumbs';
 import UserMenu from './UserMenu';
+import ImpersonationBanner from './ImpersonationBanner';
 import ErrorBoundary from '@/components/shared/ErrorBoundary';
 import { cn } from '@/lib/utils';
 
@@ -184,6 +185,9 @@ export default function AppShell() {
 
       {/* Main area */}
       <div className="flex flex-1 flex-col overflow-hidden min-w-0">
+        {/* Impersonation warning banner — shown above topbar when active */}
+        <ImpersonationBanner />
+
         <TopBar onMobileMenuOpen={() => setMobileOpen(true)} />
 
         {/* Page content */}

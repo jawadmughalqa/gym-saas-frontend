@@ -3,7 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import {
   ArrowLeft, Building2, Mail, Phone, Globe,
   RefreshCw, Ban, CheckCircle, Zap, CreditCard,
-  User, Calendar,
+  User, Calendar, KeyRound, Copy, Check, Eye, EyeOff,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -47,6 +47,10 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { useQueryClient } from '@tanstack/react-query';
+import { useAuthStore } from '@/stores/auth.store';
+import { decodeJwt } from '@/utils/jwt';
+import type { JwtPayloadShape } from '@/utils/jwt';
+import type { Permission } from '@/lib/permissions';
 import {
   useGetSuperTenantsTenantId,
   usePatchSuperTenantsTenantIdStatus,
@@ -54,9 +58,12 @@ import {
   usePostSuperTenantsTenantIdImpersonate,
   useGetSuperTenantsTenantIdInvoices,
   usePostSuperTenantsTenantIdInvoicesInvoiceIdPay,
+  usePostSuperTenantsTenantIdResetOwnerPassword,
   getGetSuperTenantsTenantIdQueryKey,
   getGetSuperTenantsQueryKey,
+  getGetSuperTenantsTenantIdInvoicesQueryKey,
 } from '@/api/generated/super-admin/super-admin';
+import type { ResetOwnerPasswordResponseData } from '@/api/generated/schemas/resetOwnerPasswordResponse';
 import type { Tenant } from '@/api/generated/schemas/tenant';
 import type { SaasInvoice } from '@/api/generated/schemas/saasInvoice';
 import type { ChangeTenantStatusRequestStatus } from '@/api/generated/schemas/changeTenantStatusRequestStatus';
@@ -281,16 +288,134 @@ function ChangePlanDialog({
   );
 }
 
+// ─── CopyField (reused from CreateTenantForm) ─────────────────────────────────
+
+function CopyField({ label, value, secret = false }: { label: string; value: string; secret?: boolean }) {
+  const [copied, setCopied] = useState(false);
+  const [revealed, setRevealed] = useState(false);
+
+  function handleCopy() {
+    void navigator.clipboard.writeText(value).then(() => {
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    });
+  }
+
+  const displayed = secret && !revealed ? '••••••••••••' : value;
+
+  return (
+    <div>
+      {label && <p className="text-xs text-muted-foreground mb-1">{label}</p>}
+      <div className="flex items-center gap-2 rounded bg-muted px-3 py-2 font-mono text-sm">
+        {secret ? (
+          <button type="button" onClick={() => setRevealed((r) => !r)} className="text-muted-foreground hover:text-foreground shrink-0">
+            {revealed ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+          </button>
+        ) : (
+          <KeyRound className="h-4 w-4 text-muted-foreground shrink-0" />
+        )}
+        <span className="flex-1 select-all truncate">{displayed}</span>
+        <button type="button" onClick={handleCopy} className="text-muted-foreground hover:text-foreground shrink-0">
+          {copied ? <Check className="h-4 w-4 text-green-500" /> : <Copy className="h-4 w-4" />}
+        </button>
+      </div>
+    </div>
+  );
+}
+
+// ─── Reset Password Dialog ────────────────────────────────────────────────────
+
+function ResetPasswordDialog({
+  open,
+  onOpenChange,
+  tenantId,
+}: {
+  open: boolean;
+  onOpenChange: (v: boolean) => void;
+  tenantId: string;
+}) {
+  const [result, setResult] = useState<ResetOwnerPasswordResponseData | null>(null);
+
+  const reset = usePostSuperTenantsTenantIdResetOwnerPassword({
+    mutation: {
+      onSuccess: (res) => {
+        setResult(res.data ?? null);
+      },
+      onError: (err) => toast({ variant: 'destructive', title: 'Failed to reset password', description: getErrorMessage(err) }),
+    },
+  });
+
+  function handleClose(v: boolean) {
+    if (!v) setResult(null);
+    onOpenChange(v);
+  }
+
+  return (
+    <Dialog open={open} onOpenChange={handleClose}>
+      <DialogContent className="sm:max-w-md">
+        <DialogHeader>
+          <DialogTitle>Reset Owner Password</DialogTitle>
+        </DialogHeader>
+
+        {result ? (
+          <div className="space-y-4">
+            <Alert className="border-green-500 bg-green-50 dark:bg-green-950">
+              <AlertDescription className="text-green-700 dark:text-green-300 font-medium">
+                ✓ Password reset successfully!
+              </AlertDescription>
+            </Alert>
+            <div className="rounded-lg border p-4 space-y-3">
+              <CopyField label="Owner Email" value={result.ownerEmail} />
+              <div className="flex items-center gap-2">
+                <p className="text-xs text-muted-foreground">New Temporary Password</p>
+                <Badge variant="destructive" className="text-[10px] px-1.5 py-0">
+                  One-time — copy now
+                </Badge>
+              </div>
+              <CopyField label="" value={result.tempPassword} secret />
+              <p className="text-xs text-muted-foreground">
+                The owner must change this password on next login.
+              </p>
+            </div>
+            <DialogFooter>
+              <Button className="w-full" onClick={() => handleClose(false)}>Done</Button>
+            </DialogFooter>
+          </div>
+        ) : (
+          <div className="space-y-4">
+            <p className="text-sm text-muted-foreground">
+              This will generate a new temporary password for the gym owner. They will be required to change it on their next login.
+            </p>
+            <DialogFooter>
+              <Button variant="outline" onClick={() => handleClose(false)}>Cancel</Button>
+              <Button
+                variant="destructive"
+                disabled={reset.isPending}
+                onClick={() => reset.mutate({ tenantId })}
+              >
+                {reset.isPending ? 'Resetting…' : 'Reset Password'}
+              </Button>
+            </DialogFooter>
+          </div>
+        )}
+      </DialogContent>
+    </Dialog>
+  );
+}
+
 // ─── TenantDetailPage ─────────────────────────────────────────────────────────
 
 export default function TenantDetailPage() {
   const { tenantId } = useParams<{ tenantId: string }>();
   const navigate = useNavigate();
+  const qc = useQueryClient();
 
   const [statusOpen, setStatusOpen] = useState(false);
   const [planOpen, setPlanOpen] = useState(false);
-  const [impersonateToken, setImpersonateToken] = useState<string | null>(null);
+  const [resetPasswordOpen, setResetPasswordOpen] = useState(false);
   const [invoicesPage, setInvoicesPage] = useState(1);
+
+  const enterImpersonation = useAuthStore((s) => s.enterImpersonation);
 
   const { confirm, confirmProps } = useConfirm();
 
@@ -298,7 +423,6 @@ export default function TenantDetailPage() {
     tenantId!,
     { query: { staleTime: 1000 * 30 } },
   );
-  console.log("🚀 ~ TenantDetailPage ~ tenantData:", tenantData)
 
   const { data: invoicesData, isLoading: invoicesLoading } = useGetSuperTenantsTenantIdInvoices(
     tenantId!,
@@ -309,7 +433,25 @@ export default function TenantDetailPage() {
   const impersonate = usePostSuperTenantsTenantIdImpersonate({
     mutation: {
       onSuccess: (res) => {
-        setImpersonateToken(res.data?.accessToken ?? null);
+        const token = res.data?.accessToken;
+        if (!token) return;
+
+        // Decode the JWT to build the impersonated user object for the store
+        const payload = decodeJwt<JwtPayloadShape>(token);
+        if (!payload) return;
+
+        enterImpersonation(token, {
+          userId: payload.userId,
+          tenantId: payload.tenantId ?? null,
+          role: payload.role as import('@/types/api.types').UserRole,
+          email: payload.email ?? '',
+          name: tenant?.businessName ?? payload.email ?? 'Gym Owner',
+          permissions: (payload.permissions ?? []) as Permission[],
+        });
+
+        // Wipe super-admin query cache so tenant pages load fresh data
+        qc.clear();
+        navigate('/dashboard', { replace: true });
       },
       onError: (err) => toast({ variant: 'destructive', title: 'Impersonation failed', description: getErrorMessage(err) }),
     },
@@ -318,6 +460,7 @@ export default function TenantDetailPage() {
   const markInvoicePaid = usePostSuperTenantsTenantIdInvoicesInvoiceIdPay({
     mutation: {
       onSuccess: () => {
+        void qc.invalidateQueries({ queryKey: getGetSuperTenantsTenantIdInvoicesQueryKey(tenantId!) });
         toast({ title: 'Invoice marked as paid' });
       },
       onError: (err) => toast({ variant: 'destructive', title: 'Failed to mark invoice paid', description: getErrorMessage(err) }),
@@ -406,7 +549,7 @@ export default function TenantDetailPage() {
             disabled={markInvoicePaid.isPending}
             onClick={(e) => {
               e.stopPropagation();
-              markInvoicePaid.mutate({ tenantId: tenantId!, invoiceId: row._id! });
+              markInvoicePaid.mutate({ tenantId: tenantId!, invoiceId: row._id!, data: {} });
             }}
           >
             Mark Paid
@@ -459,22 +602,6 @@ export default function TenantDetailPage() {
         </div>
       </div>
 
-      {/* Impersonate token alert */}
-      {impersonateToken && (
-        <Alert className="border-orange-500 bg-orange-50 dark:bg-orange-950">
-          <AlertDescription className="space-y-2">
-            <p className="font-medium text-orange-700 dark:text-orange-300">
-              Impersonation token (valid 1h) — copy and use as Bearer token:
-            </p>
-            <code className="block text-xs font-mono bg-muted rounded p-2 break-all select-all">
-              {impersonateToken}
-            </code>
-            <Button size="sm" variant="outline" onClick={() => setImpersonateToken(null)}>
-              Dismiss
-            </Button>
-          </AlertDescription>
-        </Alert>
-      )}
 
       <Tabs defaultValue="details">
         <TabsList>
@@ -510,9 +637,22 @@ export default function TenantDetailPage() {
             {/* Owner card */}
             <Card>
               <CardHeader className="pb-3">
-                <CardTitle className="text-sm font-medium text-muted-foreground flex items-center gap-2">
-                  <User className="h-4 w-4" /> Owner
-                </CardTitle>
+                <div className="flex items-center justify-between">
+                  <CardTitle className="text-sm font-medium text-muted-foreground flex items-center gap-2">
+                    <User className="h-4 w-4" /> Owner
+                  </CardTitle>
+                  {owner && (
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="h-7 text-xs"
+                      onClick={() => setResetPasswordOpen(true)}
+                    >
+                      <KeyRound className="mr-1.5 h-3 w-3" />
+                      Reset Password
+                    </Button>
+                  )}
+                </div>
               </CardHeader>
               <CardContent className="divide-y divide-border">
                 {owner ? (
@@ -520,6 +660,21 @@ export default function TenantDetailPage() {
                     <InfoRow icon={User}     label="Name"       value={`${owner.firstName ?? ''} ${owner.lastName ?? ''}`.trim() || undefined} />
                     <InfoRow icon={Mail}     label="Email"      value={owner.email} />
                     <InfoRow icon={Calendar} label="Last Login" value={owner.lastLoginAt ? new Date(owner.lastLoginAt).toLocaleDateString() : 'Never'} />
+                    {/* Status + forcePasswordChange badges */}
+                    <div className="flex items-center gap-2 py-2 flex-wrap">
+                      {owner.status && (
+                        owner.status === 'active'
+                          ? <Badge className="bg-green-600 hover:bg-green-700 text-xs">Active</Badge>
+                          : owner.status === 'suspended'
+                            ? <Badge variant="destructive" className="text-xs">Suspended</Badge>
+                            : <Badge variant="outline" className="text-xs capitalize">{owner.status}</Badge>
+                      )}
+                      {owner.forcePasswordChange && (
+                        <Badge variant="outline" className="text-amber-600 border-amber-400 text-xs">
+                          Must change password
+                        </Badge>
+                      )}
+                    </div>
                   </>
                 ) : (
                   <p className="py-2 text-sm text-muted-foreground">No owner data available</p>
@@ -608,6 +763,12 @@ export default function TenantDetailPage() {
       <ChangePlanDialog
         open={planOpen}
         onOpenChange={setPlanOpen}
+        tenantId={tenantId!}
+      />
+
+      <ResetPasswordDialog
+        open={resetPasswordOpen}
+        onOpenChange={setResetPasswordOpen}
         tenantId={tenantId!}
       />
 

@@ -336,6 +336,7 @@ export * from './resolveWorkOrderRequest';
 export * from './resolveWorkOrderRequestMaintenanceLog';
 export * from './resolveWorkOrderRequestMaintenanceLogConditionAfter';
 export * from './resolveWorkOrderRequestMaintenanceLogType';
+export * from './resetOwnerPasswordResponse';
 export * from './revenueReportResponse';
 export * from './revenueReportResponseData';
 export * from './revenueReportResponseDataByMethodItem';

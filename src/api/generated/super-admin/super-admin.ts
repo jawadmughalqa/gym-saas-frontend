@@ -1095,3 +1095,87 @@ export const usePostSuperTenantsTenantIdResetOwnerPassword = <TError = ErrorType
       > => {
       return useMutation(getPostSuperTenantsTenantIdResetOwnerPasswordMutationOptions(options), queryClient);
     }
+
+// ─── GET /super/payments/summary ─────────────────────────────────────────────
+
+export interface PaymentSummaryTenantRow {
+  tenantId: string;
+  businessName: string;
+  plan: string;
+  totalInvoices: number;
+  totalBilled: number;
+  totalCollected: number;
+  totalDue: number;
+  totalOverdue: number;
+  lastPaidAt: string | null;
+}
+
+export interface PaymentSummaryMonthlySeries {
+  month: string;
+  collected: number;
+  billed: number;
+}
+
+export interface PaymentSummaryData {
+  totalBilled: number;
+  totalCollected: number;
+  totalDue: number;
+  totalOverdue: number;
+  invoiceCounts: {
+    paid: number;
+    pending: number;
+    overdue: number;
+    void: number;
+    total: number;
+  };
+  tenants: PaymentSummaryTenantRow[];
+  monthlySeries: PaymentSummaryMonthlySeries[];
+  currency: string;
+}
+
+export interface PaymentSummaryResponse {
+  success: boolean;
+  data?: PaymentSummaryData;
+}
+
+export interface GetSuperPaymentsSummaryParams {
+  startDate?: string;
+  endDate?: string;
+  tenantId?: string;
+}
+
+export const getSuperPaymentsSummary = (
+    params?: GetSuperPaymentsSummaryParams,
+ signal?: AbortSignal
+) => {
+      return orvalMutator<PaymentSummaryResponse>(
+      {url: `/super/payments/summary`, method: 'GET',
+        params, signal
+    },
+      );
+    }
+
+export const getGetSuperPaymentsSummaryQueryKey = (params?: GetSuperPaymentsSummaryParams,) => {
+    return [
+    `/super/payments/summary`, ...(params ? [params] : [])
+    ] as const;
+    }
+
+export const getGetSuperPaymentsSummaryQueryOptions = <TData = Awaited<ReturnType<typeof getSuperPaymentsSummary>>, TError = ErrorType<UnauthorizedResponse | ForbiddenResponse>>(params?: GetSuperPaymentsSummaryParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getSuperPaymentsSummary>>, TError, TData>>, }
+) => {
+const {query: queryOptions} = options ?? {};
+  const queryKey =  queryOptions?.queryKey ?? getGetSuperPaymentsSummaryQueryKey(params);
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getSuperPaymentsSummary>>> = ({ signal }) => getSuperPaymentsSummary(params, signal);
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getSuperPaymentsSummary>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
+}
+
+export type GetSuperPaymentsSummaryQueryResult = NonNullable<Awaited<ReturnType<typeof getSuperPaymentsSummary>>>
+export type GetSuperPaymentsSummaryQueryError = ErrorType<UnauthorizedResponse | ForbiddenResponse>
+
+export function useGetSuperPaymentsSummary<TData = Awaited<ReturnType<typeof getSuperPaymentsSummary>>, TError = ErrorType<UnauthorizedResponse | ForbiddenResponse>>(
+  params?: GetSuperPaymentsSummaryParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getSuperPaymentsSummary>>, TError, TData>>, }
+ , queryClient?: QueryClient): UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+  const queryOptions = getGetSuperPaymentsSummaryQueryOptions(params, options)
+  const query = useQuery(queryOptions, queryClient) as UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+  return { ...query, queryKey: queryOptions.queryKey };
+}

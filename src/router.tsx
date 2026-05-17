@@ -45,7 +45,11 @@ const MemberTrainerPage     = lazy(() => import("@/features/member-portal/Member
 
 function RootRedirect() {
   const role = useAuthStore((s) => s.user?.role);
-  return <Navigate to={role === 'member' ? '/member/home' : '/dashboard'} replace />;
+  const dest =
+    role === 'super_admin' ? '/super-admin' :
+    role === 'member'      ? '/member/home' :
+    '/dashboard';
+  return <Navigate to={dest} replace />;
 }
 
 // ─── Suspense wrapper ─────────────────────────────────────────────────────────

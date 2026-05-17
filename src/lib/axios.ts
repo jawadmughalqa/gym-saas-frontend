@@ -1,5 +1,14 @@
 import axios from 'axios';
+import { QueryClient } from '@tanstack/react-query';
 import { useAuthStore } from '@/stores/auth.store';
+
+// Singleton queryClient reference for use inside the axios interceptor.
+// The actual QueryClient is created in main.tsx — we expose a setter so the
+// interceptor can call qc.clear() on forced logout without a circular dep.
+let _queryClient: QueryClient | null = null;
+export function setAxiosQueryClient(qc: QueryClient) {
+  _queryClient = qc;
+}
 
 export const api = axios.create({
   baseURL: import.meta.env.VITE_API_URL ?? '/api/v1',
@@ -97,6 +106,8 @@ api.interceptors.response.use(
       isRefreshing = false;
       drainQueue(null); // Reject all queued requests
       useAuthStore.getState().clearAuth();
+      // Wipe cached query data so the next user never sees stale data
+      _queryClient?.clear();
       window.location.href = '/login';
       return Promise.reject(error);
     }

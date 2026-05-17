@@ -92,17 +92,17 @@ const router = createBrowserRouter([
           },
 
           // ── Auth self-service ────────────────────────────────────────
-          // {
-          //   path: "settings",
-          //   handle: { crumb: "Settings" },
-          //   children: [
-          //     {
-          //       path: "change-password",
-          //       element: <Lazy><ChangePasswordPage /></Lazy>,
-          //       handle: { crumb: "Change Password" },
-          //     },
-          //   ],
-          // },
+          {
+            path: "settings",
+            handle: { crumb: "Settings" },
+            children: [
+              {
+                path: "change-password",
+                element: <Lazy><ChangePasswordPage /></Lazy>,
+                handle: { crumb: "Change Password" },
+              },
+            ],
+          },
 
           // ── Members ──────────────────────────────────────────────────
           {

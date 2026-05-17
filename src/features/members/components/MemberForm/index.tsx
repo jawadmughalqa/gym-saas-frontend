@@ -31,6 +31,7 @@ import {
   usePatchMembersMemberId,
   getGetMembersQueryKey,
   getGetMembersMemberIdQueryKey,
+  getGetMembersMemberIdSubscriptionsQueryKey,
   usePostMembersMemberIdSubscriptions,
 } from '@/api/generated/members/members';
 import { usePostTrainersTrainerIdAssignments } from '@/api/generated/trainers/trainers';
@@ -210,8 +211,6 @@ export default function MemberForm({
     const createdData = (created as unknown as { data: { _id: string; loginEmail?: string; tempPassword?: string } }).data;
     const newMemberId = createdData._id;
 
-    await queryClient.invalidateQueries({ queryKey: getGetMembersQueryKey() });
-
     // ── Optional membership assignment ────────────────────────────────────
     const m = values.membership;
     const shouldAssign = m.enabled && (
@@ -247,13 +246,22 @@ export default function MemberForm({
               },
         });
 
+        // Invalidate AFTER subscription is saved so the list picks up activePlan
+        await queryClient.invalidateQueries({ queryKey: getGetMembersQueryKey() });
+        await queryClient.invalidateQueries({
+          queryKey: getGetMembersMemberIdSubscriptionsQueryKey(newMemberId),
+        });
+        await queryClient.invalidateQueries({
+          queryKey: getGetMembersMemberIdQueryKey(newMemberId),
+        });
+
         toast({
           title:       'Member registered',
           description: 'Member created and membership assigned.',
         });
       } catch {
-        // Member was saved — only subscription failed
-        // Don't block the user; let them assign from the detail page
+        // Member was saved — only subscription failed; refresh the list anyway
+        await queryClient.invalidateQueries({ queryKey: getGetMembersQueryKey() });
         toast({
           title:       'Member registered',
           description: 'Member created. Plan assignment failed — assign from the profile page.',
@@ -261,6 +269,8 @@ export default function MemberForm({
         });
       }
     } else {
+      // No plan assigned — just refresh the list
+      await queryClient.invalidateQueries({ queryKey: getGetMembersQueryKey() });
       toast({
         title:       'Member registered',
         description: `${values.firstName} ${values.lastName} has been added.`,

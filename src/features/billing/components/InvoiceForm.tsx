@@ -55,47 +55,66 @@ import { CURRENCY } from "@/config/tenant.config";
 // Selecting a preset auto-fills the description; user can still edit it freely.
 
 const CHARGE_PRESETS = [
-  { value: "subscription",       label: "Membership Fee" },
-  { value: "personal_training",  label: "PT Fee" },
-  { value: "product",            label: "Supplement Charges" },
-  { value: "addon",              label: "Diet Plan" },
-  { value: "late_fee",           label: "Late Fee" },
-  { value: "other",              label: "Water Charges",      group: "Facilities" },
+  { value: "subscription", label: "Membership Fee" },
+  { value: "personal_training", label: "PT Fee" },
+  { value: "product", label: "Supplement Charges" },
+  { value: "addon", label: "Diet Plan" },
+  { value: "late_fee", label: "Late Fee" },
+  { value: "other", label: "Water Charges", group: "Facilities" },
   // extra gym-specific types reuse "other" on the backend; description carries meaning
 ] as const;
 
 // Extended display list — all named charge categories shown in the dropdown.
 // Backend only accepts the 6 enum values; we map extras → "other".
 const LINE_ITEM_DISPLAY = [
-  { value: "subscription",      label: "Membership Fee",       backendType: "subscription" },
-  { value: "personal_training", label: "PT Fee",               backendType: "personal_training" },
-  { value: "water",             label: "Water Charges",        backendType: "other" },
-  { value: "locker",            label: "Locker Fee",           backendType: "other" },
-  { value: "treadmill",         label: "Treadmill Usage",      backendType: "other" },
-  { value: "supplement",        label: "Supplement Charges",   backendType: "product" },
-  { value: "diet_plan",         label: "Diet Plan",            backendType: "addon" },
-  { value: "late_fee",          label: "Late Fee",             backendType: "late_fee" },
-  { value: "misc",              label: "Misc",                 backendType: "other" },
+  {
+    value: "subscription",
+    label: "Membership Fee",
+    backendType: "subscription",
+  },
+  {
+    value: "personal_training",
+    label: "PT Fee",
+    backendType: "personal_training",
+  },
+  { value: "water", label: "Water Charges", backendType: "other" },
+  { value: "locker", label: "Locker Fee", backendType: "other" },
+  { value: "treadmill", label: "Treadmill Usage", backendType: "other" },
+  { value: "supplement", label: "Supplement Charges", backendType: "product" },
+  { value: "diet_plan", label: "Diet Plan", backendType: "addon" },
+  { value: "late_fee", label: "Late Fee", backendType: "late_fee" },
+  { value: "misc", label: "Misc", backendType: "other" },
 ] as const;
 
-type DisplayType = typeof LINE_ITEM_DISPLAY[number]["value"];
+type DisplayType = (typeof LINE_ITEM_DISPLAY)[number]["value"];
 
 // Default description when a preset is selected
 const PRESET_DESCRIPTION: Record<DisplayType, string> = {
-  subscription:      "Membership Fee",
+  subscription: "Membership Fee",
   personal_training: "PT Fee",
-  water:             "Water Charges",
-  locker:            "Locker Fee",
-  treadmill:         "Treadmill Usage",
-  supplement:        "Supplement Charges",
-  diet_plan:         "Diet Plan",
-  late_fee:          "Late Fee",
-  misc:              "",
+  water: "Water Charges",
+  locker: "Locker Fee",
+  treadmill: "Treadmill Usage",
+  supplement: "Supplement Charges",
+  diet_plan: "Diet Plan",
+  late_fee: "Late Fee",
+  misc: "",
 };
 
 // Map display type → backend enum value
-function toBackendType(displayType: DisplayType): "subscription" | "personal_training" | "product" | "late_fee" | "addon" | "other" {
-  return LINE_ITEM_DISPLAY.find((d) => d.value === displayType)?.backendType ?? "other";
+function toBackendType(
+  displayType: DisplayType,
+):
+  | "subscription"
+  | "personal_training"
+  | "product"
+  | "late_fee"
+  | "addon"
+  | "other" {
+  return (
+    LINE_ITEM_DISPLAY.find((d) => d.value === displayType)?.backendType ??
+    "other"
+  );
 }
 
 // ─── Schema ───────────────────────────────────────────────────────────────────
@@ -305,7 +324,8 @@ export default function InvoiceForm({
     },
   });
 
-  const isPending = createInvoice.isPending || validateDiscountMutation.isPending;
+  const isPending =
+    createInvoice.isPending || validateDiscountMutation.isPending;
 
   // Discount validation state
   const [discountValidation, setDiscountValidation] =
@@ -600,6 +620,7 @@ export default function InvoiceForm({
               <div className="space-y-1.5">
                 <Label htmlFor="currency">Currency</Label>
                 <Input
+                  readOnly
                   id="currency"
                   placeholder={CURRENCY}
                   disabled={isPending}
@@ -691,7 +712,9 @@ export default function InvoiceForm({
                           // Auto-fill description from preset (only if blank or still the previous preset label)
                           const preset = PRESET_DESCRIPTION[v as DisplayType];
                           if (preset) {
-                            setValue(`lineItems.${index}.description`, preset, { shouldValidate: true });
+                            setValue(`lineItems.${index}.description`, preset, {
+                              shouldValidate: true,
+                            });
                           }
                         }}
                         disabled={isPending}
@@ -736,7 +759,7 @@ export default function InvoiceForm({
                       <Label className="text-xs">Qty *</Label>
                       <Input
                         type="number"
-                        min="0.01"
+                        min="1"
                         step="1"
                         className="h-8 text-xs"
                         disabled={isPending}
@@ -849,13 +872,20 @@ export default function InvoiceForm({
                   <div className="flex justify-between text-green-600 dark:text-green-500">
                     <span>You save:</span>
                     <span className="font-bold">
-                      -{formatCurrency(discountValidation.discountAmount || 0, currency)}
+                      -
+                      {formatCurrency(
+                        discountValidation.discountAmount || 0,
+                        currency,
+                      )}
                     </span>
                   </div>
                   <div className="flex justify-between pt-1 font-semibold text-green-700 border-t border-green-200 dark:text-green-400 dark:border-green-800">
                     <span>Final after discount:</span>
                     <span>
-                      {formatCurrency(discountValidation.finalAmount || 0, currency)}
+                      {formatCurrency(
+                        discountValidation.finalAmount || 0,
+                        currency,
+                      )}
                     </span>
                   </div>
                 </div>

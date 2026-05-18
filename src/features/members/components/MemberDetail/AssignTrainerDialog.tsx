@@ -60,7 +60,17 @@ export default function AssignTrainerDialog({
     },
     { query: { enabled: open } },
   );
-  const trainers = trainersData?.data ?? [];
+  // Filter out the currently-assigned trainer so they don't appear in the dropdown
+  const currentTrainerId =
+    currentAssignment?.trainerId
+      ? typeof currentAssignment.trainerId === "string"
+        ? currentAssignment.trainerId
+        : (currentAssignment.trainerId as any)._id
+      : null;
+
+  const trainers = (trainersData?.data ?? []).filter(
+    (t) => t._id !== currentTrainerId,
+  );
 
   // ── Pre-fill monthlyCharge from trainer's monthlyRate when trainer changes ─
   useEffect(() => {

@@ -1,6 +1,7 @@
 import { useState } from 'react';
-import { RotateCcw } from 'lucide-react';
+import { RotateCcw, Banknote, Landmark, ArrowDownToLine } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from '@/components/ui/select';
@@ -12,14 +13,17 @@ import EmptyState from '@/components/shared/EmptyState';
 import { Button } from '@/components/ui/button';
 import { usePermission } from '@/hooks/use-permission';
 import { formatCurrency, formatDateTime } from '@/lib/utils';
+import { formatDate } from '@/utils/format';
 import { CURRENCY } from '@/config/tenant.config';
 import { useGetRefunds, getGetRefundsQueryKey } from '@/api/generated/refunds/refunds';
 import type { Refund, RefundStatus } from '@/api/generated/refunds/refunds';
-import { useQueryClient } from '@tanstack/react-query';
+import { useQueryClient, useQuery } from '@tanstack/react-query';
 import { ReviewRefundDialog } from './components/ReviewRefundDialog';
 import { useTableState } from '@/hooks/use-table-state';
+import { api } from '@/lib/axios';
+import type { WalletPayout } from '@/types/member.types';
 
-// ─── Status badge ─────────────────────────────────────────────────────────────
+// ─── Shared status/type badges ────────────────────────────────────────────────
 
 const STATUS_VARIANT: Record<RefundStatus, 'warning' | 'success' | 'destructive'> = {
   pending:  'warning',
@@ -36,8 +40,6 @@ function RefundStatusBadge({ status }: { status?: RefundStatus }) {
   );
 }
 
-// ─── Type badge ───────────────────────────────────────────────────────────────
-
 function RefundTypeBadge({ type }: { type?: string }) {
   if (!type) return null;
   return (
@@ -47,18 +49,17 @@ function RefundTypeBadge({ type }: { type?: string }) {
   );
 }
 
-// ─── RefundsPage ──────────────────────────────────────────────────────────────
+// ─── Payment Refunds tab ──────────────────────────────────────────────────────
 
-export default function RefundsPage() {
+function PaymentRefundsTab() {
   const { can } = usePermission();
   const qc = useQueryClient();
   const table = useTableState({ defaultLimit: 20 });
-
   const [statusFilter, setStatusFilter] = useState<RefundStatus | 'all'>('all');
   const [reviewRefund, setReviewRefund] = useState<Refund | null>(null);
 
   const params = {
-    page: table.queryParams.page,
+    page:  table.queryParams.page,
     limit: table.queryParams.limit,
     ...(statusFilter !== 'all' ? { status: statusFilter } : {}),
   };
@@ -67,7 +68,7 @@ export default function RefundsPage() {
     query: { placeholderData: (prev: unknown) => prev, staleTime: 1000 * 30 },
   });
 
-  const refunds = (data as any)?.data ?? [];
+  const refunds    = (data as any)?.data ?? [];
   const pagination = (data as any)?.pagination;
 
   function handleReviewSuccess() {
@@ -83,10 +84,10 @@ export default function RefundsPage() {
         return (
           <div>
             <p className="font-medium text-sm">
-              {m ? `${m.firstName ?? ''} ${m.lastName ?? ''}`.trim() : '—'}
+              {m ? `${(m as any).firstName ?? ''} ${(m as any).lastName ?? ''}`.trim() : '—'}
             </p>
-            {m?.email && (
-              <p className="text-xs text-muted-foreground">{m.email}</p>
+            {(m as any)?.email && (
+              <p className="text-xs text-muted-foreground">{(m as any).email}</p>
             )}
           </div>
         );
@@ -129,7 +130,7 @@ export default function RefundsPage() {
         const u = row.requestedBy;
         return (
           <span className="text-sm">
-            {u ? `${u.firstName ?? ''} ${u.lastName ?? ''}`.trim() : '—'}
+            {u ? `${(u as any).firstName ?? ''} ${(u as any).lastName ?? ''}`.trim() : '—'}
           </span>
         );
       },
@@ -166,13 +167,8 @@ export default function RefundsPage() {
   ];
 
   return (
-    <PageShell>
-      <PageHeader
-        title="Refunds"
-        subtitle="Review and approve refund requests from staff"
-      />
-
-      {/* Filters */}
+    <div className="space-y-4">
+      {/* Status filter */}
       <div className="flex flex-col sm:flex-row gap-3 items-start sm:items-center">
         <Select
           value={statusFilter}
@@ -190,7 +186,6 @@ export default function RefundsPage() {
         </Select>
       </div>
 
-      {/* Table */}
       {!isLoading && refunds.length === 0 ? (
         <EmptyState
           icon={<RotateCcw className="h-12 w-12" />}
@@ -212,9 +207,7 @@ export default function RefundsPage() {
             sort={table.sort}
             onSortChange={table.setSort}
             onRowClick={(row) => {
-              if (row.status === 'pending' && can('payment.refund')) {
-                setReviewRefund(row);
-              }
+              if (row.status === 'pending' && can('payment.refund')) setReviewRefund(row);
             }}
           />
           {pagination && (
@@ -233,6 +226,186 @@ export default function RefundsPage() {
         refund={reviewRefund}
         onSuccess={handleReviewSuccess}
       />
+    </div>
+  );
+}
+
+// ─── Wallet payouts tab ───────────────────────────────────────────────────────
+
+interface PayoutRow extends WalletPayout {
+  memberId: WalletPayout['memberId'] | { _id: string; firstName: string; lastName: string; email: string };
+  processedBy: WalletPayout['processedBy'] | { _id: string; firstName: string; lastName: string };
+}
+
+function WalletPayoutsTab() {
+  const table = useTableState({ defaultLimit: 20 });
+
+  const { data, isLoading } = useQuery({
+    queryKey: ['wallet-payouts-all', table.queryParams.page, table.queryParams.limit],
+    queryFn: async () => {
+      const res = await api.get('/members/wallet/payouts', {
+        params: { page: table.queryParams.page, limit: table.queryParams.limit },
+      });
+      return res.data;
+    },
+    placeholderData: (prev: unknown) => prev,
+    staleTime: 30_000,
+  });
+
+  const payouts: PayoutRow[] = (data as any)?.data ?? [];
+  const pagination             = (data as any)?.pagination;
+
+  // Summary stats
+  const totalCash  = payouts.reduce((s, p) => s + (p.medium === 'cash'          ? p.amount : 0), 0);
+  const totalBank  = payouts.reduce((s, p) => s + (p.medium === 'bank_transfer' ? p.amount : 0), 0);
+  const totalAll   = totalCash + totalBank;
+
+  const columns: ColumnDef<PayoutRow>[] = [
+    {
+      key: 'member',
+      header: 'Member',
+      cell: (row) => {
+        const m = row.memberId as any;
+        const name = m?.firstName ? `${m.firstName} ${m.lastName ?? ''}`.trim() : String(row.memberId);
+        return (
+          <div>
+            <p className="font-medium text-sm">{name}</p>
+            {m?.email && <p className="text-xs text-muted-foreground">{m.email}</p>}
+          </div>
+        );
+      },
+    },
+    {
+      key: 'amount',
+      header: 'Amount',
+      cell: (row) => (
+        <span className="font-semibold text-emerald-700">
+          {formatCurrency(row.amount, CURRENCY)}
+        </span>
+      ),
+    },
+    {
+      key: 'medium',
+      header: 'Medium',
+      cell: (row) => (
+        <span className="flex items-center gap-1.5 text-sm">
+          {row.medium === 'cash'
+            ? <><Banknote className="h-3.5 w-3.5 text-muted-foreground" /> Cash</>
+            : <><Landmark  className="h-3.5 w-3.5 text-muted-foreground" /> Bank Transfer</>}
+        </span>
+      ),
+    },
+    {
+      key: 'notes',
+      header: 'Notes',
+      hideOnMobile: true,
+      cell: (row) => (
+        <p className="text-xs text-muted-foreground max-w-[200px] truncate" title={row.notes}>
+          {row.notes ?? '—'}
+        </p>
+      ),
+    },
+    {
+      key: 'processedBy',
+      header: 'Processed By',
+      hideOnMobile: true,
+      cell: (row) => {
+        const u = row.processedBy as any;
+        const name = u?.firstName ? `${u.firstName} ${u.lastName ?? ''}`.trim() : String(row.processedBy);
+        return <span className="text-sm">{name}</span>;
+      },
+    },
+    {
+      key: 'createdAt',
+      header: 'Date',
+      hideOnMobile: true,
+      cell: (row) => (
+        <span className="text-sm text-muted-foreground">{formatDate(row.createdAt)}</span>
+      ),
+    },
+  ];
+
+  return (
+    <div className="space-y-4">
+      {/* Summary cards — shown when there's data */}
+      {payouts.length > 0 && (
+        <div className="grid grid-cols-3 gap-3">
+          {[
+            { label: 'Total Paid Out',    value: totalAll,  icon: <ArrowDownToLine className="h-4 w-4 text-emerald-600" /> },
+            { label: 'Cash Payouts',      value: totalCash, icon: <Banknote className="h-4 w-4 text-emerald-600" /> },
+            { label: 'Bank Transfers',    value: totalBank, icon: <Landmark  className="h-4 w-4 text-emerald-600" /> },
+          ].map(({ label, value, icon }) => (
+            <div key={label} className="rounded-lg border border-emerald-100 bg-emerald-50/40 px-4 py-3">
+              <div className="flex items-center gap-1.5 mb-1">
+                {icon}
+                <p className="text-xs text-emerald-700 font-medium">{label}</p>
+              </div>
+              <p className="text-lg font-bold text-emerald-800">
+                {formatCurrency(value, CURRENCY)}
+              </p>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {!isLoading && payouts.length === 0 ? (
+        <EmptyState
+          icon={<ArrowDownToLine className="h-12 w-12" />}
+          title="No wallet payouts yet"
+          description="Wallet payouts appear here when a gym owner returns credit to a member."
+        />
+      ) : (
+        <>
+          <DataTable
+            columns={columns}
+            data={payouts}
+            keyExtractor={(r) => r._id}
+            loading={isLoading}
+            skeletonRows={10}
+          />
+          {pagination && (
+            <Pagination
+              meta={pagination}
+              onPageChange={table.setPage}
+              onLimitChange={table.setLimit}
+            />
+          )}
+        </>
+      )}
+    </div>
+  );
+}
+
+// ─── RefundsPage ──────────────────────────────────────────────────────────────
+
+export default function RefundsPage() {
+  return (
+    <PageShell>
+      <PageHeader
+        title="Refunds & Payouts"
+        subtitle="Track payment refund requests and wallet payouts to members"
+      />
+
+      <Tabs defaultValue="refunds">
+        <TabsList className="mb-4">
+          <TabsTrigger value="refunds">
+            <RotateCcw className="h-3.5 w-3.5 mr-1.5" />
+            Payment Refunds
+          </TabsTrigger>
+          <TabsTrigger value="payouts">
+            <ArrowDownToLine className="h-3.5 w-3.5 mr-1.5" />
+            Wallet Payouts
+          </TabsTrigger>
+        </TabsList>
+
+        <TabsContent value="refunds">
+          <PaymentRefundsTab />
+        </TabsContent>
+
+        <TabsContent value="payouts">
+          <WalletPayoutsTab />
+        </TabsContent>
+      </Tabs>
     </PageShell>
   );
 }

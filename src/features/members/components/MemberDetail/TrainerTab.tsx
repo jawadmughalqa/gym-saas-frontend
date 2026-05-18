@@ -39,7 +39,10 @@ import { usePermission } from "@/hooks/use-permission";
 import AssignTrainerDialog from "./AssignTrainerDialog";
 import { EndTrainerDialog } from "./EndTrainerDialog";
 import { EditAssignmentDialog } from "./EditAssignmentDialog";
-import { useGetMembersMemberIdTrainerAssignments } from "@/api/generated/members/members";
+import {
+  useGetMembersMemberIdTrainerAssignments,
+  getGetMembersMemberIdTrainerAssignmentsQueryKey,
+} from "@/api/generated/members/members";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -166,8 +169,6 @@ export function TrainerTab({ memberId, branchId }: TrainerTabProps) {
   const [editOpen, setEditOpen] = useState(false);
 
   // ── Fetch assignments ─────────────────────────────────────────────────────
-  const queryKey = ["member-trainer-assignments", memberId];
-
   const { data: response, isLoading } =
     useGetMembersMemberIdTrainerAssignments(memberId);
   const assignments = (response?.data ?? []) as TrainerAssignment[];
@@ -177,7 +178,9 @@ export function TrainerTab({ memberId, branchId }: TrainerTabProps) {
 
   // ── Invalidate helper ─────────────────────────────────────────────────────
   function invalidate() {
-    queryClient.invalidateQueries({ queryKey });
+    queryClient.invalidateQueries({
+      queryKey: getGetMembersMemberIdTrainerAssignmentsQueryKey(memberId),
+    });
   }
 
   // ── Loading ───────────────────────────────────────────────────────────────

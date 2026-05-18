@@ -273,10 +273,12 @@ export default function StaffPage() {
         title="Staff"
         subtitle="Manage branch managers, staff, and trainers"
       />
-      <Button onClick={openCreate} size="sm">
-        <UserPlus className="mr-2 h-4 w-4" />
-        Add staff
-      </Button>
+      {canManageStaff && (
+        <Button onClick={openCreate} size="sm">
+          <UserPlus className="mr-2 h-4 w-4" />
+          Add staff
+        </Button>
+      )}
       {/* Filters */}
       <div className="flex flex-wrap gap-3 items-end">
         <div className="flex-1 min-w-[200px]">

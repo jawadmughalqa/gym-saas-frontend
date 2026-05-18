@@ -241,7 +241,8 @@ export const NAV_GROUPS: NavGroup[] = [
         label: 'Branches',
         icon: Building2,
         permission: 'branch.read',
-        roles: ADMIN_ROLES,
+        // Branch managers oversee one branch — they don't need cross-branch management view
+        roles: ['super_admin', 'gym_owner'],
       },
       {
         to: '/equipment',

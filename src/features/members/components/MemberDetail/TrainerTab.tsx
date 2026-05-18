@@ -42,6 +42,7 @@ import { EditAssignmentDialog } from "./EditAssignmentDialog";
 import {
   useGetMembersMemberIdTrainerAssignments,
   getGetMembersMemberIdTrainerAssignmentsQueryKey,
+  getGetMembersMemberIdQueryKey,
 } from "@/api/generated/members/members";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -177,9 +178,14 @@ export function TrainerTab({ memberId, branchId }: TrainerTabProps) {
   const history = assignments.filter((a) => a.status === "ended");
 
   // ── Invalidate helper ─────────────────────────────────────────────────────
+  // Invalidates both trainer assignments AND the member profile so wallet
+  // balance in the Profile tab refreshes immediately after a refund-on-reassign.
   function invalidate() {
     queryClient.invalidateQueries({
       queryKey: getGetMembersMemberIdTrainerAssignmentsQueryKey(memberId),
+    });
+    queryClient.invalidateQueries({
+      queryKey: getGetMembersMemberIdQueryKey(memberId),
     });
   }
 

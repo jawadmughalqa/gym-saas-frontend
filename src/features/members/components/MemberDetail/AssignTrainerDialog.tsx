@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { User } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -60,7 +60,10 @@ export default function AssignTrainerDialog({
     },
     { query: { enabled: open } },
   );
-  // Filter out the currently-assigned trainer so they don't appear in the dropdown
+  // Filter out the currently-assigned trainer so they don't appear in the dropdown.
+  // Memoized so the reference is stable — without this, every keystroke in the
+  // charge field causes a re-render which recreates the array, which fires the
+  // useEffect below and resets the user's custom value back to the default rate.
   const currentTrainerId =
     currentAssignment?.trainerId
       ? typeof currentAssignment.trainerId === "string"
@@ -68,11 +71,13 @@ export default function AssignTrainerDialog({
         : (currentAssignment.trainerId as any)._id
       : null;
 
-  const trainers = (trainersData?.data ?? []).filter(
-    (t) => t._id !== currentTrainerId,
+  const trainers = useMemo(
+    () => (trainersData?.data ?? []).filter((t) => t._id !== currentTrainerId),
+    [trainersData?.data, currentTrainerId],
   );
 
-  // ── Pre-fill monthlyCharge from trainer's monthlyRate when trainer changes ─
+  // ── Pre-fill monthlyCharge from trainer's default rate when trainer changes ─
+  // Runs only when the selected trainer changes, not on every keystroke.
   useEffect(() => {
     if (!selectedTrainerId) {
       setMonthlyCharge("");

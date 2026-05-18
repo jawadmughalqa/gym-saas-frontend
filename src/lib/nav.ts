@@ -20,6 +20,7 @@ import {
   RotateCcw,
   Home,
   BadgeCheck,
+  ClipboardCheck,
   type LucideIcon,
 } from 'lucide-react';
 import type { UserRole } from '@/types/api.types';
@@ -149,7 +150,12 @@ export const NAV_ITEMS: NavItem[] = [
 
 // ─── Grouped (used by grouped sidebar implementations) ────────────────────────
 
+// ─── Role sets (reused across groups) ────────────────────────────────────────
+
+const ADMIN_ROLES: UserRole[] = ['super_admin', 'gym_owner', 'branch_manager', 'staff'];
+
 export const NAV_GROUPS: NavGroup[] = [
+  // ── Member portal (member role only) ──────────────────────────────────────
   {
     label: 'My Account',
     items: [
@@ -159,6 +165,40 @@ export const NAV_GROUPS: NavGroup[] = [
       { to: '/member/trainer',  label: 'My Trainer', icon: Dumbbell,   roles: ['member'] },
     ],
   },
+
+  // ── Trainer workspace (trainer role only) ─────────────────────────────────
+  {
+    label: 'My Workspace',
+    items: [
+      {
+        to: '/trainer/dashboard',
+        label: 'Dashboard',
+        icon: LayoutDashboard,
+        roles: ['trainer'],
+      },
+      {
+        to: '/trainer/clients',
+        label: 'My Clients',
+        icon: Users,
+        roles: ['trainer'],
+      },
+      {
+        to: '/trainer/notes',
+        label: 'Training Notes',
+        icon: ClipboardCheck,
+        roles: ['trainer'],
+      },
+      {
+        to: '/notifications',
+        label: 'Notifications',
+        icon: Bell,
+        roles: ['trainer'],
+        permission: 'notification.read',
+      },
+    ],
+  },
+
+  // ── Admin overview (admin roles only) ─────────────────────────────────────
   {
     label: 'Overview',
     items: [
@@ -166,10 +206,12 @@ export const NAV_GROUPS: NavGroup[] = [
         to: '/dashboard',
         label: 'Dashboard',
         icon: LayoutDashboard,
-        roles: ['super_admin', 'gym_owner', 'branch_manager', 'staff', 'trainer'],
+        roles: ADMIN_ROLES,
       },
     ],
   },
+
+  // ── Manage (admin roles only) ─────────────────────────────────────────────
   {
     label: 'Manage',
     items: [
@@ -178,76 +220,82 @@ export const NAV_GROUPS: NavGroup[] = [
         label: 'Members',
         icon: Users,
         permission: 'member.read',
+        roles: ADMIN_ROLES,
       },
       {
         to: '/trainers',
         label: 'Trainers',
         icon: Dumbbell,
         permission: 'trainer.read',
+        roles: ADMIN_ROLES,
       },
       {
         to: '/staff',
         label: 'Staff',
         icon: UserCog,
         permission: 'role.read',
+        roles: ADMIN_ROLES,
       },
       {
         to: '/branches',
         label: 'Branches',
         icon: Building2,
         permission: 'branch.read',
+        roles: ADMIN_ROLES,
       },
       {
         to: '/equipment',
         label: 'Equipment',
         icon: Package,
         permission: 'equipment.read',
+        roles: ADMIN_ROLES,
       },
-      // {
-      //   to: '/work-orders',
-      //   label: 'Work Orders',
-      //   icon: ClipboardList,
-      //   permission: 'work_order.read',
-      // },
       {
         to: '/membership-plans',
         label: 'Membership Plans',
         icon: BadgePercent,
         permission: 'plan.read',
+        roles: ADMIN_ROLES,
       },
-      // ─── Billing section - ADD THESE ─────────────────────────────────────
       {
         to: '/billing/dashboard',
         label: 'Billing Dashboard',
         icon: TrendingUp,
         permission: 'billing.dashboard.read',
+        roles: ADMIN_ROLES,
       },
       {
         to: '/billing/invoices',
         label: 'Invoices',
         icon: CreditCard,
         permission: 'invoice.read',
+        roles: ADMIN_ROLES,
       },
       {
         to: '/billing/discounts',
         label: 'Discounts',
         icon: Percent,
         permission: 'discount.read',
+        roles: ADMIN_ROLES,
       },
       {
         to: '/expenses',
         label: 'Expenses',
         icon: Receipt,
         permission: 'expense.read',
+        roles: ADMIN_ROLES,
       },
       {
         to: '/refunds',
         label: 'Refunds',
         icon: RotateCcw,
         permission: 'payment.refund',
+        roles: ADMIN_ROLES,
       },
     ],
   },
+
+  // ── Insights (admin roles only) ───────────────────────────────────────────
   {
     label: 'Insights',
     items: [
@@ -256,15 +304,19 @@ export const NAV_GROUPS: NavGroup[] = [
         label: 'Reports',
         icon: BarChart3,
         permission: 'report.read',
+        roles: ADMIN_ROLES,
       },
       {
         to: '/expense-analytics',
         label: 'Expense Analytics',
         icon: TrendingDown,
         permission: 'expense.read',
+        roles: ADMIN_ROLES,
       },
     ],
   },
+
+  // ── System (admin roles only) ─────────────────────────────────────────────
   {
     label: 'System',
     items: [
@@ -273,13 +325,8 @@ export const NAV_GROUPS: NavGroup[] = [
         label: 'Notifications',
         icon: Bell,
         permission: 'notification.read',
+        roles: ADMIN_ROLES,
       },
-      // {
-      //   to: '/roles',
-      //   label: 'Roles',
-      //   icon: Shield,
-      //   permission: 'role.read',
-      // },
     ],
   },
 ];

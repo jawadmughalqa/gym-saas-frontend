@@ -36,18 +36,22 @@ const ExpensesPage          = lazy(() => import("@/features/expenses/ExpensesPag
 const ExpenseAnalyticsPage  = lazy(() => import("@/features/expenses/ExpenseAnalyticsPage"));
 const StaffPage             = lazy(() => import("@/features/staff/StaffPage"));
 const RefundsPage           = lazy(() => import("@/features/refunds/RefundsPage"));
-const MemberHomePage        = lazy(() => import("@/features/member-portal/MemberHomePage"));
-const MemberPlanPage        = lazy(() => import("@/features/member-portal/MemberPlanPage"));
-const MemberInvoicesPage    = lazy(() => import("@/features/member-portal/MemberInvoicesPage"));
-const MemberTrainerPage     = lazy(() => import("@/features/member-portal/MemberTrainerPage"));
+const MemberHomePage          = lazy(() => import("@/features/member-portal/MemberHomePage"));
+const MemberPlanPage          = lazy(() => import("@/features/member-portal/MemberPlanPage"));
+const MemberInvoicesPage      = lazy(() => import("@/features/member-portal/MemberInvoicesPage"));
+const MemberTrainerPage       = lazy(() => import("@/features/member-portal/MemberTrainerPage"));
+const TrainerDashboardPage    = lazy(() => import("@/features/trainer-portal/TrainerDashboardPage"));
+const TrainerClientsPage      = lazy(() => import("@/features/trainer-portal/TrainerClientsPage"));
+const TrainerNotesPage        = lazy(() => import("@/features/trainer-portal/TrainerNotesPage"));
 
 // ─── Root redirect ────────────────────────────────────────────────────────────
 
 function RootRedirect() {
   const role = useAuthStore((s) => s.user?.role);
   const dest =
-    role === 'super_admin' ? '/super-admin' :
-    role === 'member'      ? '/member/home' :
+    role === 'super_admin' ? '/super-admin'        :
+    role === 'member'      ? '/member/home'        :
+    role === 'trainer'     ? '/trainer/dashboard'  :
     '/dashboard';
   return <Navigate to={dest} replace />;
 }
@@ -257,6 +261,29 @@ const router = createBrowserRouter([
                 path: "trainer",
                 element: <Lazy><MemberTrainerPage /></Lazy>,
                 handle: { crumb: "My Trainer" },
+              },
+            ],
+          },
+
+          // ── Trainer portal ────────────────────────────────────────────
+          {
+            path: "trainer",
+            children: [
+              { index: true, element: <Navigate to="/trainer/dashboard" replace /> },
+              {
+                path: "dashboard",
+                element: <Lazy><TrainerDashboardPage /></Lazy>,
+                handle: { crumb: "Dashboard" },
+              },
+              {
+                path: "clients",
+                element: <Lazy><TrainerClientsPage /></Lazy>,
+                handle: { crumb: "My Clients" },
+              },
+              {
+                path: "notes",
+                element: <Lazy><TrainerNotesPage /></Lazy>,
+                handle: { crumb: "Training Notes" },
               },
             ],
           },

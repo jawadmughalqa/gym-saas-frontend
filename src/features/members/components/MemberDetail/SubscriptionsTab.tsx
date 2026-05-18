@@ -6,7 +6,7 @@ import DataTable, { type ColumnDef } from '@/components/shared/DataTable';
 import EmptyState    from '@/components/shared/EmptyState';
 import { SubscriptionStatusBadge } from '@/components/shared/StatusBadge';
 import { usePermission } from '@/hooks/use-permission';
-import { formatDate }    from '@/utils/format';
+import { formatDate, formatCurrency } from '@/utils/format';
 import {
   useGetMembersMemberIdSubscriptions,
   getGetMembersMemberIdSubscriptionsQueryKey,
@@ -41,6 +41,7 @@ export function SubscriptionsTab({ memberId, branchId }: SubscriptionsTabProps) 
   const [changePlanOpen,   setChangePlanOpen]   = useState(false);
   const [selectedSubId,    setSelectedSubId]    = useState<string | null>(null);
   const [selectedPlanName, setSelectedPlanName] = useState('');
+  const [selectedSub,      setSelectedSub]      = useState<Sub | null>(null);
 
   // ── Shared success handler — refetch subscriptions list ───────────────────
   function handleMutationSuccess() {
@@ -87,7 +88,49 @@ export function SubscriptionsTab({ memberId, branchId }: SubscriptionsTabProps) 
     {
       key:    'status',
       header: 'Status',
-      cell:   (row) => <SubscriptionStatusBadge status={row.status ?? 'active'} />,
+      cell:   (row) => {
+        const sub = row as typeof row & {
+          cancelAtPeriodEnd?: boolean;
+          cancelMode?: string;
+          cancelledAt?: string;
+          cancellationReason?: string;
+          prorationRefundAmount?: number;
+        };
+
+        // For end-of-period scheduled cancellations, show a special badge
+        if (sub.cancelAtPeriodEnd && row.status === 'active') {
+          return (
+            <div className="space-y-1">
+              <SubscriptionStatusBadge status="active" />
+              <span className="block text-[10px] text-amber-600 font-medium">
+                Cancels at period end
+              </span>
+            </div>
+          );
+        }
+
+        if (row.status === 'cancelled') {
+          return (
+            <div className="space-y-1">
+              <SubscriptionStatusBadge status="cancelled" />
+              {sub.cancelMode && (
+                <span className="block text-[10px] text-muted-foreground">
+                  {sub.cancelMode === 'end_of_period'    ? 'End of period'    :
+                   sub.cancelMode === 'immediate_prorated' ? 'Immediate + refund' :
+                   'Immediate, no refund'}
+                </span>
+              )}
+              {(sub.prorationRefundAmount ?? 0) > 0 && (
+                <span className="block text-[10px] text-emerald-600 font-medium">
+                  +{formatCurrency(sub.prorationRefundAmount!, CURRENCY)} wallet
+                </span>
+              )}
+            </div>
+          );
+        }
+
+        return <SubscriptionStatusBadge status={row.status ?? 'active'} />;
+      },
     },
     {
       key:          'startDate',
@@ -97,10 +140,30 @@ export function SubscriptionsTab({ memberId, branchId }: SubscriptionsTabProps) 
     },
     {
       key:          'nextRenewalDate',
-      header:       'Next Renewal',
+      header:       'Renewal / Expiry',
       hideOnMobile: true,
       cell:         (row) => {
-        const d = (row as { nextRenewalDate?: string }).nextRenewalDate;
+        const sub = row as typeof row & { cancelAtPeriodEnd?: boolean; cancelledAt?: string };
+        const d   = (row as { nextRenewalDate?: string }).nextRenewalDate;
+
+        if (sub.cancelAtPeriodEnd && d) {
+          return (
+            <div>
+              <p className="text-xs font-medium text-amber-600">Expires</p>
+              <p className="text-sm">{formatDate(d)}</p>
+            </div>
+          );
+        }
+
+        if (row.status === 'cancelled' && sub.cancelledAt) {
+          return (
+            <div>
+              <p className="text-xs text-muted-foreground">Cancelled</p>
+              <p className="text-sm">{formatDate(sub.cancelledAt)}</p>
+            </div>
+          );
+        }
+
         return d ? formatDate(d) : 'Ongoing';
       },
     },
@@ -163,6 +226,7 @@ export function SubscriptionsTab({ memberId, branchId }: SubscriptionsTabProps) 
                   e.stopPropagation();
                   setSelectedSubId(row._id ?? null);
                   setSelectedPlanName(planName);
+                  setSelectedSub(row);
                   setCancelDialogOpen(true);
                 }}
               >
@@ -238,16 +302,17 @@ export function SubscriptionsTab({ memberId, branchId }: SubscriptionsTabProps) 
       )}
 
       {/* Cancel subscription dialog */}
-      {cancelDialogOpen && selectedSubId && (
+      {cancelDialogOpen && selectedSubId && selectedSub && (
         <CancelSubscriptionDialog
           open={cancelDialogOpen}
           onOpenChange={(o) => {
             setCancelDialogOpen(o);
-            if (!o) setSelectedSubId(null);
+            if (!o) { setSelectedSubId(null); setSelectedSub(null); }
           }}
           memberId={memberId}
           subscriptionId={selectedSubId}
           planName={selectedPlanName}
+          subscription={selectedSub}
           onSuccess={handleMutationSuccess}
         />
       )}

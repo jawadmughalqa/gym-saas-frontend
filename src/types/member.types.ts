@@ -85,6 +85,9 @@ export interface Member {
   createdAt:   string;
   updatedAt:   string;
 
+  // Wallet credit balance (set by prorated cancellation, spent on future invoices)
+  walletBalance?: number;
+
   // Attached by the listMembers API — null if no active subscription
   activePlan?: MemberActivePlan | null;
 }
@@ -154,8 +157,12 @@ export interface Subscription {
 
   cancelledAt?:        string;
   cancellationReason?: string;
+  cancelAtPeriodEnd?:     boolean;
+  cancelMode?:            'end_of_period' | 'immediate_prorated' | 'immediate_no_refund';
+  prorationRefundAmount?: number;
 
-  initialInvoiceId?: string;
+  initialInvoiceId?:        string;
+  lastInvoiceGeneratedAt?:  string;
   notes?:            string;
   createdAt:         string;
   updatedAt:         string;
@@ -283,6 +290,29 @@ export interface FreezeSubscriptionDto {
 
 export interface CancelSubscriptionDto {
   reason: string;
+}
+
+// ─── Wallet Payout ────────────────────────────────────────────────────────────
+
+export type PayoutMedium = 'cash' | 'bank_transfer';
+
+export interface WalletPayout {
+  _id:         string;
+  tenantId:    string;
+  branchId:    string;
+  memberId:    string;
+  amount:      number;
+  medium:      PayoutMedium;
+  notes?:      string;
+  processedBy: string;
+  createdAt:   string;
+  updatedAt:   string;
+}
+
+export interface CreateWalletPayoutDto {
+  amount: number;
+  medium: PayoutMedium;
+  notes?: string;
 }
 
 export interface CreateMeasurementDto {

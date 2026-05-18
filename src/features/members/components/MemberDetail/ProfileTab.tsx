@@ -1,17 +1,21 @@
 import { useState } from 'react';
-import { Mail, Phone, Calendar, MapPin, KeyRound, RefreshCw, Eye, EyeOff } from 'lucide-react';
+import { Mail, Phone, Calendar, MapPin, KeyRound, RefreshCw, Eye, EyeOff, Wallet, ArrowDownToLine } from 'lucide-react';
 import { Badge }   from '@/components/ui/badge';
 import { Button }  from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
 import { MemberStatusPanel } from '@/features/members/components/MemberStatusPanel';
-import { formatDate } from '@/utils/format';
+import { formatDate, formatCurrency } from '@/utils/format';
+import { CURRENCY } from '@/config/tenant.config';
 import { useToast }   from '@/hooks/use-toast';
 import { api }        from '@/lib/axios';
-import { useQuery }   from '@tanstack/react-query';
+import { useQuery, useQueryClient }   from '@tanstack/react-query';
 import {
   useGetMembersMemberId,
+  getGetMembersMemberIdQueryKey,
 } from '@/api/generated/members/members';
+import { WalletPayoutDialog } from './WalletPayoutDialog';
+import { usePermission } from '@/hooks/use-permission';
 
 // ─── Login credentials fetch ──────────────────────────────────────────────────
 
@@ -65,8 +69,11 @@ export function ProfileTab({ memberId }: ProfileTabProps) {
   const { data: response, isLoading } = useGetMembersMemberId(memberId);
   const member = response?.data;
   const { toast } = useToast();
-  const [resending, setResending] = useState(false);
+  const { can } = usePermission();
+  const queryClient = useQueryClient();
+  const [resending,    setResending]    = useState(false);
   const [showPassword, setShowPassword] = useState(false);
+  const [payoutOpen,   setPayoutOpen]   = useState(false);
 
   const {
     data: creds,
@@ -107,6 +114,58 @@ export function ProfileTab({ memberId }: ProfileTabProps) {
           member={member as Parameters<typeof MemberStatusPanel>[0]['member']}
         />
       </div>
+
+      {/* Wallet credit balance — shown only when > 0 */}
+      {((member as typeof member & { walletBalance?: number }).walletBalance ?? 0) > 0 && (
+        <div className="md:col-span-2">
+          <Card className="border-emerald-200 bg-emerald-50/50">
+            <CardContent className="flex items-center gap-3 py-3 px-4">
+              <div className="flex h-9 w-9 items-center justify-center rounded-full bg-emerald-100 shrink-0">
+                <Wallet className="h-5 w-5 text-emerald-600" />
+              </div>
+              <div>
+                <p className="text-xs text-emerald-700 font-medium uppercase tracking-wide">
+                  Wallet Credit
+                </p>
+                <p className="text-lg font-bold text-emerald-800 leading-tight">
+                  {formatCurrency(
+                    (member as typeof member & { walletBalance?: number }).walletBalance!,
+                    CURRENCY,
+                  )}
+                </p>
+              </div>
+              <p className="text-xs text-emerald-600 max-w-[140px] leading-snug">
+                Credited from prorated subscription cancellation
+              </p>
+              {can('member.update') && (
+                <Button
+                  size="sm"
+                  variant="outline"
+                  className="ml-auto shrink-0 border-emerald-300 text-emerald-700 hover:bg-emerald-100 hover:text-emerald-800"
+                  onClick={() => setPayoutOpen(true)}
+                >
+                  <ArrowDownToLine className="h-3.5 w-3.5 mr-1.5" />
+                  Pay Out
+                </Button>
+              )}
+            </CardContent>
+          </Card>
+
+          {payoutOpen && (
+            <WalletPayoutDialog
+              open={payoutOpen}
+              onOpenChange={setPayoutOpen}
+              memberId={memberId}
+              walletBalance={(member as typeof member & { walletBalance?: number }).walletBalance!}
+              onSuccess={() => {
+                void queryClient.invalidateQueries({
+                  queryKey: getGetMembersMemberIdQueryKey(memberId),
+                });
+              }}
+            />
+          )}
+        </div>
+      )}
 
       {/* Personal info */}
       <Card>

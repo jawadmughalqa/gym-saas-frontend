@@ -10,8 +10,13 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { toast } from "@/hooks/use-toast";
-import { useGetTrainers } from "@/api/generated/trainers/trainers";
-import { usePostTrainersTrainerIdAssignments } from "@/api/generated/trainers/trainers";
+import { useQueryClient } from "@tanstack/react-query";
+import {
+  useGetTrainers,
+  usePostTrainersTrainerIdAssignments,
+  getGetTrainersQueryKey,
+  getGetTrainersTrainerIdAssignmentsQueryKey,
+} from "@/api/generated/trainers/trainers";
 import type { TrainerAssignment } from "./TrainerTab";
 import {
   Button,
@@ -45,6 +50,7 @@ export default function AssignTrainerDialog({
   currentAssignment,
   onSuccess,
 }: Props) {
+  const queryClient = useQueryClient();
   const [selectedTrainerId, setSelectedTrainerId] = useState<string>("");
   const [goal, setGoal] = useState("");
   const [sessionsPerWeek, setSessionsPerWeek] = useState<number | undefined>();
@@ -101,6 +107,17 @@ export default function AssignTrainerDialog({
           title: "Trainer assigned",
           description: `${name} has been assigned. PT fee invoice created.`,
         });
+
+        // Invalidate all trainer-related queries so:
+        // 1. The trainer's slot counts refresh in the dropdown next time it opens
+        // 2. The "Log Note" member dropdown on the trainer detail page shows the new member
+        queryClient.invalidateQueries({ queryKey: getGetTrainersQueryKey() });
+        if (selectedTrainerId) {
+          queryClient.invalidateQueries({
+            queryKey: getGetTrainersTrainerIdAssignmentsQueryKey(selectedTrainerId),
+          });
+        }
+
         resetForm();
         onOpenChange(false);
         onSuccess();

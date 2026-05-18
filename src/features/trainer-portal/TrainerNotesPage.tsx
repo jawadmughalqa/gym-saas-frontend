@@ -17,7 +17,7 @@ import PageShell from '@/components/layout/PageShell';
 import PageHeader from '@/components/layout/PageHeader';
 import { formatDate } from '@/utils/format';
 import { api } from '@/lib/axios';
-import { useMyTrainerProfile } from './hooks/useTrainerPortal';
+import { useMyTrainerProfile, useMyActiveClients, type AssignedMember } from './hooks/useTrainerPortal';
 import TrainerNoteDialog from './TrainerNoteDialog';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -46,13 +46,16 @@ interface TrainingNote {
   createdAt: string;
 }
 
+// The backend paginatedResponse shape:
+// { success: true, data: [...], pagination: { page, limit, total, pages } }
 interface NotesResponse {
   success: boolean;
-  data: {
-    notes: TrainingNote[];
-    total: number;
+  data: TrainingNote[];
+  pagination?: {
     page: number;
     limit: number;
+    total: number;
+    pages: number;
   };
 }
 
@@ -135,24 +138,27 @@ function NoteCard({ note }: { note: TrainingNote }) {
 
 export default function TrainerNotesPage() {
   const { data: profile, isLoading: loadingProfile } = useMyTrainerProfile();
-  const [search, setSearch]   = useState('');
+  const [search, setSearch]     = useState('');
   const [noteOpen, setNoteOpen] = useState(false);
+  // Track which client the "Add Note" button was clicked for
+  const [noteTarget, setNoteTarget] = useState<{ memberId: string; memberName: string } | null>(null);
 
   const trainerId = profile?._id;
+  const { data: activeClients = [] } = useMyActiveClients(trainerId);
 
-  const { data: notesData, isLoading: loadingNotes, refetch } = useQuery({
+  const { data: notes = [], isLoading: loadingNotes, refetch } = useQuery({
     queryKey: ['trainer-portal', 'notes', trainerId],
     queryFn: async () => {
       const res = await api.get<NotesResponse>(`/trainers/${trainerId}/notes`, {
         params: { limit: 50 },
       });
-      return res.data.data;
+      // data is the notes array directly (paginatedResponse format)
+      return res.data.data ?? [];
     },
     enabled: !!trainerId,
   });
 
   const isLoading = loadingProfile || loadingNotes;
-  const notes = notesData?.notes ?? [];
 
   const filtered = notes.filter((n) => {
     if (!search.trim()) return true;
@@ -167,24 +173,43 @@ export default function TrainerNotesPage() {
       <PageHeader
         title="Training Notes"
         subtitle="All session notes you've recorded for your clients."
-        actions={
-          trainerId ? (
-            <Button size="sm" onClick={() => setNoteOpen(true)}>
-              + Add Note
-            </Button>
-          ) : undefined
-        }
       />
 
-      {/* ── Search ─────────────────────────────────────────────────── */}
-      <div className="relative w-full sm:w-72">
-        <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-        <Input
-          placeholder="Search notes or client name..."
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-          className="pl-8"
-        />
+      {/* ── Toolbar: search + quick-add per client ────────────────── */}
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <div className="relative w-full sm:w-72">
+          <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+          <Input
+            placeholder="Search notes or client name..."
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            className="pl-8"
+          />
+        </div>
+
+        {/* Add note: pick a client first */}
+        {activeClients.length > 0 && trainerId && (
+          <div className="flex flex-wrap gap-2">
+            {activeClients.slice(0, 4).map((a) => {
+              const m = typeof a.memberId === 'object' ? a.memberId as AssignedMember : null;
+              if (!m) return null;
+              const name = `${m.firstName ?? ''} ${m.lastName ?? ''}`.trim() || 'Client';
+              return (
+                <Button
+                  key={a._id}
+                  size="sm"
+                  variant="outline"
+                  onClick={() => {
+                    setNoteTarget({ memberId: m._id, memberName: name });
+                    setNoteOpen(true);
+                  }}
+                >
+                  + Note for {name.split(' ')[0]}
+                </Button>
+              );
+            })}
+          </div>
+        )}
       </div>
 
       {/* ── Notes ──────────────────────────────────────────────────── */}
@@ -214,14 +239,17 @@ export default function TrainerNotesPage() {
         </div>
       )}
 
-      {/* Quick-add note dialog (no pre-selected member) */}
-      {trainerId && (
+      {/* Add note dialog — only opens when a client is selected */}
+      {trainerId && noteTarget && (
         <TrainerNoteDialog
           open={noteOpen}
-          onOpenChange={setNoteOpen}
+          onOpenChange={(v) => {
+            setNoteOpen(v);
+            if (!v) setNoteTarget(null);
+          }}
           trainerId={trainerId}
-          memberId=""
-          memberName="client"
+          memberId={noteTarget.memberId}
+          memberName={noteTarget.memberName}
           onSuccess={() => refetch()}
         />
       )}

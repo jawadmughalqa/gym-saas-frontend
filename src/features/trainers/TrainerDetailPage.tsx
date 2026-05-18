@@ -966,11 +966,23 @@ function TrainingNoteDialog({
               className={errors.content ? "border-destructive" : ""}
               {...register("content")}
             />
-            {errors.content && (
-              <p className="text-xs text-destructive">
-                {errors.content.message}
-              </p>
-            )}
+            <div className="flex items-center justify-between">
+              {errors.content ? (
+                <p className="text-xs text-destructive">{errors.content.message}</p>
+              ) : (
+                <span />
+              )}
+              {(() => {
+                const val = watch("content") ?? "";
+                const wc = val.trim() === "" ? 0 : val.trim().split(/\s+/).filter(Boolean).length;
+                const over = wc > 35;
+                return (
+                  <p className={`text-xs ${over ? "text-destructive font-medium" : "text-muted-foreground"}`}>
+                    {wc} / 35 words
+                  </p>
+                );
+              })()}
+            </div>
           </div>
 
           <div className="grid grid-cols-3 gap-3">
@@ -1035,7 +1047,13 @@ function TrainingNoteDialog({
             >
               Cancel
             </Button>
-            <Button type="submit" disabled={create.isPending}>
+            <Button
+              type="submit"
+              disabled={create.isPending || (() => {
+                const val = watch("content") ?? "";
+                return val.trim().split(/\s+/).filter(Boolean).length > 35;
+              })()}
+            >
               {create.isPending && (
                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />
               )}
@@ -1200,14 +1218,14 @@ export default function TrainerDetailPage() {
             <Users className="h-4 w-4" />
             <span className="hidden sm:inline">Assignments</span>
           </TabsTrigger>
-          {/* <TabsTrigger value="notes" className="flex items-center gap-1.5">
+          <TabsTrigger value="notes" className="flex items-center gap-1.5">
             <FileText className="h-4 w-4" />
             <span className="hidden sm:inline">Session Notes</span>
           </TabsTrigger>
           <TabsTrigger value="ratings" className="flex items-center gap-1.5">
             <Star className="h-4 w-4" />
             <span className="hidden sm:inline">Ratings</span>
-          </TabsTrigger> */}
+          </TabsTrigger>
         </TabsList>
 
         <TabsContent value="profile" className="mt-4">
@@ -1216,12 +1234,12 @@ export default function TrainerDetailPage() {
         <TabsContent value="assignments" className="mt-4">
           <AssignmentsTab trainerId={trainer._id!} />
         </TabsContent>
-        {/* <TabsContent value="notes" className="mt-4">
+        <TabsContent value="notes" className="mt-4">
           <NotesTab trainerId={trainer._id!} />
-        </TabsContent> */}
-        {/* <TabsContent value="ratings" className="mt-4">
+        </TabsContent>
+        <TabsContent value="ratings" className="mt-4">
           <RatingsTab trainerId={trainer._id!} />
-        </TabsContent> */}
+        </TabsContent>
       </Tabs>
 
       <TrainerForm

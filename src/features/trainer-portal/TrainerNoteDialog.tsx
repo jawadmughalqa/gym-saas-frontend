@@ -60,6 +60,10 @@ export default function TrainerNoteDialog({
   const [duration, setDuration]     = useState('');
   const [rating, setRating]         = useState<string>('');
 
+  const NOTE_WORD_LIMIT = 35;
+  const wordCount = content.trim() === '' ? 0 : content.trim().split(/\s+/).filter(Boolean).length;
+  const overLimit = wordCount > NOTE_WORD_LIMIT;
+
   const mutation = useMutation({
     mutationFn: async (dto: CreateNoteDto) => {
       await api.post(`/trainers/${trainerId}/notes`, dto);
@@ -120,7 +124,11 @@ export default function TrainerNoteDialog({
               value={content}
               onChange={(e) => setContent(e.target.value)}
               rows={4}
+              className={overLimit ? 'border-destructive focus-visible:ring-destructive' : ''}
             />
+            <p className={`text-xs text-right ${overLimit ? 'text-destructive font-medium' : 'text-muted-foreground'}`}>
+              {wordCount} / {NOTE_WORD_LIMIT} words
+            </p>
           </div>
 
           <div className="grid grid-cols-2 gap-3">
@@ -190,7 +198,7 @@ export default function TrainerNoteDialog({
           </Button>
           <Button
             onClick={handleSubmit}
-            disabled={!content.trim() || mutation.isPending}
+            disabled={!content.trim() || overLimit || mutation.isPending}
           >
             {mutation.isPending ? 'Saving...' : 'Save Note'}
           </Button>

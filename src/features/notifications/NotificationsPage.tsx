@@ -213,6 +213,9 @@ export default function NotificationsPage() {
   }
 
   function handleDelete(id: string) {
+    // Check if the notification was unread before deleting so we can
+    // immediately decrement the badge count without waiting for a refetch.
+    const wasUnread = notifications.some((n) => (n as any)._id === id && !n.read);
     confirm(
       {
         title: 'Delete notification?',
@@ -220,7 +223,10 @@ export default function NotificationsPage() {
         variant: 'destructive',
         confirmLabel: 'Delete',
       },
-      () => deleteNotif.mutate({ notificationId: id }),
+      () => deleteNotif.mutate(
+        { notificationId: id },
+        { onSuccess: () => { if (wasUnread) decrementUnread(); } },
+      ),
     );
   }
 

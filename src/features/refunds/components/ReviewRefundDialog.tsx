@@ -21,6 +21,8 @@ import {
   getGetRefundsQueryKey,
 } from '@/api/generated/refunds/refunds';
 import type { Refund } from '@/api/generated/refunds/refunds';
+import { getGetInvoicesQueryKey } from '@/api/generated/invoices/invoices';
+import { getGetPaymentsQueryKey } from '@/api/generated/payments/payments';
 
 // ─── Props ────────────────────────────────────────────────────────────────────
 
@@ -47,11 +49,20 @@ export function ReviewRefundDialog({
     void qc.invalidateQueries({ queryKey: getGetRefundsQueryKey() });
   }
 
+  function invalidateAfterApproval() {
+    invalidate();
+    // Approving a refund changes both the payment (status, totalRefunded, netAmount)
+    // and the invoice (amountPaid, amountDue, status). Invalidate both so any
+    // open InvoiceDetailPage or BillingTab shows the correct figures immediately.
+    void qc.invalidateQueries({ queryKey: getGetInvoicesQueryKey() });
+    void qc.invalidateQueries({ queryKey: getGetPaymentsQueryKey() });
+  }
+
   const approve = usePostRefundsRefundIdApprove({
     mutation: {
       onSuccess: () => {
         toast({ title: 'Refund approved', description: 'Refund has been executed.' });
-        invalidate();
+        invalidateAfterApproval();
         onSuccess?.();
         handleClose();
       },

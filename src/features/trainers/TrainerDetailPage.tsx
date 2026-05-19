@@ -1222,10 +1222,10 @@ export default function TrainerDetailPage() {
             <FileText className="h-4 w-4" />
             <span className="hidden sm:inline">Session Notes</span>
           </TabsTrigger>
-          <TabsTrigger value="ratings" className="flex items-center gap-1.5">
+          {/* <TabsTrigger value="ratings" className="flex items-center gap-1.5">
             <Star className="h-4 w-4" />
             <span className="hidden sm:inline">Ratings</span>
-          </TabsTrigger>
+          </TabsTrigger> */}
         </TabsList>
 
         <TabsContent value="profile" className="mt-4">
@@ -1237,9 +1237,9 @@ export default function TrainerDetailPage() {
         <TabsContent value="notes" className="mt-4">
           <NotesTab trainerId={trainer._id!} />
         </TabsContent>
-        <TabsContent value="ratings" className="mt-4">
+        {/* <TabsContent value="ratings" className="mt-4">
           <RatingsTab trainerId={trainer._id!} />
-        </TabsContent>
+        </TabsContent> */}
       </Tabs>
 
       <TrainerForm

@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import {
   Bell, BellOff, CheckCheck, Trash2,
-  CreditCard, Receipt, Calendar, AlertCircle, RefreshCw,
+  CreditCard, Receipt, Calendar, AlertCircle, RefreshCw, RotateCcw, UserCheck,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -46,6 +46,8 @@ const TYPE_CONFIG: Record<string, NotifConfig> = {
   'payment.received':          { icon: CreditCard,   label: 'Payment Received',      color: 'text-green-500' },
   'instalment.due':            { icon: CreditCard,   label: 'Instalment Due',        color: 'text-yellow-500' },
   'instalment.overdue':        { icon: AlertCircle,  label: 'Instalment Overdue',    color: 'text-red-500' },
+  'payment.refunded':          { icon: RotateCcw,    label: 'Payment Refunded',      color: 'text-orange-500' },
+  'trainer.assigned':          { icon: UserCheck,    label: 'New Client Assigned',   color: 'text-blue-500' },
 };
 
 function getConfig(type?: string): NotifConfig {

@@ -218,26 +218,55 @@ function PaymentsTab({ invoice }: { invoice: Invoice }) {
                     <th className="px-4 py-2.5 text-left font-medium text-muted-foreground">Date</th>
                     <th className="px-4 py-2.5 text-left font-medium text-muted-foreground">Method</th>
                     <th className="px-4 py-2.5 text-left font-medium text-muted-foreground">Reference</th>
-                    <th className="px-4 py-2.5 text-right font-medium text-muted-foreground">Amount</th>
+                    <th className="px-4 py-2.5 text-right font-medium text-muted-foreground">Charged</th>
+                    <th className="px-4 py-2.5 text-right font-medium text-muted-foreground">Refunded</th>
+                    <th className="px-4 py-2.5 text-right font-medium text-muted-foreground">Net</th>
                     <th className="px-4 py-2.5 text-center font-medium text-muted-foreground">Status</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y">
-                  {payments.map((p: any) => (
-                    <tr key={p._id} className="hover:bg-muted/20">
-                      <td className="px-4 py-3 text-muted-foreground">{formatDate(p.paidAt ?? p.createdAt)}</td>
-                      <td className="px-4 py-3 capitalize">{METHOD_LABELS[p.method] ?? p.method}</td>
-                      <td className="px-4 py-3 font-mono text-xs text-muted-foreground">{p.reference ?? '—'}</td>
-                      <td className="px-4 py-3 text-right font-semibold text-green-700">
-                        {formatCurrency(p.amount, invoice.currency)}
-                      </td>
-                      <td className="px-4 py-3 text-center">
-                        <Badge variant={p.status === 'completed' ? 'success' : p.status === 'failed' ? 'destructive' : 'outline'}>
-                          {p.status}
-                        </Badge>
-                      </td>
-                    </tr>
-                  ))}
+                  {payments.map((p: any) => {
+                    const totalRefunded: number = p.totalRefunded ?? 0;
+                    const netAmount: number = p.netAmount ?? p.amount;
+                    const statusVariant =
+                      p.status === 'completed' ? 'success'
+                      : p.status === 'partially_refunded' ? 'secondary'
+                      : p.status === 'refunded' ? 'destructive'
+                      : p.status === 'failed' ? 'destructive'
+                      : 'outline';
+                    const statusLabel =
+                      p.status === 'partially_refunded' ? 'Partial Refund'
+                      : p.status === 'refunded' ? 'Refunded'
+                      : p.status === 'completed' ? 'Completed'
+                      : p.status;
+                    return (
+                      <tr key={p._id} className="hover:bg-muted/20">
+                        <td className="px-4 py-3 text-muted-foreground">{formatDate(p.paidAt ?? p.createdAt)}</td>
+                        <td className="px-4 py-3 capitalize">{METHOD_LABELS[p.method] ?? p.method}</td>
+                        <td className="px-4 py-3 font-mono text-xs text-muted-foreground">{p.reference ?? '—'}</td>
+                        <td className="px-4 py-3 text-right font-semibold text-green-700">
+                          {formatCurrency(p.amount, invoice.currency)}
+                        </td>
+                        <td className="px-4 py-3 text-right">
+                          {totalRefunded > 0 ? (
+                            <span className="font-semibold text-red-600">
+                              -{formatCurrency(totalRefunded, invoice.currency)}
+                            </span>
+                          ) : (
+                            <span className="text-muted-foreground">—</span>
+                          )}
+                        </td>
+                        <td className="px-4 py-3 text-right font-semibold">
+                          {formatCurrency(netAmount, invoice.currency)}
+                        </td>
+                        <td className="px-4 py-3 text-center">
+                          <Badge variant={statusVariant as any}>
+                            {statusLabel}
+                          </Badge>
+                        </td>
+                      </tr>
+                    );
+                  })}
                 </tbody>
               </table>
             </div>

@@ -22,7 +22,7 @@ import {
   TrendingUp, TrendingDown, Clock, Wallet, AlertTriangle,
   Building2, RefreshCw, FilePlus, Search, ExternalLink,
   CheckCircle2, XCircle, MinusCircle, CreditCard, Eye,
-  Phone, ChevronUp, ChevronDown, ChevronsUpDown,
+  Phone, ChevronUp, ChevronDown, ChevronsUpDown, RotateCcw,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -373,9 +373,9 @@ export default function BillingDashboard() {
       </div>
 
       {/* ── Stat cards ───────────────────────────────────────────────────── */}
-      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-3   gap-3">
+      <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-3">
         {loadingStats
-          ? Array.from({ length: 5 }).map((_, i) => <StatCardSkeleton key={i} />)
+          ? Array.from({ length: 4 }).map((_, i) => <StatCardSkeleton key={i} />)
           : (
             <>
               <StatCard
@@ -383,7 +383,14 @@ export default function BillingDashboard() {
                 value={formatCurrency(stats?.totalRevenue ?? 0, currency)}
                 icon={TrendingUp}
                 iconClassName="bg-green-100 text-green-700"
-                subtitle="Completed payments"
+                subtitle="Net after refunds"
+              />
+              <StatCard
+                title="Total Refunds"
+                value={formatCurrency((stats as any)?.totalRefunds ?? 0, currency)}
+                icon={RotateCcw}
+                iconClassName={(stats as any)?.totalRefunds > 0 ? 'bg-red-100 text-red-600' : 'bg-muted text-muted-foreground'}
+                subtitle="Refunded to members"
               />
               <StatCard
                 title="Pending Fees"
@@ -399,7 +406,6 @@ export default function BillingDashboard() {
                 iconClassName="bg-blue-100 text-blue-700"
                 subtitle="Received today"
               />
-          
             </>
           )
         }

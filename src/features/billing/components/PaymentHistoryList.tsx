@@ -13,7 +13,7 @@
  *      └─ Timeline: 200 on Feb 1  → PKR 300 remaining
  */
 import { useState } from 'react';
-import { Receipt, ChevronDown, ChevronUp, FileText } from 'lucide-react';
+import { Receipt, ChevronDown, ChevronUp, FileText, RotateCcw } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
 import { formatCurrency } from '@/lib/utils';
 import { useGetInvoices } from '@/api/generated/invoices/invoices';
@@ -46,11 +46,12 @@ export function PaymentHistoryList({ memberId }: PaymentHistoryListProps) {
 
   const allInvoices = ((invoicesData as any)?.data ?? []) as any[];
 
-  // Show invoices that have at least some payment activity
+  // Show invoices that have at least some payment activity (including refunded)
   const paidInvoices = allInvoices.filter(
     (inv: any) =>
       inv.status === 'paid' ||
       inv.status === 'partially_paid' ||
+      inv.status === 'refunded' ||
       inv.amountPaid > 0,
   );
 
@@ -137,7 +138,7 @@ export function PaymentHistoryList({ memberId }: PaymentHistoryListProps) {
                       <span className="text-sm font-semibold">
                         {formatCurrency(inv.amountPaid, currency)}
                       </span>
-                      {!isSettled && inv.amountDue > 0 && (
+                      {!isSettled && inv.amountDue > 0 && inv.status !== 'refunded' && (
                         <span className="text-xs text-muted-foreground">
                           of {formatCurrency(inv.total, currency)}
                         </span>
@@ -145,6 +146,12 @@ export function PaymentHistoryList({ memberId }: PaymentHistoryListProps) {
                       {(inv.discountTotal ?? 0) > 0 && (
                         <span className="text-xs text-emerald-600 font-medium">
                           −{formatCurrency(inv.discountTotal, currency)} discount
+                        </span>
+                      )}
+                      {inv.status === 'refunded' && (
+                        <span className="inline-flex items-center gap-1 text-xs font-medium text-red-600">
+                          <RotateCcw className="h-3 w-3" />
+                          Refunded
                         </span>
                       )}
                       <StatusBadge status={inv.status} />

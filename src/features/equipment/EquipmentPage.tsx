@@ -21,7 +21,12 @@ import { useConfirm } from '@/hooks/use-confirm';
 import { usePermission } from '@/hooks/use-permission';
 import { toast } from '@/hooks/use-toast';
 import { getErrorMessage } from '@/utils/error';
-import { useGetEquipment, useDeleteEquipmentEquipmentId } from '@/api/generated/equipment/equipment';
+import {
+  useGetEquipment,
+  useDeleteEquipmentEquipmentId,
+  getGetEquipmentQueryKey,
+} from '@/api/generated/equipment/equipment';
+import { useQueryClient } from '@tanstack/react-query';
 import type { Equipment } from '@/api/generated/schemas/equipment';
 import type { GetEquipmentStatus } from '@/api/generated/schemas/getEquipmentStatus';
 import EquipmentForm from './components/EquipmentForm';
@@ -66,6 +71,7 @@ export default function EquipmentPage() {
   const [editingEquipment, setEditingEquipment] = useState<Equipment | undefined>();
 
   const { confirm, confirmProps } = useConfirm();
+  const queryClient = useQueryClient();
 
   const params = {
     page: table.queryParams.page,
@@ -82,6 +88,10 @@ export default function EquipmentPage() {
 
   const deleteEquipment = useDeleteEquipmentEquipmentId({
     mutation: {
+      onSuccess: () => {
+        void queryClient.invalidateQueries({ queryKey: getGetEquipmentQueryKey() });
+        toast({ title: 'Equipment deleted' });
+      },
       onError: (err) => toast({ variant: 'destructive', title: 'Failed to delete equipment', description: getErrorMessage(err) }),
     },
   });

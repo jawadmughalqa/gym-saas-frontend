@@ -6,10 +6,39 @@
  * OpenAPI spec version: 1.0.0
  */
 
-export interface CreateSubscriptionRequest {
+export type CreateSubscriptionRequest = {
+  pricingType: 'plan';
   planId: string;
   branchId: string;
+  /** @minimum 0 */
+  discountAmount?: number;
   startDate?: string;
   addOns?: string[];
+  /** @maxLength 500 */
   notes?: string;
-}
+  autoCreateInvoice?: boolean;
+} | {
+  pricingType: 'custom';
+  branchId: string;
+  /**
+     * @minLength 1
+     * @maxLength 100
+     */
+  customLabel: string;
+  /** @minimum 0 */
+  customPrice: number;
+  customBillingFrequency: 'daily' | 'weekly' | 'monthly' | 'quarterly' | 'semi_annual' | 'annual' | 'one_time';
+  /**
+     * @minLength 3
+     * @maxLength 3
+     */
+  currency?: string;
+  /** @minimum 0 */
+  discountAmount?: number;
+  /** @minimum 1 */
+  durationDays?: number;
+  startDate?: string;
+  /** @maxLength 500 */
+  notes?: string;
+  autoCreateInvoice?: boolean;
+};

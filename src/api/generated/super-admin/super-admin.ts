@@ -35,18 +35,20 @@ import type {
   GetSuperTenantsParams,
   GetSuperTenantsTenantIdInvoicesParams,
   ImpersonateResponse,
-  InvoiceListResponse,
-  InvoiceResponse,
   MarkInvoicePaidRequest,
   NotFoundResponse,
   PlanListResponse,
   PlanResponse,
   PlatformDashboardResponse,
+  SaasInvoiceListResponse,
+  SaasInvoiceResponse,
   TenantDetailResponse,
   TenantListResponse,
   UnauthorizedResponse,
   UpdateTenantRequest,
-  UpsertPlanRequest
+  UpsertPlanRequest,
+  CreatePlanRequest,
+  ResetOwnerPasswordResponse,
 } from '../schemas';
 
 import { orvalMutator } from '../../../lib/orval-mutator';
@@ -678,7 +680,7 @@ export const getSuperTenantsTenantIdInvoices = (
 ) => {
 
 
-      return orvalMutator<InvoiceListResponse>(
+      return orvalMutator<SaasInvoiceListResponse>(
       {url: `/super/tenants/${tenantId}/invoices`, method: 'GET',
         params, signal
     },
@@ -780,7 +782,7 @@ export const postSuperTenantsTenantIdInvoicesInvoiceIdPay = (
 ) => {
 
 
-      return orvalMutator<InvoiceResponse>(
+      return orvalMutator<SaasInvoiceResponse>(
       {url: `/super/tenants/${tenantId}/invoices/${invoiceId}/pay`, method: 'POST',
       headers: {'Content-Type': 'application/json', },
       data: markInvoicePaidRequest, signal
@@ -995,3 +997,185 @@ export const usePutSuperPlansPlanName = <TError = ErrorType<BadRequestResponse |
       > => {
       return useMutation(getPutSuperPlansPlanNameMutationOptions(options), queryClient);
     }
+
+// ─── POST /super/plans — Create a new plan ────────────────────────────────────
+
+/**
+ * @summary Create a new SaaS plan
+ */
+export const postSuperPlans = (
+    createPlanRequest: BodyType<CreatePlanRequest>,
+ signal?: AbortSignal
+) => {
+      return orvalMutator<PlanResponse>(
+      {url: `/super/plans`, method: 'POST',
+      headers: {'Content-Type': 'application/json', },
+      data: createPlanRequest, signal
+    },
+      );
+    }
+
+export const getPostSuperPlansMutationOptions = <TError = ErrorType<BadRequestResponse | UnauthorizedResponse | ForbiddenResponse | ConflictResponse>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof postSuperPlans>>, TError,{data: BodyType<CreatePlanRequest>}, TContext>, }
+): UseMutationOptions<Awaited<ReturnType<typeof postSuperPlans>>, TError,{data: BodyType<CreatePlanRequest>}, TContext> => {
+const mutationKey = ['postSuperPlans'];
+const {mutation: mutationOptions} = options ?? {};
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof postSuperPlans>>, {data: BodyType<CreatePlanRequest>}> = (props) => {
+          const {data} = props ?? {};
+
+          return  postSuperPlans(data,)
+        }
+
+        return { mutationKey, mutationFn, ...mutationOptions}
+      }
+
+    export type PostSuperPlansMutationResult = NonNullable<Awaited<ReturnType<typeof postSuperPlans>>>
+    export type PostSuperPlansMutationBody = BodyType<CreatePlanRequest>
+    export type PostSuperPlansMutationError = ErrorType<BadRequestResponse | UnauthorizedResponse | ForbiddenResponse | ConflictResponse>
+
+    /**
+ * @summary Create a new SaaS plan
+ */
+export const usePostSuperPlans = <TError = ErrorType<BadRequestResponse | UnauthorizedResponse | ForbiddenResponse | ConflictResponse>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof postSuperPlans>>, TError,{data: BodyType<CreatePlanRequest>}, TContext>, }
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof postSuperPlans>>,
+        TError,
+        {data: BodyType<CreatePlanRequest>},
+        TContext
+      > => {
+      return useMutation(getPostSuperPlansMutationOptions(options), queryClient);
+    }
+
+// ─── POST /super/tenants/:tenantId/reset-owner-password ───────────────────────
+
+/**
+ * @summary Reset gym owner's password
+ */
+export const postSuperTenantsTenantIdResetOwnerPassword = (
+    tenantId: string,
+ signal?: AbortSignal
+) => {
+      return orvalMutator<ResetOwnerPasswordResponse>(
+      {url: `/super/tenants/${tenantId}/reset-owner-password`, method: 'POST',
+      signal
+    },
+      );
+    }
+
+export const getPostSuperTenantsTenantIdResetOwnerPasswordMutationOptions = <TError = ErrorType<UnauthorizedResponse | ForbiddenResponse | NotFoundResponse>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof postSuperTenantsTenantIdResetOwnerPassword>>, TError,{tenantId: string}, TContext>, }
+): UseMutationOptions<Awaited<ReturnType<typeof postSuperTenantsTenantIdResetOwnerPassword>>, TError,{tenantId: string}, TContext> => {
+const mutationKey = ['postSuperTenantsTenantIdResetOwnerPassword'];
+const {mutation: mutationOptions} = options ?? {};
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof postSuperTenantsTenantIdResetOwnerPassword>>, {tenantId: string}> = (props) => {
+          const {tenantId} = props ?? {};
+
+          return  postSuperTenantsTenantIdResetOwnerPassword(tenantId,)
+        }
+
+        return { mutationKey, mutationFn, ...mutationOptions}
+      }
+
+    export type PostSuperTenantsTenantIdResetOwnerPasswordMutationResult = NonNullable<Awaited<ReturnType<typeof postSuperTenantsTenantIdResetOwnerPassword>>>
+    export type PostSuperTenantsTenantIdResetOwnerPasswordMutationError = ErrorType<UnauthorizedResponse | ForbiddenResponse | NotFoundResponse>
+
+    /**
+ * @summary Reset gym owner's password
+ */
+export const usePostSuperTenantsTenantIdResetOwnerPassword = <TError = ErrorType<UnauthorizedResponse | ForbiddenResponse | NotFoundResponse>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof postSuperTenantsTenantIdResetOwnerPassword>>, TError,{tenantId: string}, TContext>, }
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof postSuperTenantsTenantIdResetOwnerPassword>>,
+        TError,
+        {tenantId: string},
+        TContext
+      > => {
+      return useMutation(getPostSuperTenantsTenantIdResetOwnerPasswordMutationOptions(options), queryClient);
+    }
+
+// ─── GET /super/payments/summary ─────────────────────────────────────────────
+
+export interface PaymentSummaryTenantRow {
+  tenantId: string;
+  businessName: string;
+  plan: string;
+  totalInvoices: number;
+  totalBilled: number;
+  totalCollected: number;
+  totalDue: number;
+  totalOverdue: number;
+  lastPaidAt: string | null;
+}
+
+export interface PaymentSummaryMonthlySeries {
+  month: string;
+  collected: number;
+  billed: number;
+}
+
+export interface PaymentSummaryData {
+  totalBilled: number;
+  totalCollected: number;
+  totalDue: number;
+  totalOverdue: number;
+  invoiceCounts: {
+    paid: number;
+    pending: number;
+    overdue: number;
+    void: number;
+    total: number;
+  };
+  tenants: PaymentSummaryTenantRow[];
+  monthlySeries: PaymentSummaryMonthlySeries[];
+  currency: string;
+}
+
+export interface PaymentSummaryResponse {
+  success: boolean;
+  data?: PaymentSummaryData;
+}
+
+export interface GetSuperPaymentsSummaryParams {
+  startDate?: string;
+  endDate?: string;
+  tenantId?: string;
+}
+
+export const getSuperPaymentsSummary = (
+    params?: GetSuperPaymentsSummaryParams,
+ signal?: AbortSignal
+) => {
+      return orvalMutator<PaymentSummaryResponse>(
+      {url: `/super/payments/summary`, method: 'GET',
+        params, signal
+    },
+      );
+    }
+
+export const getGetSuperPaymentsSummaryQueryKey = (params?: GetSuperPaymentsSummaryParams,) => {
+    return [
+    `/super/payments/summary`, ...(params ? [params] : [])
+    ] as const;
+    }
+
+export const getGetSuperPaymentsSummaryQueryOptions = <TData = Awaited<ReturnType<typeof getSuperPaymentsSummary>>, TError = ErrorType<UnauthorizedResponse | ForbiddenResponse>>(params?: GetSuperPaymentsSummaryParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getSuperPaymentsSummary>>, TError, TData>>, }
+) => {
+const {query: queryOptions} = options ?? {};
+  const queryKey =  queryOptions?.queryKey ?? getGetSuperPaymentsSummaryQueryKey(params);
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getSuperPaymentsSummary>>> = ({ signal }) => getSuperPaymentsSummary(params, signal);
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getSuperPaymentsSummary>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
+}
+
+export type GetSuperPaymentsSummaryQueryResult = NonNullable<Awaited<ReturnType<typeof getSuperPaymentsSummary>>>
+export type GetSuperPaymentsSummaryQueryError = ErrorType<UnauthorizedResponse | ForbiddenResponse>
+
+export function useGetSuperPaymentsSummary<TData = Awaited<ReturnType<typeof getSuperPaymentsSummary>>, TError = ErrorType<UnauthorizedResponse | ForbiddenResponse>>(
+  params?: GetSuperPaymentsSummaryParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getSuperPaymentsSummary>>, TError, TData>>, }
+ , queryClient?: QueryClient): UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+  const queryOptions = getGetSuperPaymentsSummaryQueryOptions(params, options)
+  const query = useQuery(queryOptions, queryClient) as UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+  return { ...query, queryKey: queryOptions.queryKey };
+}

@@ -15,49 +15,98 @@ import { useTableState } from '@/hooks/use-table-state';
 import { useConfirm } from '@/hooks/use-confirm';
 import { usePermission } from '@/hooks/use-permission';
 import { formatDate, formatCurrency } from '@/utils/format';
-import { useInvoices, useVoidInvoice } from './hooks/use-billing';
+import { useGetInvoices, usePostInvoicesInvoiceIdVoid, getGetInvoicesQueryKey } from '@/api/generated/invoices/invoices';
+import { useQueryClient } from '@tanstack/react-query';
+import { toast } from '@/hooks/use-toast';
 import InvoiceForm from './components/InvoiceForm';
-import type { Invoice, InvoiceStatus } from '@/types/billing.types';
+import type { InvoiceStatus } from '@/types/billing.types';
+
+// ─── Types ────────────────────────────────────────────────────────────────────
+
+interface PopulatedMember {
+  _id: string;
+  firstName: string;
+  lastName: string;
+  email?: string;
+  phone?: string;
+}
+
+// memberId may be a populated object (when fetched via listInvoices) or a plain string
+interface InvoiceRow {
+  _id: string;
+  invoiceNumber: string;
+  status: InvoiceStatus;
+  memberId: PopulatedMember | string;
+  branchId: { _id: string; name: string } | string;
+  total: number;
+  amountDue: number;
+  amountPaid: number;
+  currency: string;
+  dueDate?: string;
+  createdAt: string;
+}
+
+function memberName(row: InvoiceRow): string {
+  if (row.memberId && typeof row.memberId === 'object') {
+    return `${row.memberId.firstName} ${row.memberId.lastName}`;
+  }
+  return typeof row.memberId === 'string' ? `…${row.memberId.slice(-6).toUpperCase()}` : '—';
+}
 
 // ─── InvoicesPage ─────────────────────────────────────────────────────────────
 
 export default function InvoicesPage() {
   const navigate = useNavigate();
+  const qc = useQueryClient();
   const { can } = usePermission();
   const table = useTableState({ defaultLimit: 20 });
 
   const [statusFilter, setStatusFilter] = useState<InvoiceStatus | 'all'>('all');
   const [formOpen, setFormOpen] = useState(false);
-  const [voidingInvoice, setVoidingInvoice] = useState<Invoice | null>(null);
+  const [voidingId, setVoidingId] = useState<string | null>(null);
+  const [voidingNumber, setVoidingNumber] = useState<string>('');
 
   const { confirm, confirmProps } = useConfirm();
 
-  const voidMutation = useVoidInvoice(voidingInvoice?._id ?? '', {
-    onSuccess: () => setVoidingInvoice(null),
-  });
-
-  const query = {
+  // ── Fetch invoices ─────────────────────────────────────────────────────────
+  const { data, isLoading } = useGetInvoices({
     ...table.queryParams,
     ...(statusFilter !== 'all' ? { status: statusFilter } : {}),
-  };
+  });
 
-  const { data, isLoading } = useInvoices(query);
-  console.log("🚀 ~ InvoicesPage ~ data:", data)
+  // API returns { success, data: Invoice[], pagination }
+  const invoices = (data as unknown as { data?: InvoiceRow[] })?.data ?? [];
+  const pagination = (data as unknown as { pagination?: { page: number; limit: number; total: number; pages: number } })?.pagination;
 
-  function handleVoid(inv: Invoice) {
-    setVoidingInvoice(inv);
+  // ── Void invoice ───────────────────────────────────────────────────────────
+  const voidMutation = usePostInvoicesInvoiceIdVoid({
+    mutation: {
+      onSuccess: () => {
+        setVoidingId(null);
+        qc.invalidateQueries({ queryKey: getGetInvoicesQueryKey() });
+      },
+      onError: () => {
+        toast({ variant: 'destructive', title: 'Failed to void invoice' });
+      },
+    },
+  });
+
+  function handleVoid(row: InvoiceRow) {
+    setVoidingId(row._id);
+    setVoidingNumber(row.invoiceNumber);
     confirm(
       {
-        title: `Void ${inv.invoiceNumber}?`,
+        title: `Void ${row.invoiceNumber}?`,
         description: 'This will permanently void the invoice. This action cannot be undone.',
         variant: 'destructive',
         confirmLabel: 'Void Invoice',
       },
-      () => voidMutation.mutate({ reason: 'Voided by staff' }),
+      () => voidMutation.mutate({ invoiceId: row._id, data: { reason: 'Voided by staff' } }),
     );
   }
 
-  const columns: ColumnDef<Invoice>[] = [
+  // ── Columns ────────────────────────────────────────────────────────────────
+  const columns: ColumnDef<InvoiceRow>[] = [
     {
       key: 'invoiceNumber',
       header: 'Invoice',
@@ -65,8 +114,8 @@ export default function InvoicesPage() {
       cell: (row) => (
         <div>
           <p className="font-medium font-mono text-sm">{row.invoiceNumber}</p>
-          <p className="text-xs text-muted-foreground">
-            {row.memberId.firstName} {row.memberId.lastName}
+          <p className="text-xs text-muted-foreground truncate max-w-[160px]">
+            {memberName(row)}
           </p>
         </div>
       ),
@@ -97,11 +146,14 @@ export default function InvoicesPage() {
       header: 'Due Date',
       sortable: true,
       hideOnMobile: true,
-      cell: (row) => row.dueDate
-        ? <span className={row.status === 'overdue' ? 'text-destructive font-medium' : ''}>
+      cell: (row) =>
+        row.dueDate ? (
+          <span className={row.status === 'overdue' ? 'text-destructive font-medium' : ''}>
             {formatDate(row.dueDate)}
           </span>
-        : <span className="text-muted-foreground">—</span>,
+        ) : (
+          <span className="text-muted-foreground">—</span>
+        ),
     },
     {
       key: 'createdAt',
@@ -118,7 +170,8 @@ export default function InvoicesPage() {
         can('invoice.void') && ['issued', 'partially_paid', 'overdue'].includes(row.status) ? (
           <div className="flex justify-end">
             <Button
-              variant="ghost" size="sm"
+              variant="ghost"
+              size="sm"
               className="text-destructive hover:text-destructive"
               onClick={(e) => { e.stopPropagation(); handleVoid(row); }}
             >
@@ -154,7 +207,10 @@ export default function InvoicesPage() {
         />
         <Select
           value={statusFilter}
-          onValueChange={(v) => { setStatusFilter(v as InvoiceStatus | 'all'); table.setPage(1); }}
+          onValueChange={(v) => {
+            setStatusFilter(v as InvoiceStatus | 'all');
+            table.setPage(1);
+          }}
         >
           <SelectTrigger className="w-44">
             <SelectValue placeholder="All statuses" />
@@ -173,30 +229,36 @@ export default function InvoicesPage() {
       </div>
 
       {/* Table */}
-      {!isLoading && data?.data?.length === 0 ? (
+      {!isLoading && invoices.length === 0 ? (
         <EmptyState
           icon={<FileText className="h-12 w-12" />}
           title="No invoices found"
           description={
-            table.search ? 'Try adjusting your search or filters.' : 'Create your first invoice to get started.'
+            table.search
+              ? 'Try adjusting your search or filters.'
+              : 'Create your first invoice to get started.'
           }
-          action={can('invoice.create') ? { label: 'New Invoice', onClick: () => setFormOpen(true) } : undefined}
+          action={
+            can('invoice.create')
+              ? { label: 'New Invoice', onClick: () => setFormOpen(true) }
+              : undefined
+          }
         />
       ) : (
         <>
           <DataTable
             columns={columns}
-            data={data?.data ?? []}
+            data={invoices}
             keyExtractor={(r) => r._id}
             loading={isLoading}
             skeletonRows={10}
             sort={table.sort}
             onSortChange={table.setSort}
-            onRowClick={(row) => navigate(`/billing/${row._id}`)}
+            onRowClick={(row) => navigate(`/billing/invoices/${row._id}`)}
           />
-          {data?.pagination && (
+          {pagination && (
             <Pagination
-              meta={data.pagination}
+              meta={pagination}
               onPageChange={table.setPage}
               onLimitChange={table.setLimit}
             />

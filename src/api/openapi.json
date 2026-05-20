@@ -1,0 +1,639 @@
+{
+  "openapi": "3.0.3",
+  "info": {
+    "title": "SaaS Gym Management System API",
+    "version": "1.0.0",
+    "description": "REST API for the SaaS Gym Management System",
+    "contact": {
+      "name": "API Support",
+      "email": "support@gymplatform.com"
+    }
+  },
+  "servers": [
+    {
+      "url": "http://localhost:5000/api/v1",
+      "description": "Local Development"
+    }
+  ],
+  "components": {
+    "schemas": {
+      "ChangeMemberStatusRequest": {
+        "anyOf": [
+          {
+            "type": "object",
+            "properties": {
+              "status": {
+                "type": "string",
+                "enum": [
+                  "active"
+                ]
+              },
+              "reason": {
+                "type": "string",
+                "maxLength": 500
+              }
+            },
+            "required": [
+              "status"
+            ],
+            "additionalProperties": false
+          },
+          {
+            "type": "object",
+            "properties": {
+              "status": {
+                "type": "string",
+                "enum": [
+                  "suspended"
+                ]
+              },
+              "reason": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 500
+              }
+            },
+            "required": [
+              "status",
+              "reason"
+            ],
+            "additionalProperties": false
+          },
+          {
+            "type": "object",
+            "properties": {
+              "status": {
+                "type": "string",
+                "enum": [
+                  "frozen"
+                ]
+              },
+              "freezeEndDate": {
+                "type": "string",
+                "format": "date-time"
+              },
+              "reason": {
+                "type": "string",
+                "maxLength": 500
+              },
+              "notes": {
+                "type": "string",
+                "maxLength": 500
+              }
+            },
+            "required": [
+              "status",
+              "freezeEndDate"
+            ],
+            "additionalProperties": false
+          },
+          {
+            "type": "object",
+            "properties": {
+              "status": {
+                "type": "string",
+                "enum": [
+                  "inactive"
+                ]
+              },
+              "reason": {
+                "type": "string",
+                "maxLength": 500
+              }
+            },
+            "required": [
+              "status"
+            ],
+            "additionalProperties": false
+          }
+        ]
+      },
+      "CreateMemberRequest": {
+        "type": "object",
+        "properties": {
+          "branchId": {
+            "type": "string",
+            "minLength": 1
+          },
+          "firstName": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 50
+          },
+          "lastName": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 50
+          },
+          "email": {
+            "type": "string",
+            "format": "email"
+          },
+          "phone": {
+            "type": "string",
+            "minLength": 5,
+            "maxLength": 30
+          },
+          "dateOfBirth": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "gender": {
+            "type": "string",
+            "enum": [
+              "male",
+              "female",
+              "other",
+              "prefer_not_to_say"
+            ]
+          },
+          "govId": {
+            "type": "string",
+            "maxLength": 50
+          },
+          "govIdType": {
+            "type": "string",
+            "enum": [
+              "cnic",
+              "passport",
+              "driving_license",
+              "other"
+            ]
+          },
+          "emergencyContact": {
+            "type": "object",
+            "properties": {
+              "name": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 100
+              },
+              "relationship": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 50
+              },
+              "phone": {
+                "type": "string",
+                "minLength": 5,
+                "maxLength": 30
+              }
+            },
+            "required": [
+              "name",
+              "relationship",
+              "phone"
+            ],
+            "additionalProperties": false
+          },
+          "healthQuestionnaire": {
+            "type": "object",
+            "properties": {
+              "hasCardiacCondition": {
+                "type": "boolean"
+              },
+              "hasChronicIllness": {
+                "type": "boolean"
+              },
+              "hasPhysicalLimitations": {
+                "type": "boolean"
+              },
+              "notes": {
+                "type": "string",
+                "maxLength": 500
+              }
+            },
+            "required": [
+              "hasCardiacCondition",
+              "hasChronicIllness",
+              "hasPhysicalLimitations"
+            ],
+            "additionalProperties": false
+          },
+          "consentMarketing": {
+            "type": "boolean",
+            "default": false
+          },
+          "consentDataProcessing": {
+            "type": "boolean",
+            "default": false
+          },
+          "waiverAccepted": {
+            "type": "boolean"
+          },
+          "waiverDocumentVersion": {
+            "type": "string",
+            "default": "1.0"
+          },
+          "notes": {
+            "type": "string",
+            "maxLength": 1000
+          }
+        },
+        "required": [
+          "branchId",
+          "firstName",
+          "lastName",
+          "email",
+          "phone"
+        ],
+        "additionalProperties": false
+      },
+      "UpdateMemberRequest": {
+        "type": "object",
+        "properties": {
+          "firstName": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 50
+          },
+          "lastName": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 50
+          },
+          "phone": {
+            "type": "string",
+            "minLength": 5,
+            "maxLength": 30
+          },
+          "dateOfBirth": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "gender": {
+            "type": "string",
+            "enum": [
+              "male",
+              "female",
+              "other",
+              "prefer_not_to_say"
+            ]
+          },
+          "profilePhotoUrl": {
+            "type": "string",
+            "format": "uri"
+          },
+          "emergencyContact": {
+            "type": "object",
+            "properties": {
+              "name": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 100
+              },
+              "relationship": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 50
+              },
+              "phone": {
+                "type": "string",
+                "minLength": 5,
+                "maxLength": 30
+              }
+            },
+            "required": [
+              "name",
+              "relationship",
+              "phone"
+            ],
+            "additionalProperties": false
+          },
+          "healthQuestionnaire": {
+            "type": "object",
+            "properties": {
+              "hasCardiacCondition": {
+                "type": "boolean"
+              },
+              "hasChronicIllness": {
+                "type": "boolean"
+              },
+              "hasPhysicalLimitations": {
+                "type": "boolean"
+              },
+              "notes": {
+                "type": "string",
+                "maxLength": 500
+              }
+            },
+            "required": [
+              "hasCardiacCondition",
+              "hasChronicIllness",
+              "hasPhysicalLimitations"
+            ],
+            "additionalProperties": false
+          },
+          "consentMarketing": {
+            "type": "boolean"
+          },
+          "notes": {
+            "type": "string",
+            "maxLength": 1000
+          }
+        },
+        "additionalProperties": false
+      },
+      "CreateSubscriptionRequest": {
+        "anyOf": [
+          {
+            "type": "object",
+            "properties": {
+              "pricingType": {
+                "type": "string",
+                "enum": [
+                  "plan"
+                ]
+              },
+              "planId": {
+                "type": "string",
+                "minLength": 1
+              },
+              "branchId": {
+                "type": "string",
+                "minLength": 1
+              },
+              "discountAmount": {
+                "type": "number",
+                "minimum": 0,
+                "default": 0
+              },
+              "startDate": {
+                "type": "string",
+                "format": "date-time"
+              },
+              "addOns": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                }
+              },
+              "notes": {
+                "type": "string",
+                "maxLength": 500
+              },
+              "autoCreateInvoice": {
+                "type": "boolean",
+                "default": true
+              }
+            },
+            "required": [
+              "pricingType",
+              "planId",
+              "branchId"
+            ],
+            "additionalProperties": false
+          },
+          {
+            "type": "object",
+            "properties": {
+              "pricingType": {
+                "type": "string",
+                "enum": [
+                  "custom"
+                ]
+              },
+              "branchId": {
+                "type": "string",
+                "minLength": 1
+              },
+              "customLabel": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 100
+              },
+              "customPrice": {
+                "type": "number",
+                "minimum": 0
+              },
+              "customBillingFrequency": {
+                "type": "string",
+                "enum": [
+                  "daily",
+                  "weekly",
+                  "monthly",
+                  "quarterly",
+                  "semi_annual",
+                  "annual",
+                  "one_time"
+                ]
+              },
+              "currency": {
+                "type": "string",
+                "minLength": 3,
+                "maxLength": 3,
+                "default": "PKR"
+              },
+              "discountAmount": {
+                "type": "number",
+                "minimum": 0,
+                "default": 0
+              },
+              "durationDays": {
+                "type": "integer",
+                "minimum": 1
+              },
+              "startDate": {
+                "type": "string",
+                "format": "date-time"
+              },
+              "notes": {
+                "type": "string",
+                "maxLength": 500
+              },
+              "autoCreateInvoice": {
+                "type": "boolean",
+                "default": true
+              }
+            },
+            "required": [
+              "pricingType",
+              "branchId",
+              "customLabel",
+              "customPrice",
+              "customBillingFrequency"
+            ],
+            "additionalProperties": false
+          }
+        ]
+      },
+      "FreezeSubscriptionRequest": {
+        "type": "object",
+        "properties": {
+          "resumeAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "reason": {
+            "type": "string",
+            "maxLength": 300
+          }
+        },
+        "required": [
+          "resumeAt"
+        ],
+        "additionalProperties": false
+      },
+      "CreateMeasurementRequest": {
+        "type": "object",
+        "properties": {
+          "date": {
+            "type": "string",
+            "format": "date-time",
+            "default": "2026-05-10T22:06:23.363Z"
+          },
+          "weightKg": {
+            "type": "number",
+            "minimum": 0,
+            "maximum": 500
+          },
+          "heightCm": {
+            "type": "number",
+            "minimum": 0,
+            "maximum": 300
+          },
+          "bodyFatPercent": {
+            "type": "number",
+            "minimum": 0,
+            "maximum": 100
+          },
+          "measurements": {
+            "type": "object",
+            "properties": {
+              "chest": {
+                "type": "number",
+                "minimum": 0
+              },
+              "waist": {
+                "type": "number",
+                "minimum": 0
+              },
+              "hips": {
+                "type": "number",
+                "minimum": 0
+              },
+              "thigh": {
+                "type": "number",
+                "minimum": 0
+              },
+              "bicep": {
+                "type": "number",
+                "minimum": 0
+              },
+              "neck": {
+                "type": "number",
+                "minimum": 0
+              }
+            },
+            "additionalProperties": false
+          },
+          "notes": {
+            "type": "string",
+            "maxLength": 500
+          }
+        },
+        "additionalProperties": false
+      },
+      "CreateWorkoutLogRequest": {
+        "type": "object",
+        "properties": {
+          "date": {
+            "type": "string",
+            "format": "date-time",
+            "default": "2026-05-10T22:06:23.363Z"
+          },
+          "durationMinutes": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 600
+          },
+          "exercises": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "name": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 100
+                },
+                "category": {
+                  "type": "string",
+                  "maxLength": 50
+                },
+                "sets": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "properties": {
+                      "reps": {
+                        "type": "integer",
+                        "minimum": 0
+                      },
+                      "weightKg": {
+                        "type": "number",
+                        "minimum": 0
+                      },
+                      "durationSeconds": {
+                        "type": "integer",
+                        "minimum": 0
+                      },
+                      "distanceMeters": {
+                        "type": "number",
+                        "minimum": 0
+                      },
+                      "restSeconds": {
+                        "type": "integer",
+                        "minimum": 0
+                      },
+                      "isPersonalRecord": {
+                        "type": "boolean"
+                      }
+                    },
+                    "additionalProperties": false
+                  },
+                  "maxItems": 50,
+                  "default": []
+                },
+                "notes": {
+                  "type": "string",
+                  "maxLength": 300
+                }
+              },
+              "required": [
+                "name"
+              ],
+              "additionalProperties": false
+            },
+            "maxItems": 30
+          },
+          "notes": {
+            "type": "string",
+            "maxLength": 1000
+          },
+          "mood": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 5
+          }
+        },
+        "required": [
+          "exercises"
+        ],
+        "additionalProperties": false
+      }
+    },
+    "securitySchemes": {
+      "bearerAuth": {
+        "type": "http",
+        "scheme": "bearer",
+        "bearerFormat": "JWT"
+      }
+    }
+  },
+  "security": [
+    {
+      "bearerAuth": []
+    }
+  ]
+}

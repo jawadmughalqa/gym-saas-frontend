@@ -5,5 +5,12 @@
  * REST API for the SaaS Gym Management System. Built with Node.js, Express, MongoDB, and TypeScript.
  * OpenAPI spec version: 1.0.0
  */
+import type { SuccessResponseDataData } from './successResponseDataData';
 
-export type SuccessResponseData = { [key: string]: unknown };
+/**
+ * Generic success wrapper when data shape is unknown
+ */
+export interface SuccessResponseData {
+  success?: boolean;
+  data?: SuccessResponseDataData;
+}

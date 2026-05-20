@@ -27,7 +27,7 @@ import {
 } from '@/components/ui/select';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Badge } from '@/components/ui/badge';
-import { KeyRound } from 'lucide-react';
+import { KeyRound, Copy, Check, Eye, EyeOff } from 'lucide-react';
 import { useState } from 'react';
 import { toast } from '@/hooks/use-toast';
 import { getErrorMessage } from '@/utils/error';
@@ -37,15 +37,15 @@ import type { CreateTenantResponseData } from '@/api/generated/schemas/createTen
 // ─── Schema ───────────────────────────────────────────────────────────────────
 
 const schema = z.object({
-  businessName: z.string().min(2, 'At least 2 characters').max(100),
-  contactEmail: z.string().email('Invalid email'),
-  contactPhone: z.string().optional(),
-  country: z.string().min(1, 'Country is required'),
-  plan: z.enum(['starter', 'pro', 'enterprise']).optional(),
-  ownerFirstName: z.string().min(1, 'Required'),
-  ownerLastName: z.string().min(1, 'Required'),
-  ownerEmail: z.string().email('Invalid email'),
-  ownerPassword: z
+  businessName:     z.string().min(2, 'At least 2 characters').max(100),
+  contactEmail:     z.string().email('Invalid email'),
+  contactPhone:     z.string().optional(),
+  country:          z.string().min(1, 'Country is required'),
+  plan:             z.enum(['starter', 'pro', 'enterprise']).optional(),
+  ownerFirstName:   z.string().min(1, 'Required'),
+  ownerLastName:    z.string().min(1, 'Required'),
+  ownerEmail:       z.string().email('Invalid email'),
+  ownerPassword:    z
     .string()
     .min(8, 'Min 8 characters')
     .regex(/[A-Z]/, 'Must contain uppercase')
@@ -55,6 +55,7 @@ const schema = z.object({
     .optional()
     .transform((v) => (v === '' || v === undefined ? undefined : Number(v)))
     .pipe(z.number().min(0).max(90).optional()),
+  firstInvoiceDate: z.string().optional(), // ISO date string from <input type="date">
 });
 
 type FormValues = z.infer<typeof schema>;
@@ -65,24 +66,83 @@ interface CreateTenantFormProps {
   onSuccess?: () => void;
 }
 
+// ─── CopyField — shows value + copy button ────────────────────────────────────
+
+function CopyField({
+  label,
+  value,
+  secret = false,
+}: {
+  label: string;
+  value: string;
+  secret?: boolean;
+}) {
+  const [copied, setCopied] = useState(false);
+  const [revealed, setRevealed] = useState(false);
+
+  function handleCopy() {
+    void navigator.clipboard.writeText(value).then(() => {
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    });
+  }
+
+  const displayed = secret && !revealed ? '••••••••••••' : value;
+
+  return (
+    <div>
+      <p className="text-xs text-muted-foreground mb-1">{label}</p>
+      <div className="flex items-center gap-2 rounded bg-muted px-3 py-2 font-mono text-sm">
+        {secret && (
+          <button
+            type="button"
+            onClick={() => setRevealed((r) => !r)}
+            className="text-muted-foreground hover:text-foreground shrink-0"
+          >
+            {revealed ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+          </button>
+        )}
+        {!secret && <KeyRound className="h-4 w-4 text-muted-foreground shrink-0" />}
+        <span className="flex-1 select-all truncate">{displayed}</span>
+        <button
+          type="button"
+          onClick={handleCopy}
+          className="text-muted-foreground hover:text-foreground shrink-0"
+        >
+          {copied ? (
+            <Check className="h-4 w-4 text-green-500" />
+          ) : (
+            <Copy className="h-4 w-4" />
+          )}
+        </button>
+      </div>
+    </div>
+  );
+}
+
 // ─── CreateTenantForm ─────────────────────────────────────────────────────────
 
 export default function CreateTenantForm({ open, onOpenChange, onSuccess }: CreateTenantFormProps) {
   const [created, setCreated] = useState<CreateTenantResponseData | null>(null);
+  const [showPassword, setShowPassword] = useState(false);
+
+  // Default firstInvoiceDate to today
+  const todayStr = new Date().toISOString().split('T')[0]!;
 
   const form = useForm<FormValues>({
     resolver: zodResolver(schema),
     defaultValues: {
-      businessName: '',
-      contactEmail: '',
-      contactPhone: '',
-      country: '',
-      plan: 'starter',
-      ownerFirstName: '',
-      ownerLastName: '',
-      ownerEmail: '',
-      ownerPassword: '',
-      trialDays: undefined,
+      businessName:     '',
+      contactEmail:     '',
+      contactPhone:     '',
+      country:          'Pakistan',
+      plan:             'starter',
+      ownerFirstName:   '',
+      ownerLastName:    '',
+      ownerEmail:       '',
+      ownerPassword:    '',
+      trialDays:        undefined,
+      firstInvoiceDate: todayStr,
     },
   });
 
@@ -98,31 +158,34 @@ export default function CreateTenantForm({ open, onOpenChange, onSuccess }: Crea
   });
 
   function onSubmit(values: FormValues) {
-    console.log("🚀 ~ onSubmit ~ values:", values)
     create.mutate({
       data: {
-        businessName: values.businessName,
-        contactEmail: values.contactEmail,
+        businessName:  values.businessName,
+        contactEmail:  values.contactEmail,
         ...(values.contactPhone && { contactPhone: values.contactPhone }),
-        country: values.country,
+        country:       values.country,
         ...(values.plan && { plan: values.plan }),
         ownerFirstName: values.ownerFirstName,
-        ownerLastName: values.ownerLastName,
-        ownerEmail: values.ownerEmail,
-        ownerPassword: values.ownerPassword,
+        ownerLastName:  values.ownerLastName,
+        ownerEmail:     values.ownerEmail,
+        ownerPassword:  values.ownerPassword,
         ...(values.trialDays !== undefined && { trialDays: values.trialDays }),
+        ...(values.firstInvoiceDate && { firstInvoiceDate: values.firstInvoiceDate }),
       },
     });
   }
 
   function handleClose(v: boolean) {
-    if (!v) setCreated(null);
+    if (!v) {
+      setCreated(null);
+      setShowPassword(false);
+    }
     onOpenChange(v);
   }
 
   return (
     <Sheet open={open} onOpenChange={handleClose}>
-      <SheetContent className="w-full sm:max-w-lg overflow-y-auto">
+      <SheetContent className="w-full px-4 sm:max-w-lg overflow-y-auto">
         <SheetHeader className="mb-6">
           <SheetTitle>Provision New Tenant</SheetTitle>
           <SheetDescription>
@@ -130,12 +193,12 @@ export default function CreateTenantForm({ open, onOpenChange, onSuccess }: Crea
           </SheetDescription>
         </SheetHeader>
 
-        {/* ── Success state — show temp password ── */}
+        {/* ── Success state — show credentials ── */}
         {created ? (
           <div className="space-y-4">
             <Alert className="border-green-500 bg-green-50 dark:bg-green-950">
               <AlertDescription className="text-green-700 dark:text-green-300 font-medium">
-                Tenant provisioned successfully!
+                ✓ Tenant provisioned successfully!
               </AlertDescription>
             </Alert>
 
@@ -144,24 +207,28 @@ export default function CreateTenantForm({ open, onOpenChange, onSuccess }: Crea
                 <p className="text-xs text-muted-foreground">Business</p>
                 <p className="font-medium">{created.tenant?.businessName}</p>
               </div>
-              <div>
-                <p className="text-xs text-muted-foreground">Owner Email</p>
-                <p className="font-medium">{created.ownerEmail}</p>
-              </div>
+
+              <CopyField label="Owner Email" value={created.ownerEmail ?? ''} />
+
               {created.tempPassword && (
-                <div>
-                  <p className="text-xs text-muted-foreground mb-1">
-                    Temporary Password{' '}
+                <>
+                  <div className="flex items-center gap-2">
+                    <p className="text-xs text-muted-foreground">Temporary Password</p>
                     <Badge variant="destructive" className="text-[10px] px-1.5 py-0">
                       One-time — copy now
                     </Badge>
-                  </p>
-                  <div className="flex items-center gap-2 rounded bg-muted px-3 py-2 font-mono text-sm">
-                    <KeyRound className="h-4 w-4 text-muted-foreground shrink-0" />
-                    <span className="select-all">{created.tempPassword}</span>
                   </div>
-                </div>
+                  <CopyField
+                    label=""
+                    value={created.tempPassword}
+                    secret
+                  />
+                </>
               )}
+
+              <p className="text-xs text-muted-foreground pt-1">
+                These credentials have also been sent to the owner's email address.
+              </p>
             </div>
 
             <Button className="w-full" onClick={() => handleClose(false)}>
@@ -173,7 +240,7 @@ export default function CreateTenantForm({ open, onOpenChange, onSuccess }: Crea
           <Form {...form}>
             <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-5">
 
-              {/* Business info */}
+              {/* Organisation */}
               <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
                 Organisation
               </p>
@@ -184,7 +251,7 @@ export default function CreateTenantForm({ open, onOpenChange, onSuccess }: Crea
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>Business Name *</FormLabel>
-                    <FormControl><Input placeholder="Apex Fitness Ltd" {...field} /></FormControl>
+                    <FormControl><Input placeholder="Apex Fitness" {...field} /></FormControl>
                     <FormMessage />
                   </FormItem>
                 )}
@@ -208,7 +275,7 @@ export default function CreateTenantForm({ open, onOpenChange, onSuccess }: Crea
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel>Phone</FormLabel>
-                      <FormControl><Input placeholder="+44..." {...field} /></FormControl>
+                      <FormControl><Input placeholder="+92..." {...field} /></FormControl>
                       <FormMessage />
                     </FormItem>
                   )}
@@ -222,7 +289,7 @@ export default function CreateTenantForm({ open, onOpenChange, onSuccess }: Crea
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel>Country *</FormLabel>
-                      <FormControl><Input placeholder="UK" {...field} /></FormControl>
+                      <FormControl><Input placeholder="Pakistan" {...field} /></FormControl>
                       <FormMessage />
                     </FormItem>
                   )}
@@ -249,30 +316,54 @@ export default function CreateTenantForm({ open, onOpenChange, onSuccess }: Crea
                 />
               </div>
 
-              <FormField
-                control={form.control}
-                name="trialDays"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Trial Period (days)</FormLabel>
-                    <FormControl>
-                      <Input
-                        type="number"
-                        min={0}
-                        max={90}
-                        placeholder="0 = no trial"
-                        {...field}
-                        value={field.value ?? ''}
-                        onChange={(e) => field.onChange(e.target.value)}
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
+              {/* Billing */}
+              <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground pt-1">
+                Billing
+              </p>
 
-              {/* Owner account */}
-              <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground pt-2">
+              <div className="grid grid-cols-2 gap-3">
+                <FormField
+                  control={form.control}
+                  name="firstInvoiceDate"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>First Invoice Date *</FormLabel>
+                      <FormControl>
+                        <Input
+                          type="date"
+                          {...field}
+                          value={field.value ?? todayStr}
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
+                  name="trialDays"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Trial Days</FormLabel>
+                      <FormControl>
+                        <Input
+                          type="number"
+                          min={0}
+                          max={90}
+                          placeholder="0 = no trial"
+                          {...field}
+                          value={field.value ?? ''}
+                          onChange={(e) => field.onChange(e.target.value)}
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
+
+              {/* Owner Account */}
+              <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground pt-1">
                 Owner Account
               </p>
 
@@ -319,7 +410,23 @@ export default function CreateTenantForm({ open, onOpenChange, onSuccess }: Crea
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>Temporary Password *</FormLabel>
-                    <FormControl><Input type="password" placeholder="Min 8 chars, 1 uppercase, 1 number" {...field} /></FormControl>
+                    <div className="relative">
+                      <FormControl>
+                        <Input
+                          type={showPassword ? 'text' : 'password'}
+                          placeholder="Min 8 chars, 1 uppercase, 1 number"
+                          className="pr-10"
+                          {...field}
+                        />
+                      </FormControl>
+                      <button
+                        type="button"
+                        onClick={() => setShowPassword((s) => !s)}
+                        className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                      >
+                        {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                      </button>
+                    </div>
                     <FormMessage />
                   </FormItem>
                 )}

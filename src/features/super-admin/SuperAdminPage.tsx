@@ -7,6 +7,7 @@ import {
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -38,6 +39,7 @@ import type { Tenant } from '@/api/generated/schemas/tenant';
 import type { GetSuperTenantsStatus } from '@/api/generated/schemas/getSuperTenantsStatus';
 import type { GetSuperTenantsPlan } from '@/api/generated/schemas/getSuperTenantsPlan';
 import CreateTenantForm from './components/CreateTenantForm';
+import SaasPaymentsTab from './components/SaasPaymentsTab';
 
 // ─── Status badge ─────────────────────────────────────────────────────────────
 
@@ -241,98 +243,121 @@ export default function SuperAdminPage() {
         </div>
       )}
 
-      {/* Plan breakdown */}
-      {dash?.planBreakdown && dash.planBreakdown.length > 0 && (
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">Plan Breakdown</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="flex items-center gap-8">
-              {dash.planBreakdown.map((p) => (
-                <MiniStat
-                  key={p._id}
-                  label={p._id ?? ''}
-                  value={p.count}
-                  className={
-                    p._id === 'enterprise' ? 'text-amber-600' :
-                    p._id === 'pro' ? 'text-purple-600' : 'text-slate-600'
-                  }
-                />
-              ))}
-            </div>
-          </CardContent>
-        </Card>
-      )}
+      {/* Tabs: Tenants | Payments */}
+      <Tabs defaultValue="tenants">
+        <TabsList className="w-full sm:w-auto">
+          <TabsTrigger value="tenants" className="flex items-center gap-1.5">
+            <Building2 className="h-3.5 w-3.5" />
+            Tenants
+          </TabsTrigger>
+          <TabsTrigger value="payments" className="flex items-center gap-1.5">
+            <CreditCard className="h-3.5 w-3.5" />
+            Payments
+          </TabsTrigger>
+        </TabsList>
 
-      {/* Filters */}
-      <div className="flex flex-wrap items-center gap-3">
-        <SearchInput
-          value={search}
-          onChange={(v) => { setSearch(v); setPage(1); }}
-          placeholder="Search tenants…"
-          className="w-64"
-        />
-        <Select
-          value={statusFilter}
-          onValueChange={(v) => { setStatusFilter(v as GetSuperTenantsStatus | 'all'); setPage(1); }}
-        >
-          <SelectTrigger className="w-36 h-9">
-            <SelectValue placeholder="Status" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">All statuses</SelectItem>
-            <SelectItem value="active">Active</SelectItem>
-            <SelectItem value="trial">Trial</SelectItem>
-            <SelectItem value="suspended">Suspended</SelectItem>
-            <SelectItem value="terminated">Terminated</SelectItem>
-          </SelectContent>
-        </Select>
-        <Select
-          value={planFilter}
-          onValueChange={(v) => { setPlanFilter(v as GetSuperTenantsPlan | 'all'); setPage(1); }}
-        >
-          <SelectTrigger className="w-36 h-9">
-            <SelectValue placeholder="Plan" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">All plans</SelectItem>
-            <SelectItem value="starter">Starter</SelectItem>
-            <SelectItem value="pro">Pro</SelectItem>
-            <SelectItem value="enterprise">Enterprise</SelectItem>
-          </SelectContent>
-        </Select>
-      </div>
+        {/* ── Tenants tab ── */}
+        <TabsContent value="tenants" className="space-y-5 mt-4">
 
-      {/* Table */}
-      {!isLoading && tenants.length === 0 ? (
-        <EmptyState
-          icon={<Building2 className="h-12 w-12" />}
-          title="No tenants found"
-          description={
-            debouncedSearch || statusFilter !== 'all' || planFilter !== 'all'
-              ? 'Try adjusting your search or filters.'
-              : 'No tenants have been provisioned yet.'
-          }
-          action={
-            !debouncedSearch && statusFilter === 'all' && planFilter === 'all'
-              ? { label: 'New Tenant', onClick: () => setCreateOpen(true) }
-              : undefined
-          }
-        />
-      ) : (
-        <DataTable
-          columns={columns}
-          data={tenants}
-          keyExtractor={(row) => row._id ?? ''}
-          loading={isLoading}
-          onRowClick={(row) => navigate(`/super-admin/tenants/${row._id}`)}
-        />
-      )}
+          {/* Plan breakdown */}
+          {dash?.planBreakdown && dash.planBreakdown.length > 0 && (
+            <Card>
+              <CardHeader className="pb-2">
+                <CardTitle className="text-sm font-medium text-muted-foreground">Plan Breakdown</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="flex items-center gap-8">
+                  {dash.planBreakdown.map((p) => (
+                    <MiniStat
+                      key={p._id}
+                      label={p._id ?? ''}
+                      value={p.count}
+                      className={
+                        p._id === 'enterprise' ? 'text-amber-600' :
+                        p._id === 'pro' ? 'text-purple-600' : 'text-slate-600'
+                      }
+                    />
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+          )}
 
-      {pagination && tenants.length > 0 && (
-        <Pagination meta={pagination} onPageChange={setPage} />
-      )}
+          {/* Filters */}
+          <div className="flex flex-wrap items-center gap-3">
+            <SearchInput
+              value={search}
+              onChange={(v) => { setSearch(v); setPage(1); }}
+              placeholder="Search tenants…"
+              className="w-64"
+            />
+            <Select
+              value={statusFilter}
+              onValueChange={(v) => { setStatusFilter(v as GetSuperTenantsStatus | 'all'); setPage(1); }}
+            >
+              <SelectTrigger className="w-36 h-9">
+                <SelectValue placeholder="Status" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All statuses</SelectItem>
+                <SelectItem value="active">Active</SelectItem>
+                <SelectItem value="trial">Trial</SelectItem>
+                <SelectItem value="suspended">Suspended</SelectItem>
+                <SelectItem value="terminated">Terminated</SelectItem>
+              </SelectContent>
+            </Select>
+            <Select
+              value={planFilter}
+              onValueChange={(v) => { setPlanFilter(v as GetSuperTenantsPlan | 'all'); setPage(1); }}
+            >
+              <SelectTrigger className="w-36 h-9">
+                <SelectValue placeholder="Plan" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All plans</SelectItem>
+                <SelectItem value="starter">Starter</SelectItem>
+                <SelectItem value="pro">Pro</SelectItem>
+                <SelectItem value="enterprise">Enterprise</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+
+          {/* Table */}
+          {!isLoading && tenants.length === 0 ? (
+            <EmptyState
+              icon={<Building2 className="h-12 w-12" />}
+              title="No tenants found"
+              description={
+                debouncedSearch || statusFilter !== 'all' || planFilter !== 'all'
+                  ? 'Try adjusting your search or filters.'
+                  : 'No tenants have been provisioned yet.'
+              }
+              action={
+                !debouncedSearch && statusFilter === 'all' && planFilter === 'all'
+                  ? { label: 'New Tenant', onClick: () => setCreateOpen(true) }
+                  : undefined
+              }
+            />
+          ) : (
+            <DataTable
+              columns={columns}
+              data={tenants}
+              keyExtractor={(row) => row._id ?? ''}
+              loading={isLoading}
+              onRowClick={(row) => navigate(`/super-admin/tenants/${row._id}`)}
+            />
+          )}
+
+          {pagination && tenants.length > 0 && (
+            <Pagination meta={pagination} onPageChange={setPage} />
+          )}
+        </TabsContent>
+
+        {/* ── Payments tab ── */}
+        <TabsContent value="payments">
+          <SaasPaymentsTab />
+        </TabsContent>
+      </Tabs>
 
       <CreateTenantForm
         open={createOpen}

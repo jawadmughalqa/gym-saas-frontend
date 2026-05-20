@@ -5,11 +5,11 @@
  * REST API for the SaaS Gym Management System. Built with Node.js, Express, MongoDB, and TypeScript.
  * OpenAPI spec version: 1.0.0
  */
+import type { Invoice } from './invoice';
 import type { PaginationMeta } from './paginationMeta';
-import type { SaasInvoice } from './saasInvoice';
 
 export interface InvoiceListResponse {
   success?: boolean;
-  data?: SaasInvoice[];
+  data?: Invoice[];
   pagination?: PaginationMeta;
 }

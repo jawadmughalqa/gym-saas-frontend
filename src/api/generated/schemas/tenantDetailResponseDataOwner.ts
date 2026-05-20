@@ -15,4 +15,6 @@ export type TenantDetailResponseDataOwner = {
   email?: string;
   /** @nullable */
   lastLoginAt?: string | null;
+  status?: 'active' | 'suspended' | 'inactive';
+  forcePasswordChange?: boolean;
 } | null;

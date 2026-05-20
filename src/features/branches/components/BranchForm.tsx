@@ -162,7 +162,7 @@ export default function BranchForm({ open, onOpenChange, branch }: BranchFormPro
 
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
-      <SheetContent className="w-full sm:max-w-lg overflow-y-auto">
+      <SheetContent className="w-full px-4 sm:max-w-lg overflow-y-auto">
         <SheetHeader className="mb-6">
           <SheetTitle>{isEdit ? 'Edit Branch' : 'New Branch'}</SheetTitle>
           <SheetDescription>
@@ -228,7 +228,7 @@ export default function BranchForm({ open, onOpenChange, branch }: BranchFormPro
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel>City *</FormLabel>
-                      <FormControl><Input placeholder="London" {...field} /></FormControl>
+                      <FormControl><Input placeholder="Pakistan" {...field} /></FormControl>
                       <FormMessage />
                     </FormItem>
                   )}
@@ -239,7 +239,7 @@ export default function BranchForm({ open, onOpenChange, branch }: BranchFormPro
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel>State / Province</FormLabel>
-                      <FormControl><Input placeholder="England" {...field} /></FormControl>
+                      <FormControl><Input placeholder="Punjab" {...field} /></FormControl>
                       <FormMessage />
                     </FormItem>
                   )}
@@ -264,7 +264,7 @@ export default function BranchForm({ open, onOpenChange, branch }: BranchFormPro
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel>Country *</FormLabel>
-                      <FormControl><Input placeholder="UK" {...field} /></FormControl>
+                      <FormControl><Input placeholder="PK" {...field} /></FormControl>
                       <FormMessage />
                     </FormItem>
                   )}
@@ -280,7 +280,7 @@ export default function BranchForm({ open, onOpenChange, branch }: BranchFormPro
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>Phone</FormLabel>
-                    <FormControl><Input placeholder="+44 20 0000 0000" {...field} /></FormControl>
+                    <FormControl><Input placeholder="+92 322 XXXXXXX" {...field} /></FormControl>
                     <FormMessage />
                   </FormItem>
                 )}
@@ -299,7 +299,7 @@ export default function BranchForm({ open, onOpenChange, branch }: BranchFormPro
             </div>
 
             {/* Timezone */}
-            <FormField
+            {/* <FormField
               control={form.control}
               name="timezone"
               render={({ field }) => (
@@ -309,7 +309,7 @@ export default function BranchForm({ open, onOpenChange, branch }: BranchFormPro
                   <FormMessage />
                 </FormItem>
               )}
-            />
+            /> */}
 
             {/* Headquarters toggle */}
             <FormField

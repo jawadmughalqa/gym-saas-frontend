@@ -7,5 +7,8 @@
  */
 
 export type GetMembershipPlansParams = {
+/**
+ * Include archived plans in the response
+ */
 includeArchived?: boolean;
 };

@@ -1,160 +1,130 @@
-import { useState } from "react";
-import { useNavigate } from "react-router-dom";
-import { UserPlus, Users } from "lucide-react";
-import { Button } from "@/components/ui/button";
+import { useState }        from 'react';
+import { UserPlus }        from 'lucide-react';
+import { useQueryClient }  from '@tanstack/react-query';
+import { Button }          from '@/components/ui/button';
+import PageHeader          from '@/components/layout/PageHeader';
+import PageShell           from '@/components/layout/PageShell';
+import ConfirmDialog       from '@/components/shared/ConfirmDialog';
+import { useTableState }   from '@/hooks/use-table-state';
+import { useConfirm }      from '@/hooks/use-confirm';
+import { usePermission }   from '@/hooks/use-permission';
+import { useToast }        from '@/hooks/use-toast';
+import { useArchiveMember } from './hooks/use-members';
+import { MembersFilters }  from './components/MembersFilters';
+import { MembersTable }    from './components/MembersTable';
+import MemberForm          from './components/MemberForm';
+import { MemberStatusDialog } from './components/MemberStatusDialog';
+
+import type { Member, MemberStatus } from '@/types/member.types';
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import PageHeader from "@/components/layout/PageHeader";
-import PageShell from "@/components/layout/PageShell";
-import DataTable, { type ColumnDef } from "@/components/shared/DataTable";
-import SearchInput from "@/components/shared/SearchInput";
-import Pagination from "@/components/shared/Pagination";
-import { MembershipStatusBadge } from "@/components/shared/StatusBadge";
-import EmptyState from "@/components/shared/EmptyState";
-import ConfirmDialog from "@/components/shared/ConfirmDialog";
-import { useTableState } from "@/hooks/use-table-state";
-import { useConfirm } from "@/hooks/use-confirm";
-import { usePermission } from "@/hooks/use-permission";
-import { formatDate } from "@/utils/format";
-import { useMembers, useArchiveMember } from "./hooks/use-members";
-import MemberForm from "./components/MemberForm";
-import type { Member, MemberStatus } from "@/types/member.types";
-import { useGetMembers } from "@/api/generated/members/members";
+  useGetMembers,
+  getGetMembersQueryKey,
+} from '@/api/generated/members/members';
+import { api } from '@/lib/axios';
 
-// ─── Column definitions ───────────────────────────────────────────────────────
+// ─── Status change (inline — no Orval hook for this endpoint yet) ─────────────
 
-function useColumns(
-  onEdit: (m: Member) => void,
-  onArchive: (m: Member) => void,
-  canEdit: boolean,
-  canDelete: boolean,
-): ColumnDef<Member>[] {
-  return [
-    {
-      key: "fullName",
-      header: "Name",
-      sortable: true,
-      cell: (row) => (
-        <div>
-          <p className="font-medium">{row.fullName}</p>
-          <p className="text-xs text-muted-foreground">{row.email}</p>
-        </div>
-      ),
+function useChangeMemberStatus() {
+  const queryClient = useQueryClient();
+  const { toast }   = useToast();
+  const [isPending, setIsPending] = useState(false);
+
+  async function mutate(
+    memberId: string,
+    payload: {
+      status:         MemberStatus;
+      reason?:        string;
+      freezeEndDate?: string;
+      notes?:         string;
     },
-    {
-      key: "phone",
-      header: "Phone",
-      hideOnMobile: true,
-      cell: (row) => row.phone,
-    },
-    {
-      key: "status",
-      header: "Status",
-      sortable: true,
-      cell: (row) => <MembershipStatusBadge status={row.status} />,
-    },
-    {
-      key: "joinedAt",
-      header: "Joined",
-      sortable: true,
-      hideOnMobile: true,
-      cell: (row) => formatDate(row.joinedAt),
-    },
-    {
-      key: "actions",
-      header: "",
-      width: "w-24",
-      cell: (row) => (
-        <div className="flex items-center gap-1 justify-end">
-          {canEdit && (
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={(e) => {
-                e.stopPropagation();
-                onEdit(row);
-              }}
-            >
-              Edit
-            </Button>
-          )}
-          {canDelete && (
-            <Button
-              variant="ghost"
-              size="sm"
-              className="text-destructive hover:text-destructive"
-              onClick={(e) => {
-                e.stopPropagation();
-                onArchive(row);
-              }}
-            >
-              Archive
-            </Button>
-          )}
-        </div>
-      ),
-    },
-  ];
+    onSuccess?: () => void,
+  ) {
+    setIsPending(true);
+    try {
+      await api.patch(`/members/${memberId}/status`, payload);
+      await queryClient.invalidateQueries({ queryKey: getGetMembersQueryKey() });
+      toast({
+        title:       'Status updated',
+        description: `Member status changed to ${payload.status}.`,
+      });
+      onSuccess?.();
+    } catch (err: unknown) {
+      const msg =
+        (err as { response?: { data?: { message?: string } } })
+          ?.response?.data?.message ?? 'Failed to change member status.';
+      toast({ title: 'Error', description: msg, variant: 'destructive' });
+    } finally {
+      setIsPending(false);
+    }
+  }
+
+  return { mutate, isPending };
 }
 
 // ─── MembersPage ──────────────────────────────────────────────────────────────
 
 export default function MembersPage() {
-  const navigate = useNavigate();
-  const { can } = usePermission();
-  const table = useTableState({ defaultLimit: 20 });
+  const { can }      = usePermission();
+  const table        = useTableState({ defaultLimit: 20 });
+  const { confirm, confirmProps } = useConfirm();
+  const archive      = useArchiveMember();
+  const changeStatus = useChangeMemberStatus();
 
-  const [statusFilter, setStatusFilter] = useState<MemberStatus | "all">("all");
-  const [formOpen, setFormOpen] = useState(false);
+  const [statusFilter,  setStatusFilter]  = useState<MemberStatus | 'all'>('all');
+  const [formOpen,      setFormOpen]      = useState(false);
   const [editingMember, setEditingMember] = useState<Member | undefined>();
 
-  const { confirm, confirmProps } = useConfirm();
-  const archive = useArchiveMember();
+  // ── Status dialog state ───────────────────────────────────────────────────
+  const [statusDialog, setStatusDialog] = useState<{
+    open:         boolean;
+    member:       Member | null;
+    targetStatus: MemberStatus;
+  }>({ open: false, member: null, targetStatus: 'active' });
 
+  // ── Query ─────────────────────────────────────────────────────────────────
   const query = {
     ...table.queryParams,
-    ...(statusFilter !== "all" ? { status: statusFilter } : {}),
+    ...(statusFilter !== 'all' ? { status: statusFilter } : {}),
   };
-
   const { data, isLoading } = useGetMembers(query);
 
-  const columns = useColumns(
-    (m) => {
-      setEditingMember(m);
-      setFormOpen(true);
-    },
-    (m) =>
-      confirm(
-        {
-          title: `Archive ${m.fullName}?`,
-          description:
-            "This will cancel all active subscriptions. This action cannot be undone.",
-          variant: "destructive",
-          confirmLabel: "Archive",
-        },
-        () => archive.mutate(m._id),
-      ),
-    can("member.update"),
-    can("member.delete"),
-  );
+  // ── Handlers ──────────────────────────────────────────────────────────────
+  function openStatusDialog(member: Member, target: MemberStatus) {
+    setStatusDialog({ open: true, member, targetStatus: target });
+  }
+
+  function closeStatusDialog() {
+    setStatusDialog((prev) => ({ ...prev, open: false, member: null }));
+  }
+
+  function handleStatusConfirm(payload: {
+    status:         MemberStatus;
+    reason?:        string;
+    freezeEndDate?: string;
+    notes?:         string;
+  }) {
+    if (!statusDialog.member) return;
+    changeStatus.mutate(statusDialog.member._id, payload, closeStatusDialog);
+  }
 
   function handleAddMember() {
     setEditingMember(undefined);
     setFormOpen(true);
   }
 
+  function handleEdit(member: Member) {
+    setEditingMember(member);
+    setFormOpen(true);
+  }
+
+  // ─── Render ───────────────────────────────────────────────────────────────
   return (
     <PageShell>
       <PageHeader
         title="Members"
         subtitle="Manage gym members and their subscriptions"
         actions={
-          can("member.create") && (
+          can('member.create') && (
             <Button onClick={handleAddMember}>
               <UserPlus className="mr-2 h-4 w-4" />
               Add Member
@@ -163,81 +133,53 @@ export default function MembersPage() {
         }
       />
 
-      {/* Filters */}
-      <div className="flex flex-col sm:flex-row gap-3">
-        <SearchInput
-          value={table.search}
-          onChange={table.setSearch}
-          placeholder="Search by name, email or phone…"
-          className="flex-1 max-w-sm"
-        />
-        <Select
-          value={statusFilter}
-          onValueChange={(v) => {
-            setStatusFilter(v as MemberStatus | "all");
-            table.setPage(1);
-          }}
-        >
-          <SelectTrigger className="w-40">
-            <SelectValue placeholder="All statuses" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">All statuses</SelectItem>
-            <SelectItem value="active">Active</SelectItem>
-            <SelectItem value="inactive">Inactive</SelectItem>
-            <SelectItem value="suspended">Suspended</SelectItem>
-            <SelectItem value="frozen">Frozen</SelectItem>
-          </SelectContent>
-        </Select>
-      </div>
+      {/* Search + status filter */}
+      <MembersFilters
+        search={table.search}
+        onSearchChange={table.setSearch}
+        statusFilter={statusFilter}
+        onStatusChange={(v) => {
+          setStatusFilter(v);
+          table.setPage(1);
+        }}
+      />
 
-      {/* Table */}
-      {!isLoading && data?.data?.length === 0 ? (
-        <EmptyState
-          icon={<Users className="h-12 w-12" />}
-          title="No members found"
-          description={
-            table.search
-              ? "Try adjusting your search or filters."
-              : "Get started by adding your first member."
-          }
-          action={
-            can("member.create")
-              ? { label: "Add Member", onClick: handleAddMember }
-              : undefined
-          }
-        />
-      ) : (
-        <>
-          <DataTable
-            columns={columns}
-            data={data?.data ?? []}
-            keyExtractor={(r) => r._id}
-            loading={isLoading}
-            skeletonRows={10}
-            sort={table.sort}
-            onSortChange={table.setSort}
-            onRowClick={(row) => navigate(`/members/${row._id}`)}
-          />
+      {/* Members table */}
+      <MembersTable
+        data={data?.data ?? []}
+        isLoading={isLoading}
+        pagination={data?.pagination}
+        sort={table.sort}
+        onSortChange={table.setSort}
+        onPageChange={table.setPage}
+        onLimitChange={table.setLimit}
+        onEdit={handleEdit}
+        onStatusClick={openStatusDialog}
+        hasSearch={!!table.search || statusFilter !== 'all'}
+        onAddMember={handleAddMember}
+      />
 
-          {data?.pagination && (
-            <Pagination
-              meta={data.pagination}
-              onPageChange={table.setPage}
-              onLimitChange={table.setLimit}
-            />
-          )}
-        </>
-      )}
-
-      {/* Add / Edit form */}
+      {/* Add / edit member sheet */}
       <MemberForm
         open={formOpen}
         onOpenChange={setFormOpen}
         member={editingMember}
       />
 
-      {/* Archive confirm */}
+      {/* Status change dialog */}
+      {statusDialog.member && (
+        <MemberStatusDialog
+          open={statusDialog.open}
+          onOpenChange={(o) => { if (!o) closeStatusDialog(); }}
+          memberName={`${statusDialog.member.firstName} ${statusDialog.member.lastName}`}
+          currentStatus={statusDialog.member.status}
+          targetStatus={statusDialog.targetStatus}
+          isSubmitting={changeStatus.isPending}
+          onConfirm={handleStatusConfirm}
+        />
+      )}
+
+      {/* Archive confirm (kept for backward compat) */}
       <ConfirmDialog {...confirmProps} loading={archive.isPending} />
     </PageShell>
   );

@@ -1,0 +1,239 @@
+import { useEffect } from 'react';
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { z } from 'zod';
+import {
+  Dialog, DialogContent, DialogHeader,
+  DialogTitle, DialogDescription, DialogFooter,
+} from '@/components/ui/dialog';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import {
+  Select, SelectContent, SelectItem,
+  SelectTrigger, SelectValue,
+} from '@/components/ui/select';
+import { toast } from '@/hooks/use-toast';
+import { usePatchTrainersTrainerIdAssignmentsAssignmentId } from '@/api/generated/trainers/trainers';
+import { CURRENCY, CURRENCIES } from '@/config/tenant.config';
+import type { TrainerAssignment } from './TrainerTab';
+
+// ─── Schema ───────────────────────────────────────────────────────────────────
+
+const schema = z.object({
+  monthlyCharge:           z.coerce.number().min(0).optional(),
+  currency:                z.string().default(CURRENCY),
+  goal:                    z.string().max(300).optional(),
+  sessionFrequencyPerWeek: z.coerce.number().min(1).max(7).optional(),
+  notes:                   z.string().max(500).optional(),
+});
+
+type FormValues = z.infer<typeof schema>;
+
+// ─── Props ────────────────────────────────────────────────────────────────────
+
+interface Props {
+  open:         boolean;
+  onOpenChange: (open: boolean) => void;
+  assignment:   TrainerAssignment;
+  onSuccess:    () => void;
+}
+
+// ─── Helpers ─────────────────────────────────────────────────────────────────
+
+/** Returns the trainer's default monthlyRate from the populated trainerId object, if available. */
+function getTrainerDefaultRate(assignment: TrainerAssignment): number | undefined {
+  if (typeof assignment.trainerId === 'object' && assignment.trainerId !== null) {
+    // Model stores it as 'hourlyRate' — fall back to 'monthlyRate' for legacy data
+    return (assignment.trainerId as any).hourlyRate ?? (assignment.trainerId as any).monthlyRate ?? undefined;
+  }
+  return undefined;
+}
+
+// ─── Component ────────────────────────────────────────────────────────────────
+
+export function EditAssignmentDialog({ open, onOpenChange, assignment, onSuccess }: Props) {
+  // If the assignment has no monthlyCharge yet, fall back to the trainer's default rate
+  const defaultCharge = assignment.monthlyCharge ?? getTrainerDefaultRate(assignment);
+
+  const {
+    register,
+    handleSubmit,
+    watch,
+    setValue,
+    reset,
+    formState: { errors },
+  } = useForm<FormValues>({
+    resolver: zodResolver(schema),
+    defaultValues: {
+      monthlyCharge:           defaultCharge,
+      currency:                assignment.currency ?? CURRENCY,
+      goal:                    assignment.goal ?? '',
+      sessionFrequencyPerWeek: assignment.sessionFrequencyPerWeek,
+      notes:                   assignment.notes ?? '',
+    },
+  });
+
+  const updateMutation = usePatchTrainersTrainerIdAssignmentsAssignmentId({
+    mutation: {
+      onSuccess: () => {
+        toast({
+          title: 'Assignment updated',
+          description: 'Trainer assignment details have been saved.',
+        });
+        onOpenChange(false);
+        onSuccess();
+      },
+      onError: (err: any) => {
+        toast({
+          variant: 'destructive',
+          title: 'Failed to update',
+          description: err?.response?.data?.message ?? 'Something went wrong.',
+        });
+      },
+    },
+  });
+
+  useEffect(() => {
+    if (open) {
+      const charge = assignment.monthlyCharge ?? getTrainerDefaultRate(assignment);
+      reset({
+        monthlyCharge:           charge,
+        currency:                assignment.currency ?? CURRENCY,
+        goal:                    assignment.goal ?? '',
+        sessionFrequencyPerWeek: assignment.sessionFrequencyPerWeek,
+        notes:                   assignment.notes ?? '',
+      });
+    }
+  }, [open, assignment, reset]);
+
+  function handleClose(open: boolean) {
+    if (!open) reset();
+    onOpenChange(open);
+  }
+
+  function onSubmit(values: FormValues) {
+    const trainerId = typeof assignment.trainerId === 'string'
+      ? assignment.trainerId
+      : assignment.trainerId._id;
+
+    updateMutation.mutate({
+      trainerId,
+      assignmentId: assignment._id,
+      data: {
+        monthlyCharge: values.monthlyCharge || undefined,
+        currency: values.currency,
+        goal: values.goal || undefined,
+        sessionFrequencyPerWeek: values.sessionFrequencyPerWeek || undefined,
+        notes: values.notes || undefined,
+      },
+    });
+  }
+
+  return (
+    <Dialog open={open} onOpenChange={handleClose}>
+      <DialogContent className="sm:max-w-md">
+        <DialogHeader>
+          <DialogTitle>Edit Assignment Details</DialogTitle>
+          <DialogDescription>
+            Update the PT charge, goal, session frequency, or notes for
+            this assignment. To change the trainer, use "Change Trainer".
+          </DialogDescription>
+        </DialogHeader>
+
+        <form onSubmit={handleSubmit(onSubmit)} className="space-y-4 mt-2">
+          <div className="grid grid-cols-2 gap-3">
+            <div className="space-y-1.5">
+              <Label htmlFor="monthlyCharge">PT Charge / Month</Label>
+              <Input
+                id="monthlyCharge"
+                type="number"
+                min={0}
+                step="1"
+                placeholder="e.g. 5000"
+                disabled={updateMutation.isPending}
+                {...register('monthlyCharge')}
+              />
+              {errors.monthlyCharge && (
+                <p className="text-xs text-destructive">{errors.monthlyCharge.message}</p>
+              )}
+            </div>
+            <div className="space-y-1.5">
+              <Label>Currency</Label>
+              <Select
+                value={watch('currency') ?? CURRENCY}
+                onValueChange={(v) => setValue('currency', v)}
+                disabled={updateMutation.isPending}
+              >
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {CURRENCIES.map((c) => (
+                    <SelectItem key={c.value} value={c.value}>{c.value}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+
+          <div className="space-y-1.5">
+            <Label>Sessions per Week</Label>
+            <Select
+              value={String(watch('sessionFrequencyPerWeek') ?? '')}
+              onValueChange={(v) =>
+                setValue('sessionFrequencyPerWeek', v ? Number(v) : undefined)
+              }
+              disabled={updateMutation.isPending}
+            >
+              <SelectTrigger>
+                <SelectValue placeholder="Select frequency" />
+              </SelectTrigger>
+              <SelectContent>
+                {[1, 2, 3, 4, 5, 6, 7].map((n) => (
+                  <SelectItem key={n} value={String(n)}>
+                    {n}x per week
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
+          <div className="space-y-1.5">
+            <Label htmlFor="goal">Goal</Label>
+            <Input
+              id="goal"
+              placeholder="e.g. Weight loss, Muscle gain, Rehabilitation"
+              disabled={updateMutation.isPending}
+              {...register('goal')}
+            />
+          </div>
+
+          <div className="space-y-1.5">
+            <Label htmlFor="notes">Notes</Label>
+            <Input
+              id="notes"
+              placeholder="Any additional notes"
+              disabled={updateMutation.isPending}
+              {...register('notes')}
+            />
+          </div>
+
+          <DialogFooter className="pt-2">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => handleClose(false)}
+              disabled={updateMutation.isPending}
+            >
+              Cancel
+            </Button>
+            <Button type="submit" disabled={updateMutation.isPending}>
+              {updateMutation.isPending ? 'Saving…' : 'Save Changes'}
+            </Button>
+          </DialogFooter>
+        </form>
+      </DialogContent>
+    </Dialog>
+  );
+}

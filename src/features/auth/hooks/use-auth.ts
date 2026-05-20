@@ -1,29 +1,57 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { useNavigate, useLocation } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import { loginApi, logoutApi, changePasswordApi } from '@/api/auth.api';
 import { useAuthStore } from '@/stores/auth.store';
 import { toast } from '@/hooks/use-toast';
 import { getErrorMessage } from '@/utils/error';
+import type { UserRole } from '@/types/api.types';
+
+// ─── Role → default landing page ─────────────────────────────────────────────
+
+/**
+ * Each role has a fixed default landing page after login.
+ * This prevents a gym_owner's last-visited URL (/dashboard) from being shown
+ * to a member who logs in next on the same browser.
+ */
+function getDefaultRouteForRole(role: UserRole): string {
+  switch (role) {
+    case 'super_admin':    return '/super-admin';
+    case 'gym_owner':      return '/dashboard';
+    case 'branch_manager': return '/dashboard';
+    case 'trainer':        return '/dashboard';
+    case 'staff':          return '/dashboard';
+    case 'member':         return '/member/home';
+    default:               return '/dashboard';
+  }
+}
 
 // ─── Login ────────────────────────────────────────────────────────────────────
 
 export function useLogin() {
   const { setAuth } = useAuthStore();
   const navigate = useNavigate();
-  const location = useLocation();
-
-  // Redirect to the page the user was trying to reach, or /dashboard
-  const from = (location.state as { from?: { pathname: string } } | null)?.from?.pathname ?? '/dashboard';
+  const qc = useQueryClient();
 
   return useMutation({
     mutationFn: loginApi,
     onSuccess: (data) => {
+      // Clear any cached data from a previous user's session before setting
+      // the new user so queries never see stale cross-user data
+      qc.clear();
+
       setAuth(data.user, data.accessToken);
-      navigate(from, { replace: true });
+
+      // First-time login: must change password before accessing the app
+      if (data.user.forcePasswordChange) {
+        navigate('/settings/change-password', { replace: true });
+        return;
+      }
+
+      // Always go to the role's fixed default page — never reuse a URL that
+      // belonged to a previous user's session
+      navigate(getDefaultRouteForRole(data.user.role as UserRole), { replace: true });
     },
     onError: (error) => {
-      // Error is surfaced inline on the login form — toast is redundant here,
-      // but we keep it as a fallback for network-level failures.
       const msg = getErrorMessage(error);
       if (msg.toLowerCase().includes('network')) {
         toast({ variant: 'destructive', title: 'Network error', description: msg });

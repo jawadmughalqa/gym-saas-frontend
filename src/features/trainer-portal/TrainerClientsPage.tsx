@@ -13,7 +13,7 @@ import {
   useMyAssignments,
   type TrainerAssignmentItem,
   type AssignedMember,
-} from './hooks/useTrainerPortal';
+} from './hooks/use-trainer-portal';
 import TrainerNoteDialog from './TrainerNoteDialog';
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────

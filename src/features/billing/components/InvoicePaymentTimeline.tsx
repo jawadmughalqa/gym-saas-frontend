@@ -14,7 +14,7 @@ import { Receipt, FileText, CheckCircle2, Clock } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Button } from '@/components/ui/button';
 import { formatCurrency, formatDateTime } from '@/lib/utils';
-import { useInvoicePayments, INVOICE_PAYMENTS_KEY } from '../hooks/useInvoicePayments';
+import { useInvoicePayments, INVOICE_PAYMENTS_KEY } from '../hooks/use-invoice-payments';
 import { StatusBadge } from './StatusBadge';
 import { CURRENCY } from '@/config/tenant.config';
 import { usePermission } from '@/hooks/use-permission';

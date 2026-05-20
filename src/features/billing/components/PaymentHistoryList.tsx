@@ -21,7 +21,7 @@ import { CURRENCY } from '@/config/tenant.config';
 import { useQueryClient } from '@tanstack/react-query';
 import { StatusBadge } from './StatusBadge';
 import { InvoicePaymentTimeline } from './InvoicePaymentTimeline';
-import { INVOICE_PAYMENTS_KEY } from '../hooks/useInvoicePayments';
+import { INVOICE_PAYMENTS_KEY } from '../hooks/use-invoice-payments';
 import { cn } from '@/lib/utils';
 
 // ─── Props ────────────────────────────────────────────────────────────────────

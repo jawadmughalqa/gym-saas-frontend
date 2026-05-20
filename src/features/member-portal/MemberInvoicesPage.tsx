@@ -7,7 +7,7 @@ import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
 import PageShell from '@/components/layout/PageShell';
 import PageHeader from '@/components/layout/PageHeader';
-import { useMyInvoices } from './hooks/useMemberPortal';
+import { useMyInvoices } from './hooks/use-member-portal';
 import { formatDate, formatCurrency } from '@/utils/format';
 import type { Invoice, InvoiceLineItem } from '@/types/billing.types';
 

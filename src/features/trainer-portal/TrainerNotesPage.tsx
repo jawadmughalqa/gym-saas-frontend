@@ -17,7 +17,7 @@ import PageShell from '@/components/layout/PageShell';
 import PageHeader from '@/components/layout/PageHeader';
 import { formatDate } from '@/utils/format';
 import { api } from '@/lib/axios';
-import { useMyTrainerProfile, useMyActiveClients, type AssignedMember } from './hooks/useTrainerPortal';
+import { useMyTrainerProfile, useMyActiveClients, type AssignedMember } from './hooks/use-trainer-portal';
 import TrainerNoteDialog from './TrainerNoteDialog';
 
 // ─── Types ────────────────────────────────────────────────────────────────────

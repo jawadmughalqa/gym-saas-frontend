@@ -65,7 +65,7 @@ function PaymentRefundsTab() {
   };
 
   const { data, isLoading } = useGetRefunds(params, {
-    query: { placeholderData: (prev: unknown) => prev, staleTime: 1000 * 30 },
+    query: { placeholderData: (prev: unknown) => prev, staleTime: 0 },
   });
 
   const refunds    = (data as any)?.data ?? [];

@@ -233,21 +233,11 @@ export function OutstandingFeesList({
                             )}
                           </span>
                           <div className="flex items-center gap-1.5 shrink-0">
-                            {lineDiscount > 0 && (
-                              <span className="text-muted-foreground line-through">
-                                {formatCurrency(originalTotal, invoice.currency || CURRENCY)}
-                              </span>
-                            )}
                             <span className="font-medium">
                               {formatCurrency(lineTotal, invoice.currency || CURRENCY)}
                             </span>
                           </div>
                         </div>
-                        {lineDiscount > 0 && (
-                          <p className="text-emerald-600 mt-0.5 text-right">
-                            Discount: −{formatCurrency(lineDiscount, invoice.currency || CURRENCY)}
-                          </p>
-                        )}
                       </div>
                     );
                   })}

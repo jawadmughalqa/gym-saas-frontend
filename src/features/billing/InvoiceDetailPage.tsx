@@ -31,6 +31,7 @@ import {
   usePostInvoicesInvoiceIdVoid,
   usePostInvoicesInvoiceIdDiscount,
   getGetInvoicesInvoiceIdQueryKey,
+  getGetInvoicesQueryKey,
 } from '@/api/generated/invoices/invoices';
 
 import {
@@ -685,7 +686,9 @@ function ApplyDiscountDialog({
   const apply = usePostInvoicesInvoiceIdDiscount({
     mutation: {
       onSuccess: () => {
+        // Invalidate both the single invoice AND the list so BillingTab reflects the new amountDue
         queryClient.invalidateQueries({ queryKey: getGetInvoicesInvoiceIdQueryKey(invoiceId) });
+        queryClient.invalidateQueries({ queryKey: getGetInvoicesQueryKey() });
         toast({ title: 'Discount applied successfully' });
         onOpenChange(false);
       },
@@ -757,6 +760,7 @@ export default function InvoiceDetailPage() {
     mutation: {
       onSuccess: () => {
         queryClient.invalidateQueries({ queryKey: getGetInvoicesInvoiceIdQueryKey(invoiceId ?? '') });
+        queryClient.invalidateQueries({ queryKey: getGetInvoicesQueryKey() });
         toast({ title: 'Invoice issued successfully' });
       },
       onError: (err: any) => {
@@ -773,6 +777,7 @@ export default function InvoiceDetailPage() {
     mutation: {
       onSuccess: () => {
         queryClient.invalidateQueries({ queryKey: getGetInvoicesInvoiceIdQueryKey(invoiceId ?? '') });
+        queryClient.invalidateQueries({ queryKey: getGetInvoicesQueryKey() });
         toast({ title: 'Invoice voided successfully' });
       },
       onError: (err: any) => {

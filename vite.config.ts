@@ -13,9 +13,14 @@ export default defineConfig({
   },
   server: {
     port: 5173,
+    host: true,
+    allowedHosts: ['app.coredevai.com'],  
+
     proxy: {
+      // Always proxy to local backend — works for both local dev and
+      // remote access via Cloudflare Tunnel (Vite runs on same Mac as backend)
       '/api': {
-        target: 'http://localhost:5000',
+        target: 'http://localhost:9000',
         changeOrigin: true,
       },
     },

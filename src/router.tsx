@@ -12,6 +12,7 @@ import { useAuthStore } from "@/stores/auth.store";
 // ─── Lazy pages ───────────────────────────────────────────────────────────────
 
 const ChangePasswordPage  = lazy(() => import("@/features/auth/ChangePasswordPage"));
+const ProfilePage         = lazy(() => import("@/features/auth/ProfilePage"));
 const MembersPage         = lazy(() => import("@/features/members/MembersPage"));
 const MemberDetailPage    = lazy(() => import("@/features/members/MemberDetailPage"));
 const InvoicesPage        = lazy(() => import("@/features/billing/InvoicesPage"));
@@ -99,7 +100,12 @@ const router = createBrowserRouter([
             handle: { crumb: "Dashboard" },
           },
 
-          // ── Auth self-service ────────────────────────────────────────
+          // ── Profile & auth self-service ──────────────────────────────
+          {
+            path: "profile",
+            element: <Lazy><ProfilePage /></Lazy>,
+            handle: { crumb: "Profile" },
+          },
           {
             path: "settings",
             handle: { crumb: "Settings" },

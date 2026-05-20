@@ -21,10 +21,11 @@
 import { useEffect, useState } from 'react';
 import { useForm }        from 'react-hook-form';
 import { zodResolver }    from '@hookform/resolvers/zod';
-import { Loader2 }        from 'lucide-react';
+import { Loader2, AlertTriangle } from 'lucide-react';
 import { Sheet, SheetContent } from '@/components/ui/sheet';
 import { Button }              from '@/components/ui/button';
 import { Separator }           from '@/components/ui/separator';
+import { Alert, AlertDescription } from '@/components/ui/alert';
 
 import {
   usePostMembers,
@@ -144,173 +145,184 @@ export default function MemberForm({
 
   // ── Submit ────────────────────────────────────────────────────────────────
   async function onSubmit(values: MemberFormValues) {
-    const emergencyContact = values.ec_name
-      ? {
-          name:         values.ec_name,
-          relationship: values.ec_relationship ?? '',
-          phone:        values.ec_phone        ?? '',
+    try {
+      const emergencyContact = values.ec_name
+        ? {
+            name:         values.ec_name,
+            relationship: values.ec_relationship ?? '',
+            phone:        values.ec_phone        ?? '',
+          }
+        : undefined;
+
+      // ── EDIT path ───────────────────────────────────────────────────────
+      if (isEdit) {
+        const originalBranchId =
+          typeof member!.branchId === 'object' && member!.branchId !== null
+            ? (member!.branchId as any)._id
+            : member!.branchId;
+        const branchChanged = values.branchId && values.branchId !== originalBranchId;
+
+        await updateMutation.mutateAsync({
+          memberId: member!._id,
+          data: {
+            ...(branchChanged ? { branchId: values.branchId } : {}),
+            firstName:        values.firstName,
+            lastName:         values.lastName,
+            phone:            values.phone,
+            dateOfBirth:      values.dateOfBirth  || undefined,
+            gender:           values.gender,
+            notes:            values.notes        || undefined,
+            consentMarketing: values.consentMarketing,
+            emergencyContact,
+          },
+        });
+
+        await queryClient.invalidateQueries({ queryKey: getGetMembersQueryKey() });
+        await queryClient.invalidateQueries({
+          queryKey: getGetMembersMemberIdQueryKey(member!._id),
+        });
+        if (branchChanged) {
+          await queryClient.invalidateQueries({ queryKey: getGetBranchesQueryKey() });
         }
-      : undefined;
 
-    // ── EDIT path ─────────────────────────────────────────────────────────
-    if (isEdit) {
-      // Detect branch change so we only send it when it actually changed
-      const originalBranchId =
-        typeof member!.branchId === 'object' && member!.branchId !== null
-          ? (member!.branchId as any)._id
-          : member!.branchId;
-      const branchChanged = values.branchId && values.branchId !== originalBranchId;
+        toast({ title: 'Member updated', description: 'Profile saved successfully.' });
+        onOpenChange(false);
+        return;
+      }
 
-      await updateMutation.mutateAsync({
-        memberId: member!._id,
+      // ── CREATE path ─────────────────────────────────────────────────────
+      const created = await createMutation.mutateAsync({
         data: {
-          ...(branchChanged ? { branchId: values.branchId } : {}),
-          firstName:        values.firstName,
-          lastName:         values.lastName,
-          phone:            values.phone,
-          dateOfBirth:      values.dateOfBirth  || undefined,
-          gender:           values.gender,
-          notes:            values.notes        || undefined,
-          consentMarketing: values.consentMarketing,
+          branchId:              values.branchId,
+          firstName:             values.firstName,
+          lastName:              values.lastName,
+          email:                 values.email,
+          phone:                 values.phone,
+          dateOfBirth:           values.dateOfBirth  || undefined,
+          gender:                values.gender,
+          notes:                 values.notes        || undefined,
+          consentMarketing:      values.consentMarketing,
+          consentDataProcessing: values.consentDataProcessing,
           emergencyContact,
         },
       });
 
-      await queryClient.invalidateQueries({ queryKey: getGetMembersQueryKey() });
-      await queryClient.invalidateQueries({
-        queryKey: getGetMembersMemberIdQueryKey(member!._id),
-      });
-      // If branch changed, refresh branch list so memberCount updates everywhere
-      if (branchChanged) {
-        await queryClient.invalidateQueries({ queryKey: getGetBranchesQueryKey() });
+      // orvalMutator returns res.data (the API envelope), so we need .data again
+      // to get the actual member object: { success, data: { _id, loginEmail, tempPassword } }
+      const createdData = (created as unknown as { data: { _id: string; loginEmail?: string; tempPassword?: string } }).data;
+      const newMemberId = createdData._id;
+
+      // ── Optional membership assignment ──────────────────────────────────
+      const m = values.membership;
+      const shouldAssign = m.enabled && (
+        (m.planId && m.planId.length > 0) ||
+        (m.customLabel && m.customLabel.length > 0 && Number(m.customPrice) > 0)
+      );
+
+      if (shouldAssign) {
+        const isPlan = !!(m.planId && m.planId.length > 0);
+
+        try {
+          await subscriptionMutation.mutateAsync({
+            memberId: newMemberId,
+            data: isPlan
+              ? {
+                  pricingType:       'plan',
+                  planId:            m.planId!,
+                  branchId:          values.branchId,
+                  discountAmount:    Number(m.discountAmount) || 0,
+                  startDate:         m.startDate || undefined,
+                  autoCreateInvoice: true,
+                }
+              : {
+                  pricingType:            'custom',
+                  branchId:               values.branchId,
+                  customLabel:            m.customLabel!,
+                  customPrice:            Number(m.customPrice),
+                  customBillingFrequency: (m.customBillingFrequency as 'monthly') ?? 'monthly',
+                  currency:               CURRENCY,
+                  discountAmount:         Number(m.discountAmount) || 0,
+                  startDate:              m.startDate || undefined,
+                  autoCreateInvoice:      true,
+                },
+          });
+
+          await queryClient.invalidateQueries({ queryKey: getGetMembersQueryKey() });
+          await queryClient.invalidateQueries({
+            queryKey: getGetMembersMemberIdSubscriptionsQueryKey(newMemberId),
+          });
+          await queryClient.invalidateQueries({
+            queryKey: getGetMembersMemberIdQueryKey(newMemberId),
+          });
+
+          toast({
+            title:       'Member registered',
+            description: 'Member created and membership assigned.',
+          });
+        } catch {
+          // Member was saved — only subscription failed
+          await queryClient.invalidateQueries({ queryKey: getGetMembersQueryKey() });
+          toast({
+            title:       'Member registered',
+            description: 'Member created. Plan assignment failed — assign from the profile page.',
+            variant:     'destructive',
+          });
+        }
+      } else {
+        await queryClient.invalidateQueries({ queryKey: getGetMembersQueryKey() });
+        toast({
+          title:       'Member registered',
+          description: `${values.firstName} ${values.lastName} has been added.`,
+        });
       }
 
-      toast({ title: 'Member updated', description: 'Profile saved successfully.' });
+      // ── Optional trainer assignment ────────────────────────────────────
+      const t = values.trainer;
+      if (t?.enabled && t.trainerId) {
+        try {
+          await trainerAssignMutation.mutateAsync({
+            trainerId: t.trainerId,
+            data: {
+              memberId:                newMemberId,
+              branchId:                values.branchId,
+              goal:                    t.goal                    || undefined,
+              sessionFrequencyPerWeek: t.sessionFrequencyPerWeek || undefined,
+              monthlyCharge:           t.monthlyCharge            || undefined,
+              currency:                CURRENCY,
+            },
+          });
+        } catch {
+          toast({
+            variant:     'destructive',
+            title:       'Trainer assignment failed',
+            description: 'Member was created. You can assign a trainer from the member profile page.',
+          });
+        }
+      }
+
+      // Show credentials dialog so owner can hand login details to the member
+      if (createdData.loginEmail && createdData.tempPassword) {
+        setCredentials({
+          memberName:   `${values.firstName} ${values.lastName}`,
+          loginEmail:   createdData.loginEmail,
+          tempPassword: createdData.tempPassword,
+        });
+      }
+
       onOpenChange(false);
-      return;
-    }
 
-    // ── CREATE path ───────────────────────────────────────────────────────
-    const created = await createMutation.mutateAsync({
-      data: {
-        branchId:              values.branchId,
-        firstName:             values.firstName,
-        lastName:              values.lastName,
-        email:                 values.email,
-        phone:                 values.phone,
-        dateOfBirth:           values.dateOfBirth  || undefined,
-        gender:                values.gender,
-        notes:                 values.notes        || undefined,
-        consentMarketing:      values.consentMarketing,
-        consentDataProcessing: values.consentDataProcessing,
-        emergencyContact,
-      },
-    });
-
-    // created.data is the new member object from the API (includes loginEmail + tempPassword)
-    const createdData = (created as unknown as { data: { _id: string; loginEmail?: string; tempPassword?: string } }).data;
-    const newMemberId = createdData._id;
-
-    // ── Optional membership assignment ────────────────────────────────────
-    const m = values.membership;
-    const shouldAssign = m.enabled && (
-      (m.planId && m.planId.length > 0) ||
-      (m.customLabel && m.customLabel.length > 0 && Number(m.customPrice) > 0)
-    );
-
-    if (shouldAssign) {
-      const isPlan = !!(m.planId && m.planId.length > 0);
-
-      try {
-        await subscriptionMutation.mutateAsync({
-          memberId: newMemberId,
-          data: isPlan
-            ? {
-                pricingType:       'plan',
-                planId:            m.planId!,
-                branchId:          values.branchId,
-                discountAmount:    Number(m.discountAmount) || 0,
-                startDate:         m.startDate || undefined,
-                autoCreateInvoice: true,
-              }
-            : {
-                pricingType:            'custom',
-                branchId:               values.branchId,
-                customLabel:            m.customLabel!,
-                customPrice:            Number(m.customPrice),
-                customBillingFrequency: (m.customBillingFrequency as 'monthly') ?? 'monthly',
-                currency:               CURRENCY,
-                discountAmount:         Number(m.discountAmount) || 0,
-                startDate:              m.startDate || undefined,
-                autoCreateInvoice:      true,
-              },
-        });
-
-        // Invalidate AFTER subscription is saved so the list picks up activePlan
-        await queryClient.invalidateQueries({ queryKey: getGetMembersQueryKey() });
-        await queryClient.invalidateQueries({
-          queryKey: getGetMembersMemberIdSubscriptionsQueryKey(newMemberId),
-        });
-        await queryClient.invalidateQueries({
-          queryKey: getGetMembersMemberIdQueryKey(newMemberId),
-        });
-
-        toast({
-          title:       'Member registered',
-          description: 'Member created and membership assigned.',
-        });
-      } catch {
-        // Member was saved — only subscription failed; refresh the list anyway
-        await queryClient.invalidateQueries({ queryKey: getGetMembersQueryKey() });
-        toast({
-          title:       'Member registered',
-          description: 'Member created. Plan assignment failed — assign from the profile page.',
-          variant:     'destructive',
-        });
-      }
-    } else {
-      // No plan assigned — just refresh the list
-      await queryClient.invalidateQueries({ queryKey: getGetMembersQueryKey() });
+    } catch (err) {
+      // Top-level catch — handles create/update API failures
+      // The inner subscription/trainer blocks have their own catches above,
+      // so this only fires when the member create/update call itself fails.
+      const message =
+        (err as Error)?.message ?? 'Something went wrong. Please try again.';
       toast({
-        title:       'Member registered',
-        description: `${values.firstName} ${values.lastName} has been added.`,
+        title:       isEdit ? 'Failed to save member' : 'Failed to register member',
+        description: message,
+        variant:     'destructive',
       });
     }
-
-    // ── Optional trainer assignment ────────────────────────────────────────
-    const t = values.trainer;
-    if (t?.enabled && t.trainerId) {
-      try {
-        await trainerAssignMutation.mutateAsync({
-          trainerId: t.trainerId,
-          data: {
-            memberId:                newMemberId,
-            branchId:                values.branchId,
-            goal:                    t.goal                    || undefined,
-            sessionFrequencyPerWeek: t.sessionFrequencyPerWeek || undefined,
-            monthlyCharge:           t.monthlyCharge            || undefined,
-            currency:                CURRENCY,
-          },
-        });
-      } catch {
-        toast({
-          variant:     'destructive',
-          title:       'Trainer assignment failed',
-          description: 'Member was created. You can assign a trainer from the member profile page.',
-        });
-      }
-    }
-
-    // Show credentials dialog so gym owner can give them to the member directly
-    if (createdData.loginEmail && createdData.tempPassword) {
-      setCredentials({
-        memberName: `${values.firstName} ${values.lastName}`,
-        loginEmail: createdData.loginEmail,
-        tempPassword: createdData.tempPassword,
-      });
-    }
-
-    onOpenChange(false);
   }
 
   // ─── Render ───────────────────────────────────────────────────────────────
@@ -341,6 +353,20 @@ export default function MemberForm({
         </div>
 
         <form onSubmit={handleSubmit(onSubmit)} className="px-6 py-5 space-y-6">
+
+          {/* No-branches warning — create mode only */}
+          {!isEdit && !branchesLoading && branches.length === 0 && (
+            <Alert variant="destructive">
+              <AlertTriangle className="h-4 w-4" />
+              <AlertDescription>
+                No active branches found. Please{' '}
+                <a href="/branches" className="underline font-medium">
+                  create a branch
+                </a>{' '}
+                first before registering members.
+              </AlertDescription>
+            </Alert>
+          )}
 
           {/* Personal info */}
           <PersonalInfoSection
@@ -402,7 +428,11 @@ export default function MemberForm({
             >
               Cancel
             </Button>
-            <Button type="submit" className="flex-1" disabled={isPending}>
+            <Button
+              type="submit"
+              className="flex-1"
+              disabled={isPending || (!isEdit && !branchesLoading && branches.length === 0)}
+            >
               {isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
               {isEdit ? 'Save Changes' : 'Register Member'}
             </Button>

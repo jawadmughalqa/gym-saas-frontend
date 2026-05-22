@@ -4,7 +4,7 @@ import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
 import PageShell from '@/components/layout/PageShell';
 import PageHeader from '@/components/layout/PageHeader';
-import { useMySubscriptions, useMyProfile } from './hooks/useMemberPortal';
+import { useMySubscriptions, useMyProfile } from './hooks/use-member-portal';
 import { formatDate, formatCurrency } from '@/utils/format';
 import { CURRENCY } from '@/config/tenant.config';
 import type { Subscription } from '@/types/member.types';

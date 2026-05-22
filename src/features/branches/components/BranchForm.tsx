@@ -228,7 +228,7 @@ export default function BranchForm({ open, onOpenChange, branch }: BranchFormPro
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel>City *</FormLabel>
-                      <FormControl><Input placeholder="Pakistan" {...field} /></FormControl>
+                      <FormControl><Input placeholder="Lahore" {...field} /></FormControl>
                       <FormMessage />
                     </FormItem>
                   )}

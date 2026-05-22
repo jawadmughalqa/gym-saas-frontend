@@ -157,13 +157,15 @@ export default function NotificationsPage() {
   // Queries
   const { data, isLoading, refetch } = useGetNotifications(
     { page, limit, unreadOnly },
-    { query: { staleTime: 1000 * 30, refetchInterval: 1000 * 60 } },
+    { query: { staleTime: 0, refetchOnMount: true, refetchOnWindowFocus: true, refetchInterval: 1000 * 30 } },
   );
 
   const { data: countData } = useGetNotificationsUnreadCount({
     query: {
-      staleTime: 1000 * 30,
-      refetchInterval: 1000 * 60,
+      staleTime: 0,
+      refetchOnMount: true,
+      refetchOnWindowFocus: true,
+      refetchInterval: 1000 * 30,
     },
   });
 

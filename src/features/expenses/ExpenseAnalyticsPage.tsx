@@ -17,6 +17,7 @@ import { useExpenseSummary, useExpenseAnalytics } from './hooks/use-expenses';
 import { CATEGORY_LABELS } from './components/ExpenseForm';
 import { TrendingDown, Building2, ListOrdered, Calendar } from 'lucide-react';
 import { CURRENCY } from '@/config/tenant.config';
+import { CHART_COLORS } from '@/lib/constants';
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 
@@ -27,10 +28,6 @@ const MONTHS = [
   'July', 'August', 'September', 'October', 'November', 'December',
 ];
 
-const CHART_COLORS = [
-  '#6366f1', '#f59e0b', '#10b981', '#ef4444', '#3b82f6',
-  '#8b5cf6', '#ec4899', '#14b8a6', '#f97316', '#84cc16',
-];
 
 function formatCurrency(amount: number) {
   if (amount >= 1_000_000) return `${(amount / 1_000_000).toFixed(1)}M`;

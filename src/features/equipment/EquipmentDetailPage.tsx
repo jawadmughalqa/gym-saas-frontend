@@ -45,6 +45,10 @@ import {
   getGetWorkOrdersQueryKey,
 } from '@/api/generated/work-orders/work-orders';
 import { useQueryClient } from '@tanstack/react-query';
+import {
+  getGetNotificationsQueryKey,
+  getGetNotificationsUnreadCountQueryKey,
+} from '@/api/generated/notifications/notifications';
 import type { MaintenanceLog } from '@/api/generated/schemas/maintenanceLog';
 import type { WorkOrder } from '@/api/generated/schemas/workOrder';
 import EquipmentForm from './components/EquipmentForm';
@@ -283,9 +287,12 @@ function CreateWorkOrderDialog({
   branchId: string;
   onSuccess: () => void;
 }) {
+  const qcWO = useQueryClient();
   const createWO = usePostWorkOrders({
     mutation: {
       onSuccess: () => {
+        void qcWO.invalidateQueries({ queryKey: getGetNotificationsQueryKey() });
+        void qcWO.invalidateQueries({ queryKey: getGetNotificationsUnreadCountQueryKey() });
         onOpenChange(false);
         onSuccess();
       },

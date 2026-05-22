@@ -31,8 +31,14 @@ import {
 import { Separator } from '@/components/ui/separator';
 import { formatCurrency } from '@/lib/utils';
 import { usePostPayments } from '@/api/generated/payments/payments';
+import { getGetBillingDashboardQueryKey } from '@/api/generated/billing/billing';
+import { getGetReportsDashboardQueryKey } from '@/api/generated/reports/reports';
 import { getGetInvoicesQueryKey } from '@/api/generated/invoices/invoices';
 import { getGetPaymentsQueryKey } from '@/api/generated/payments/payments';
+import {
+  getGetNotificationsQueryKey,
+  getGetNotificationsUnreadCountQueryKey,
+} from '@/api/generated/notifications/notifications';
 import { toast } from '@/hooks/use-toast';
 import type { OutstandingInvoice } from './OutstandingFeesList';
 
@@ -126,6 +132,10 @@ export function MultiInvoicePaymentDialog({
 
     await queryClient.invalidateQueries({ queryKey: getGetInvoicesQueryKey() });
     invalidatePayments(queryClient);
+    queryClient.invalidateQueries({ queryKey: getGetBillingDashboardQueryKey() });
+    queryClient.invalidateQueries({ queryKey: getGetReportsDashboardQueryKey() });
+    queryClient.invalidateQueries({ queryKey: getGetNotificationsQueryKey() });
+    queryClient.invalidateQueries({ queryKey: getGetNotificationsUnreadCountQueryKey() });
 
     setSubmitting(false);
 

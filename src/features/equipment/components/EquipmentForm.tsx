@@ -20,6 +20,10 @@ import {
   getGetEquipmentEquipmentIdQueryKey,
 } from '@/api/generated/equipment/equipment';
 import { useQueryClient } from '@tanstack/react-query';
+import {
+  getGetNotificationsQueryKey,
+  getGetNotificationsUnreadCountQueryKey,
+} from '@/api/generated/notifications/notifications';
 import { toast } from '@/hooks/use-toast';
 import { getErrorMessage } from '@/utils/error';
 import type { Equipment } from '@/api/generated/schemas/equipment';
@@ -86,6 +90,8 @@ export default function EquipmentForm({ open, onOpenChange, equipment }: Equipme
     mutation: {
       onSuccess: () => {
         void qc.invalidateQueries({ queryKey: getGetEquipmentQueryKey() });
+        void qc.invalidateQueries({ queryKey: getGetNotificationsQueryKey() });
+        void qc.invalidateQueries({ queryKey: getGetNotificationsUnreadCountQueryKey() });
         toast({ title: 'Equipment added' });
         onOpenChange(false);
       },

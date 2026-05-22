@@ -24,6 +24,7 @@ import { useGetBillingDashboard } from '@/api/generated/billing/billing';
 import { useGetReportsRevenue } from '@/api/generated/reports/reports';
 import { useGetBranches } from '@/api/generated/branches/branches';
 import { CURRENCY } from '@/config/tenant.config';
+import { formatApiDate, formatCurrencyCompact } from '@/utils/format';
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 
@@ -55,27 +56,18 @@ const QUICK_LINKS = [
   { label: 'View Reports',  href: '/reports',  icon: TrendingUp },
 ];
 
-// ─── Helpers ──────────────────────────────────────────────────────────────────
-
-const fmt = (d: Date) => format(d, 'yyyy-MM-dd');
-
-function formatCurrency(amount: number) {
-  if (amount >= 1_000_000) return `${CURRENCY} ${(amount / 1_000_000).toFixed(1)}M`;
-  if (amount >= 1_000) return `${CURRENCY} ${(amount / 1_000).toFixed(0)}K`;
-  return `${CURRENCY} ${Math.round(amount).toLocaleString()}`;
-}
 
 /** Given year + month (1-based, or 0 = full year), return ISO dateFrom/dateTo strings */
 function getDateRange(year: number, month: number): { dateFrom: string; dateTo: string } {
   if (month === 0) {
     // Full year
     return {
-      dateFrom: fmt(startOfYear(new Date(year, 0, 1))),
-      dateTo: fmt(endOfYear(new Date(year, 0, 1))),
+      dateFrom: formatApiDate(startOfYear(new Date(year, 0, 1))),
+      dateTo: formatApiDate(endOfYear(new Date(year, 0, 1))),
     };
   }
   const d = new Date(year, month - 1, 1);
-  return { dateFrom: fmt(startOfMonth(d)), dateTo: fmt(endOfMonth(d)) };
+  return { dateFrom: formatApiDate(startOfMonth(d)), dateTo: formatApiDate(endOfMonth(d)) };
 }
 
 // ─── PaymentSummaryCard ───────────────────────────────────────────────────────
@@ -85,8 +77,8 @@ function PaymentSummaryCard() {
   const [month, setMonth]     = useState<string>(String(CURRENT_MONTH));
   const [branchId, setBranchId] = useState<string>('all');
   const [customMode, setCustomMode] = useState(false);
-  const [customFrom, setCustomFrom] = useState<string>(fmt(subDays(new Date(), 30)));
-  const [customTo, setCustomTo]   = useState<string>(fmt(new Date()));
+  const [customFrom, setCustomFrom] = useState<string>(formatApiDate(subDays(new Date(), 30)));
+  const [customTo, setCustomTo]   = useState<string>(formatApiDate(new Date()));
 
   const { data: branchesData } = useGetBranches({ limit: 100 });
   const branches = branchesData?.data ?? [];
@@ -105,7 +97,7 @@ function PaymentSummaryCard() {
   };
 
   const { data: billingData, isLoading: billingLoading } =
-    useGetBillingDashboard(billingParams, { query: { staleTime: 60_000 } });
+    useGetBillingDashboard(billingParams, { query: { staleTime: 0, refetchOnMount: true } });
 
   const billing = billingData?.data;
 
@@ -118,7 +110,7 @@ function PaymentSummaryCard() {
   };
 
   const { data: revenueData, isLoading: chartLoading } =
-    useGetReportsRevenue(revenueParams, { query: { staleTime: 60_000 } });
+    useGetReportsRevenue(revenueParams, { query: { staleTime: 0, refetchOnMount: true } });
 
   const timeSeries = ((revenueData?.data as any)?.timeSeries ?? []) as Array<{
     period: string;
@@ -260,7 +252,7 @@ function PaymentSummaryCard() {
               </span>
             </div>
             <p className="text-2xl font-bold tabular-nums text-emerald-700 dark:text-emerald-300">
-              {billingLoading ? '—' : formatCurrency(billing?.totalRevenue ?? 0)}
+              {billingLoading ? '—' : formatCurrencyCompact(billing?.totalRevenue ?? 0)}
             </p>
             <p className="text-xs text-muted-foreground mt-0.5">Payments received</p>
           </div>
@@ -274,7 +266,7 @@ function PaymentSummaryCard() {
               </span>
             </div>
             <p className="text-2xl font-bold tabular-nums text-red-700 dark:text-red-300">
-              {billingLoading ? '—' : formatCurrency(billing?.pendingFees ?? 0)}
+              {billingLoading ? '—' : formatCurrencyCompact(billing?.pendingFees ?? 0)}
             </p>
             <p className="text-xs text-muted-foreground mt-0.5">Outstanding invoices</p>
           </div>
@@ -288,7 +280,7 @@ function PaymentSummaryCard() {
               </span>
             </div>
             <p className="text-2xl font-bold tabular-nums text-blue-700 dark:text-blue-300">
-              {billingLoading ? '—' : formatCurrency(billing?.todayCollection ?? 0)}
+              {billingLoading ? '—' : formatCurrencyCompact(billing?.todayCollection ?? 0)}
             </p>
             <p className="text-xs text-muted-foreground mt-0.5">Received today</p>
           </div>
@@ -313,7 +305,7 @@ function PaymentSummaryCard() {
                 axisLine={false}
               />
               <YAxis
-                tickFormatter={(v: number) => formatCurrency(v)}
+                tickFormatter={(v: number) => formatCurrencyCompact(v)}
                 tick={{ fontSize: 11 }}
                 tickLine={false}
                 axisLine={false}
@@ -349,12 +341,18 @@ export default function DashboardPage() {
   // Reports dashboard — KPI cards
   const { data: dashData, isLoading: dashLoading } = useGetReportsDashboard(
     undefined,
-    { query: { staleTime: 60_000 } },
+    { query: { staleTime: 0, refetchOnMount: true, refetchOnWindowFocus: true } },
   );
   const d = dashData?.data as Record<string, any> | undefined;
   const members      = d?.members      ?? {};
   const revenue      = d?.revenue      ?? {};
   const trainers     = d?.trainers     ?? {};
+
+  // Alerts — `d.alerts.expiringSoon` doesn't exist on the backend;
+  // the real field is `d.subscriptions.expiringSoon`
+  const overdueInvoices    = (d?.alerts?.overdueInvoices     ?? 0) as number;
+  const expiringSoon       = (d?.subscriptions?.expiringSoon ?? 0) as number;
+  const openWorkOrders     = (d?.alerts?.openWorkOrders      ?? 0) as number;
 
   return (
     <PageShell>
@@ -374,7 +372,7 @@ export default function DashboardPage() {
         />
         <StatCard
           title="Revenue This Month"
-          value={dashLoading ? '—' : formatCurrency(revenue.thisMonth ?? 0)}
+          value={dashLoading ? '—' : formatCurrencyCompact(revenue.thisMonth ?? 0)}
           icon={CreditCard}
           iconClassName="bg-emerald-500/10 text-emerald-600"
           subtitle="Invoices paid"
@@ -419,40 +417,38 @@ export default function DashboardPage() {
           </CardContent>
 
           {/* Alerts strip */}
-          {!dashLoading && d?.alerts && (
+          {!dashLoading && d && (
             <>
               <Separator />
               <CardContent className="pt-4 space-y-2">
                 <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-2">
                   Alerts
                 </p>
-                {(d.alerts.overdueInvoices ?? 0) > 0 && (
+                {overdueInvoices > 0 && (
                   <div className="flex items-center justify-between text-sm">
                     <span className="text-muted-foreground">Overdue invoices</span>
                     <Badge variant="destructive" className="text-xs">
-                      {d.alerts.overdueInvoices}
+                      {overdueInvoices}
                     </Badge>
                   </div>
                 )}
-                {(d.alerts.expiringSoon ?? d?.subscriptions?.expiringSoon ?? 0) > 0 && (
+                {expiringSoon > 0 && (
                   <div className="flex items-center justify-between text-sm">
                     <span className="text-muted-foreground">Expiring soon</span>
                     <Badge variant="secondary" className="text-xs bg-amber-100 text-amber-700">
-                      {d.alerts.expiringSoon ?? d?.subscriptions?.expiringSoon}
+                      {expiringSoon}
                     </Badge>
                   </div>
                 )}
-                {(d.alerts.openWorkOrders ?? 0) > 0 && (
+                {openWorkOrders > 0 && (
                   <div className="flex items-center justify-between text-sm">
                     <span className="text-muted-foreground">Open work orders</span>
                     <Badge variant="outline" className="text-xs">
-                      {d.alerts.openWorkOrders}
+                      {openWorkOrders}
                     </Badge>
                   </div>
                 )}
-                {(d.alerts.overdueInvoices ?? 0) === 0 &&
-                  (d.alerts.openWorkOrders ?? 0) === 0 &&
-                  (d.alerts.expiringSoon ?? d?.subscriptions?.expiringSoon ?? 0) === 0 && (
+                {overdueInvoices === 0 && expiringSoon === 0 && openWorkOrders === 0 && (
                   <p className="text-xs text-muted-foreground">All clear — no alerts</p>
                 )}
               </CardContent>

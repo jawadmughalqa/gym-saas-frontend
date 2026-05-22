@@ -5,7 +5,7 @@ import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
 import PageShell from '@/components/layout/PageShell';
 import PageHeader from '@/components/layout/PageHeader';
-import { useMyProfile, useMySubscriptions, useMyInvoices, useMyCheckIns } from './hooks/useMemberPortal';
+import { useMyProfile, useMySubscriptions, useMyInvoices, useMyCheckIns } from './hooks/use-member-portal';
 import { formatDate, formatCurrency } from '@/utils/format';
 
 // ─── Status badge helper ──────────────────────────────────────────────────────

@@ -6,8 +6,8 @@ import ProtectedRoute from "@/components/shared/ProtectedRoute";
 import NotFoundPage from "@/components/shared/NotFoundPage";
 import UnauthorizedPage from "@/components/shared/UnauthorizedPage";
 import LoginPage from "@/features/auth/LoginPage";
+import RootRedirect from "@/features/auth/RootRedirect";
 import DashboardPage from "@/features/dashboard/DashboardPage";
-import { useAuthStore } from "@/stores/auth.store";
 
 // ─── Lazy pages ───────────────────────────────────────────────────────────────
 
@@ -45,17 +45,6 @@ const TrainerDashboardPage    = lazy(() => import("@/features/trainer-portal/Tra
 const TrainerClientsPage      = lazy(() => import("@/features/trainer-portal/TrainerClientsPage"));
 const TrainerNotesPage        = lazy(() => import("@/features/trainer-portal/TrainerNotesPage"));
 
-// ─── Root redirect ────────────────────────────────────────────────────────────
-
-function RootRedirect() {
-  const role = useAuthStore((s) => s.user?.role);
-  const dest =
-    role === 'super_admin' ? '/super-admin'        :
-    role === 'member'      ? '/member/home'        :
-    role === 'trainer'     ? '/trainer/dashboard'  :
-    '/dashboard';
-  return <Navigate to={dest} replace />;
-}
 
 // ─── Suspense wrapper ─────────────────────────────────────────────────────────
 

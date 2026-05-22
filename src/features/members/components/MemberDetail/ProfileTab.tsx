@@ -202,8 +202,8 @@ export function ProfileTab({ memberId }: ProfileTabProps) {
             }
           />
           <InfoRow
-            label="Date of Birth"
-            value={member.dateOfBirth ? formatDate(member.dateOfBirth) : undefined}
+            label="Age"
+            value={(member as any).age != null ? `${(member as any).age} years` : undefined}
           />
           <InfoRow
             label="Gender"

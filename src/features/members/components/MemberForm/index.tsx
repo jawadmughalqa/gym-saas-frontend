@@ -38,6 +38,10 @@ import {
 import { usePostTrainersTrainerIdAssignments } from '@/api/generated/trainers/trainers';
 import { useGetBranches, getGetBranchesQueryKey }  from '@/api/generated/branches/branches';
 import { useQueryClient }  from '@tanstack/react-query';
+import {
+  getGetNotificationsQueryKey,
+  getGetNotificationsUnreadCountQueryKey,
+} from '@/api/generated/notifications/notifications';
 import { useToast }        from '@/hooks/use-toast';
 import type { Member }     from '@/types/member.types';
 import { CURRENCY } from '@/config/tenant.config';
@@ -126,7 +130,7 @@ export default function MemberForm({
         lastName:              member.lastName,
         email:                 member.email,
         phone:                 member.phone,
-        dateOfBirth:           member.dateOfBirth?.slice(0, 10) ?? '',
+        age:                   (member as any).age ?? undefined,
         gender:                member.gender,
         notes:                 member.notes ?? '',
         consentMarketing:      member.consentMarketing,
@@ -169,7 +173,7 @@ export default function MemberForm({
             firstName:        values.firstName,
             lastName:         values.lastName,
             phone:            values.phone,
-            dateOfBirth:      values.dateOfBirth  || undefined,
+            age:              values.age          || undefined,
             gender:           values.gender,
             notes:            values.notes        || undefined,
             consentMarketing: values.consentMarketing,
@@ -198,7 +202,7 @@ export default function MemberForm({
           lastName:              values.lastName,
           email:                 values.email,
           phone:                 values.phone,
-          dateOfBirth:           values.dateOfBirth  || undefined,
+          age:                   values.age          || undefined,
           gender:                values.gender,
           notes:                 values.notes        || undefined,
           consentMarketing:      values.consentMarketing,
@@ -299,6 +303,10 @@ export default function MemberForm({
           });
         }
       }
+
+      // Refresh notification bell — member created + optional subscription events dispatched
+      queryClient.invalidateQueries({ queryKey: getGetNotificationsQueryKey() });
+      queryClient.invalidateQueries({ queryKey: getGetNotificationsUnreadCountQueryKey() });
 
       // Show credentials dialog so owner can hand login details to the member
       if (createdData.loginEmail && createdData.tempPassword) {

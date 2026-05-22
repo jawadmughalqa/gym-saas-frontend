@@ -18,6 +18,12 @@ import { formatCurrency } from '@/lib/utils';
 import { usePostPayments } from '@/api/generated/payments/payments';
 import { CURRENCY } from '@/config/tenant.config';
 import { getGetInvoicesQueryKey } from '@/api/generated/invoices/invoices';
+import { getGetBillingDashboardQueryKey } from '@/api/generated/billing/billing';
+import { getGetReportsDashboardQueryKey } from '@/api/generated/reports/reports';
+import {
+  getGetNotificationsQueryKey,
+  getGetNotificationsUnreadCountQueryKey,
+} from '@/api/generated/notifications/notifications';
 import { toast } from '@/hooks/use-toast';
 
 const formSchema = z.object({
@@ -67,6 +73,10 @@ export function CollectPaymentForm({
       onSuccess: async () => {
         toast({ title: 'Payment recorded successfully' });
         await queryClient.invalidateQueries({ queryKey: getGetInvoicesQueryKey() });
+        await queryClient.invalidateQueries({ queryKey: getGetBillingDashboardQueryKey() });
+        queryClient.invalidateQueries({ queryKey: getGetReportsDashboardQueryKey() });
+        queryClient.invalidateQueries({ queryKey: getGetNotificationsQueryKey() });
+        queryClient.invalidateQueries({ queryKey: getGetNotificationsUnreadCountQueryKey() });
         form.reset({ paidAmount: 0, paymentMethod: 'cash', referenceNumber: '' });
         onSuccess();
       },

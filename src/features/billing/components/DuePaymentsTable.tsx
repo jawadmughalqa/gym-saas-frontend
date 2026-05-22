@@ -94,7 +94,7 @@ interface Props {
   sort: { field: SortField; dir: SortDir };
   page: number;
   currency: string;
-  pendingFees?: number;
+  overdueCount?: number;
   canCollect: boolean;
   onSort: (field: SortField) => void;
   onStatusTab: (v: StatusTab) => void;
@@ -108,7 +108,7 @@ interface Props {
 
 export default function DuePaymentsTable({
   rows, loading, pagination, statusTab, search, sort, page, currency,
-  pendingFees, canCollect, onSort, onStatusTab, onSearch, onPage,
+  overdueCount, canCollect, onSort, onStatusTab, onSearch, onPage,
   onCollect, onViewInvoice,
 }: Props) {
   return (
@@ -137,7 +137,7 @@ export default function DuePaymentsTable({
               )}
             >
               {tab.label}
-              {tab.value === 'overdue' && (pendingFees ?? 0) > 0 && (
+              {tab.value === 'overdue' && (overdueCount ?? 0) > 0 && (
                 <span className="ml-1.5 bg-red-500 text-white rounded-full px-1.5 py-0 text-[10px]">!</span>
               )}
             </button>

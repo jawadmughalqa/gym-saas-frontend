@@ -15,6 +15,10 @@ import {
   getGetTrainersTrainerIdQueryKey,
 } from "@/api/generated/trainers/trainers";
 import {
+  getGetNotificationsQueryKey,
+  getGetNotificationsUnreadCountQueryKey,
+} from "@/api/generated/notifications/notifications";
+import {
   Sheet,
   SheetContent,
   SheetHeader,
@@ -284,8 +288,9 @@ export default function TrainerForm({
   const createTrainer = usePostTrainersWithUser({
     mutation: {
       onSuccess: () => {
-        // Use Orval's query key pattern
         queryClient.invalidateQueries({ queryKey: getGetTrainersQueryKey() });
+        queryClient.invalidateQueries({ queryKey: getGetNotificationsQueryKey() });
+        queryClient.invalidateQueries({ queryKey: getGetNotificationsUnreadCountQueryKey() });
         toast({ title: "Trainer created successfully" });
         onOpenChange(false);
       },

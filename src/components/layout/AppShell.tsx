@@ -20,7 +20,7 @@ import { cn } from '@/lib/utils';
 function useUnreadCountSync() {
   const setUnreadCount = useNotificationStore((s) => s.setUnreadCount);
   const { data } = useGetNotificationsUnreadCount({
-    query: { staleTime: 1000 * 30, refetchInterval: 1000 * 60 },
+    query: { staleTime: 0, refetchOnMount: true, refetchOnWindowFocus: true, refetchInterval: 1000 * 30 },
   });
   useEffect(() => {
     if (data?.data?.count !== undefined) {

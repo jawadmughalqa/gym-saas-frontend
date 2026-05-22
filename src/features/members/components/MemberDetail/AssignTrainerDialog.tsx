@@ -18,6 +18,10 @@ import {
   getGetTrainersTrainerIdAssignmentsQueryKey,
 } from "@/api/generated/trainers/trainers";
 import { getGetInvoicesQueryKey } from "@/api/generated/invoices/invoices";
+import {
+  getGetNotificationsQueryKey,
+  getGetNotificationsUnreadCountQueryKey,
+} from "@/api/generated/notifications/notifications";
 import type { TrainerAssignment } from "./TrainerTab";
 import {
   Button,
@@ -122,6 +126,10 @@ export default function AssignTrainerDialog({
         // Invalidate member invoices — backend auto-creates a PT fee invoice on assignment.
         // Without this, BillingTab won't show the new invoice until a manual page refresh.
         queryClient.invalidateQueries({ queryKey: getGetInvoicesQueryKey({ memberId }) });
+
+        // Refresh notification bell — trainer assigned event dispatched to owner + trainer
+        queryClient.invalidateQueries({ queryKey: getGetNotificationsQueryKey() });
+        queryClient.invalidateQueries({ queryKey: getGetNotificationsUnreadCountQueryKey() });
 
         resetForm();
         onOpenChange(false);

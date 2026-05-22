@@ -97,7 +97,7 @@ function PaymentSummaryCard() {
   };
 
   const { data: billingData, isLoading: billingLoading } =
-    useGetBillingDashboard(billingParams, { query: { staleTime: 60_000 } });
+    useGetBillingDashboard(billingParams, { query: { staleTime: 0, refetchOnMount: true } });
 
   const billing = billingData?.data;
 
@@ -110,7 +110,7 @@ function PaymentSummaryCard() {
   };
 
   const { data: revenueData, isLoading: chartLoading } =
-    useGetReportsRevenue(revenueParams, { query: { staleTime: 60_000 } });
+    useGetReportsRevenue(revenueParams, { query: { staleTime: 0, refetchOnMount: true } });
 
   const timeSeries = ((revenueData?.data as any)?.timeSeries ?? []) as Array<{
     period: string;
@@ -341,12 +341,18 @@ export default function DashboardPage() {
   // Reports dashboard — KPI cards
   const { data: dashData, isLoading: dashLoading } = useGetReportsDashboard(
     undefined,
-    { query: { staleTime: 60_000 } },
+    { query: { staleTime: 0, refetchOnMount: true, refetchOnWindowFocus: true } },
   );
   const d = dashData?.data as Record<string, any> | undefined;
   const members      = d?.members      ?? {};
   const revenue      = d?.revenue      ?? {};
   const trainers     = d?.trainers     ?? {};
+
+  // Alerts — `d.alerts.expiringSoon` doesn't exist on the backend;
+  // the real field is `d.subscriptions.expiringSoon`
+  const overdueInvoices    = (d?.alerts?.overdueInvoices     ?? 0) as number;
+  const expiringSoon       = (d?.subscriptions?.expiringSoon ?? 0) as number;
+  const openWorkOrders     = (d?.alerts?.openWorkOrders      ?? 0) as number;
 
   return (
     <PageShell>
@@ -411,40 +417,38 @@ export default function DashboardPage() {
           </CardContent>
 
           {/* Alerts strip */}
-          {!dashLoading && d?.alerts && (
+          {!dashLoading && d && (
             <>
               <Separator />
               <CardContent className="pt-4 space-y-2">
                 <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-2">
                   Alerts
                 </p>
-                {(d.alerts.overdueInvoices ?? 0) > 0 && (
+                {overdueInvoices > 0 && (
                   <div className="flex items-center justify-between text-sm">
                     <span className="text-muted-foreground">Overdue invoices</span>
                     <Badge variant="destructive" className="text-xs">
-                      {d.alerts.overdueInvoices}
+                      {overdueInvoices}
                     </Badge>
                   </div>
                 )}
-                {(d.alerts.expiringSoon ?? d?.subscriptions?.expiringSoon ?? 0) > 0 && (
+                {expiringSoon > 0 && (
                   <div className="flex items-center justify-between text-sm">
                     <span className="text-muted-foreground">Expiring soon</span>
                     <Badge variant="secondary" className="text-xs bg-amber-100 text-amber-700">
-                      {d.alerts.expiringSoon ?? d?.subscriptions?.expiringSoon}
+                      {expiringSoon}
                     </Badge>
                   </div>
                 )}
-                {(d.alerts.openWorkOrders ?? 0) > 0 && (
+                {openWorkOrders > 0 && (
                   <div className="flex items-center justify-between text-sm">
                     <span className="text-muted-foreground">Open work orders</span>
                     <Badge variant="outline" className="text-xs">
-                      {d.alerts.openWorkOrders}
+                      {openWorkOrders}
                     </Badge>
                   </div>
                 )}
-                {(d.alerts.overdueInvoices ?? 0) === 0 &&
-                  (d.alerts.openWorkOrders ?? 0) === 0 &&
-                  (d.alerts.expiringSoon ?? d?.subscriptions?.expiringSoon ?? 0) === 0 && (
+                {overdueInvoices === 0 && expiringSoon === 0 && openWorkOrders === 0 && (
                   <p className="text-xs text-muted-foreground">All clear — no alerts</p>
                 )}
               </CardContent>

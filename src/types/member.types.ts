@@ -63,7 +63,7 @@ export interface Member {
   fullName:         string;
   email:            string;
   phone:            string;
-  dateOfBirth?:     string;
+  age?:             number;
   gender?:          Gender;
   profilePhotoUrl?: string;
 
@@ -216,7 +216,7 @@ export interface CreateMemberDto {
   lastName:    string;
   email:       string;
   phone:       string;
-  dateOfBirth?: string;
+  age?:         number;
   gender?:      Gender;
   govId?:       string;
   govIdType?:   GovIdType;
@@ -232,7 +232,7 @@ export interface UpdateMemberDto {
   firstName?:       string;
   lastName?:        string;
   phone?:           string;
-  dateOfBirth?:     string;
+  age?:             number;
   gender?:          Gender;
   profilePhotoUrl?: string;
   emergencyContact?:    EmergencyContact;

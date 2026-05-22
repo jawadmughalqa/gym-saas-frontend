@@ -132,16 +132,22 @@ export function PersonalInfoSection({
         )}
       </div>
 
-      {/* DOB + Gender */}
+      {/* Age + Gender */}
       <div className="grid grid-cols-2 gap-3">
         <div className="space-y-1.5">
-          <Label htmlFor="dateOfBirth">Date of Birth</Label>
+          <Label htmlFor="age">Age</Label>
           <Input
-            id="dateOfBirth"
-            type="date"
+            id="age"
+            type="number"
+            min={1}
+            max={120}
+            placeholder="e.g. 28"
             disabled={isPending}
-            {...register('dateOfBirth')}
+            {...register('age', { valueAsNumber: true })}
           />
+          {errors.age && (
+            <p className="text-xs text-destructive">{errors.age.message}</p>
+          )}
         </div>
         <div className="space-y-1.5">
           <Label>Gender</Label>

@@ -322,7 +322,7 @@ export default function BillingDashboard() {
             sort={sort}
             page={page}
             currency={currency}
-            pendingFees={stats?.pendingFees}
+            overdueCount={(stats as any)?.overdueCount}
             canCollect={can('payment.create')}
             onSort={handleSort}
             onStatusTab={(v) => { setStatusTab(v); setPage(1); }}

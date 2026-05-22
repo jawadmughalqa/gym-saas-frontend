@@ -15,6 +15,12 @@ import {
   getGetPaymentsQueryKey,
 } from '@/api/generated/payments/payments';
 import { getGetInvoicesInvoiceIdQueryKey } from '@/api/generated/invoices/invoices';
+import { getGetBillingDashboardQueryKey } from '@/api/generated/billing/billing';
+import { getGetReportsDashboardQueryKey } from '@/api/generated/reports/reports';
+import {
+  getGetNotificationsQueryKey,
+  getGetNotificationsUnreadCountQueryKey,
+} from '@/api/generated/notifications/notifications';
 
 // ─── Schema ───────────────────────────────────────────────────────────────────
 
@@ -44,6 +50,10 @@ export default function RecordPaymentDialog({ invoiceId, currency, amountDue, op
       onSuccess: () => {
         queryClient.invalidateQueries({ queryKey: getGetInvoicesInvoiceIdQueryKey(invoiceId) });
         queryClient.invalidateQueries({ queryKey: getGetPaymentsQueryKey() });
+        queryClient.invalidateQueries({ queryKey: getGetBillingDashboardQueryKey() });
+        queryClient.invalidateQueries({ queryKey: getGetReportsDashboardQueryKey() });
+        queryClient.invalidateQueries({ queryKey: getGetNotificationsQueryKey() });
+        queryClient.invalidateQueries({ queryKey: getGetNotificationsUnreadCountQueryKey() });
         toast({ title: 'Payment recorded successfully' });
         onOpenChange(false);
       },

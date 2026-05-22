@@ -12,6 +12,10 @@ import {
   type UpdateStaffRequest,
   type UpdateStaffStatusRequest,
 } from '@/api/generated/staff/staff';
+import {
+  getGetNotificationsQueryKey,
+  getGetNotificationsUnreadCountQueryKey,
+} from '@/api/generated/notifications/notifications';
 import { toast } from '@/hooks/use-toast';
 import { getErrorMessage } from '@/utils/error';
 
@@ -41,6 +45,8 @@ export function useCreateStaff(options?: { onSuccess?: () => void }) {
     mutation: {
       onSuccess: () => {
         qc.invalidateQueries({ queryKey: getGetStaffQueryKey() });
+        qc.invalidateQueries({ queryKey: getGetNotificationsQueryKey() });
+        qc.invalidateQueries({ queryKey: getGetNotificationsUnreadCountQueryKey() });
         toast({ title: 'Staff account created', description: 'The user can now log in and will be prompted to set a new password.' });
         options?.onSuccess?.();
       },

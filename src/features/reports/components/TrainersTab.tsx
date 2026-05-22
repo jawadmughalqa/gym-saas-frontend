@@ -8,9 +8,10 @@ import { Badge } from '@/components/ui/badge';
 import { CHART_COLORS } from '@/lib/constants';
 import { useGetReportsTrainers } from '@/api/generated/reports/reports';
 import {
-  DatePreset, getDateRange,
+  getDateRange,
   DateRangeSelector, SectionTitle, ChartCard,
 } from './ReportsShared';
+import type { DatePreset } from './ReportsShared';
 
 export default function TrainersTab() {
   const [preset, setPreset] = useState<DatePreset>('30d');

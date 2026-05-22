@@ -10,9 +10,10 @@ import { CHART_COLORS } from '@/lib/constants';
 import { useGetReportsRevenue } from '@/api/generated/reports/reports';
 import type { GetReportsRevenueGranularity } from '@/api/generated/schemas/getReportsRevenueGranularity';
 import {
-  DatePreset, getDateRange, granularityForPreset,
+  getDateRange, granularityForPreset,
   DateRangeSelector, SectionTitle, ChartCard, ChartSkeleton, EmptyChart,
 } from './ReportsShared';
+import type { DatePreset } from './ReportsShared';
 
 export default function RevenueTab() {
   const [preset, setPreset] = useState<DatePreset>('30d');

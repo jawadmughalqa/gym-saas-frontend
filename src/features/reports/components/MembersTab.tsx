@@ -8,9 +8,10 @@ import { CHART_COLORS } from '@/lib/constants';
 import { useGetReportsMembers } from '@/api/generated/reports/reports';
 import type { GetReportsMembersGranularity } from '@/api/generated/schemas/getReportsMembersGranularity';
 import {
-  DatePreset, getDateRange, granularityForPreset,
+  getDateRange, granularityForPreset,
   DateRangeSelector, SectionTitle, ChartCard, ChartSkeleton, EmptyChart,
 } from './ReportsShared';
+import type { DatePreset } from './ReportsShared';
 
 export default function MembersTab() {
   const [preset, setPreset] = useState<DatePreset>('6m');

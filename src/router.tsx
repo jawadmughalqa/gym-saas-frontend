@@ -12,6 +12,7 @@ import DashboardPage from "@/features/dashboard/DashboardPage";
 // ─── Lazy pages ───────────────────────────────────────────────────────────────
 
 const ChangePasswordPage  = lazy(() => import("@/features/auth/ChangePasswordPage"));
+const PricingPage         = lazy(() => import("@/features/settings/PricingPage"));
 const ProfilePage         = lazy(() => import("@/features/auth/ProfilePage"));
 const MembersPage         = lazy(() => import("@/features/members/MembersPage"));
 const MemberDetailPage    = lazy(() => import("@/features/members/MemberDetailPage"));
@@ -105,6 +106,11 @@ const router = createBrowserRouter([
                 path: "change-password",
                 element: <Lazy><ChangePasswordPage /></Lazy>,
                 handle: { crumb: "Change Password" },
+              },
+              {
+                path: "pricing",
+                element: <Lazy><PricingPage /></Lazy>,
+                handle: { crumb: "Plans & Pricing" },
               },
             ],
           },

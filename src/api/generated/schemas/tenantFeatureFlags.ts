@@ -7,11 +7,16 @@
  */
 
 export interface TenantFeatureFlags {
-  customRoles?: boolean;
-  advancedReporting?: boolean;
-  apiAccess?: boolean;
-  whiteLabeling?: boolean;
-  instalmentPlans?: boolean;
-  discountEngine?: boolean;
-  multiCurrency?: boolean;
+  members?:       boolean;
+  trainers?:      boolean;
+  billing?:       boolean;
+  attendance?:    boolean;
+  reports?:       boolean;
+  expenses?:      boolean;
+  branches?:      boolean;
+  equipment?:     boolean;
+  notifications?: boolean;
+  discounts?:     boolean;
+  fitPlan?:       boolean;
+  memberPortal?:  boolean;
 }

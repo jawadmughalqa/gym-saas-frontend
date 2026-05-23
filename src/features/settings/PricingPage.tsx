@@ -1,0 +1,294 @@
+import { useNavigate } from 'react-router-dom';
+import {
+  Check, X, ArrowLeft, Sparkles, Mail,
+  Users, UserCheck, CreditCard, ScanLine, BarChart3,
+  Receipt, GitBranch, Wrench, Bell, Tag, Dumbbell, Smartphone,
+} from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
+import { Card, CardContent, CardHeader } from '@/components/ui/card';
+import { Skeleton } from '@/components/ui/skeleton';
+import { Separator } from '@/components/ui/separator';
+import { cn } from '@/lib/utils';
+import { formatCurrency } from '@/utils/format';
+import { useGetMyTenant, useGetTenantPlans } from '@/api/generated/tenants/tenants';
+import type { Plan } from '@/api/generated/schemas/plan';
+
+// ─── Feature Flag definitions (same as PlansPage) ────────────────────────────
+
+interface FeatureDef {
+  key:         string;
+  label:       string;
+  description: string;
+  icon:        React.ElementType;
+  color:       string;
+}
+
+const FEATURES: FeatureDef[] = [
+  { key: 'members',       label: 'Members',          description: 'Member registration & management',      icon: Users,       color: 'text-blue-500'   },
+  { key: 'trainers',      label: 'Trainers',          description: 'Trainer management & assignments',      icon: UserCheck,   color: 'text-violet-500' },
+  { key: 'billing',       label: 'Billing',           description: 'Invoices, payments & subscriptions',   icon: CreditCard,  color: 'text-green-500'  },
+  { key: 'attendance',    label: 'Attendance',        description: 'Check-in & attendance tracking',       icon: ScanLine,    color: 'text-cyan-500'   },
+  { key: 'notifications', label: 'Notifications',     description: 'In-app & push notifications',          icon: Bell,        color: 'text-amber-500'  },
+  { key: 'memberPortal',  label: 'Member Portal',     description: 'Member self-service portal',           icon: Smartphone,  color: 'text-indigo-500' },
+  { key: 'reports',       label: 'Advanced Reports',  description: 'Analytics, revenue & growth reports',  icon: BarChart3,   color: 'text-rose-500'   },
+  { key: 'expenses',      label: 'Expenses',          description: 'Expense tracking & analytics',         icon: Receipt,     color: 'text-orange-500' },
+  { key: 'branches',      label: 'Multi-Branch',      description: 'Multiple gym locations',               icon: GitBranch,   color: 'text-teal-500'   },
+  { key: 'equipment',     label: 'Equipment',         description: 'Equipment & maintenance management',   icon: Wrench,      color: 'text-slate-500'  },
+  { key: 'discounts',     label: 'Discounts',         description: 'Discount codes & promotions',          icon: Tag,         color: 'text-pink-500'   },
+  { key: 'fitPlan',       label: 'FitPlan',           description: 'AI-powered personalised fitness plans', icon: Dumbbell,   color: 'text-emerald-500'},
+];
+
+// ─── Plan tier styles ─────────────────────────────────────────────────────────
+
+const TIER_STYLES: Record<string, {
+  border: string; activeBorder: string; badge: string; accent: string; cardBg: string;
+}> = {
+  starter:    { border: 'border-slate-200',  activeBorder: 'border-slate-500',   badge: 'bg-slate-100 text-slate-700',   accent: 'text-slate-700',   cardBg: '' },
+  pro:        { border: 'border-purple-200', activeBorder: 'border-purple-500',  badge: 'bg-purple-100 text-purple-700', accent: 'text-purple-700',  cardBg: 'bg-purple-50/40 dark:bg-purple-950/20' },
+  enterprise: { border: 'border-amber-200',  activeBorder: 'border-amber-500',   badge: 'bg-amber-100 text-amber-700',   accent: 'text-amber-700',   cardBg: 'bg-amber-50/40 dark:bg-amber-950/20' },
+};
+
+// ─── Quota display ────────────────────────────────────────────────────────────
+
+function quotaLabel(val: number | undefined, unit?: string): string {
+  if (val === -1 || val === undefined) return '∞';
+  return unit ? `${val} ${unit}` : String(val);
+}
+
+// ─── Plan Card ────────────────────────────────────────────────────────────────
+
+function PlanCard({
+  plan,
+  isCurrent,
+  featureFlags,
+}: {
+  plan: Plan;
+  isCurrent: boolean;
+  featureFlags: Record<string, boolean>;
+}) {
+  const planName   = plan.name ?? 'starter';
+  const styles     = TIER_STYLES[planName] ?? TIER_STYLES['starter'];
+  const currency   = plan.currency ?? 'PKR';
+  const planAny    = plan as Plan & { billingCycle?: string; trialDays?: number };
+  const billing    = planAny.billingCycle ?? 'monthly';
+  const trialDays  = planAny.trialDays ?? 0;
+
+  return (
+    <Card
+      className={cn(
+        'relative flex flex-col border-2 transition-all',
+        isCurrent ? styles.activeBorder : styles.border,
+        styles.cardBg,
+      )}
+    >
+      {/* Current plan ribbon */}
+      {isCurrent && (
+        <div className="absolute -top-3 left-1/2 -translate-x-1/2">
+          <span className="inline-flex items-center gap-1 bg-primary text-primary-foreground text-xs font-semibold px-3 py-1 rounded-full shadow-sm">
+            <Sparkles className="h-3 w-3" />
+            Current Plan
+          </span>
+        </div>
+      )}
+
+      <CardHeader className={cn('pb-4', isCurrent && 'pt-7')}>
+        {/* Plan name + tier badge */}
+        <div className="flex items-center gap-2 mb-1">
+          <h3 className={cn('text-xl font-bold capitalize', styles.accent)}>
+            {plan.displayName ?? planName}
+          </h3>
+          <span className={cn('text-xs font-semibold px-2 py-0.5 rounded-full capitalize', styles.badge)}>
+            {planName}
+          </span>
+        </div>
+        {plan.description && (
+          <p className="text-sm text-muted-foreground">{plan.description}</p>
+        )}
+
+        {/* Price */}
+        <div className="mt-3">
+          <span className={cn('text-3xl font-bold', styles.accent)}>
+            {formatCurrency(plan.price ?? 0, currency)}
+          </span>
+          <span className="text-muted-foreground text-sm">/{billing}</span>
+        </div>
+
+        {trialDays > 0 && (
+          <p className="text-xs text-muted-foreground mt-1">{trialDays}-day free trial</p>
+        )}
+      </CardHeader>
+
+      <CardContent className="flex-1 space-y-4">
+        {/* Quotas */}
+        <div className="space-y-2">
+          <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Limits</p>
+          <div className="grid grid-cols-2 gap-x-4 gap-y-1">
+            {[
+              { label: 'Members',        val: plan.quotas?.maxMembers },
+              { label: 'Trainers',       val: plan.quotas?.maxTrainers },
+              { label: 'Branches',       val: plan.quotas?.maxBranches },
+              { label: 'Storage',        val: plan.quotas?.maxStorageMb, unit: 'MB' },
+              { label: 'Emails/month',   val: plan.quotas?.maxEmailSendsPerMonth },
+            ].map(({ label, val, unit }) => (
+              <div key={label} className="flex justify-between text-sm">
+                <span className="text-muted-foreground">{label}</span>
+                <span className="font-semibold">{quotaLabel(val, unit)}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        <Separator />
+
+        {/* Features */}
+        <div className="space-y-2">
+          <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Features</p>
+          <div className="space-y-1.5">
+            {FEATURES.map(({ key, label, icon: Icon, color }) => {
+              const enabled = featureFlags[key] ?? false;
+              return (
+                <div
+                  key={key}
+                  className={cn(
+                    'flex items-center gap-2 text-sm',
+                    !enabled && 'opacity-40',
+                  )}
+                >
+                  {enabled
+                    ? <Check className="h-3.5 w-3.5 text-emerald-500 flex-shrink-0" />
+                    : <X     className="h-3.5 w-3.5 text-muted-foreground flex-shrink-0" />
+                  }
+                  <Icon className={cn('h-3.5 w-3.5 flex-shrink-0', enabled ? color : 'text-muted-foreground')} />
+                  <span className={enabled ? 'font-medium' : ''}>{label}</span>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      </CardContent>
+    </Card>
+  );
+}
+
+// ─── PricingPage ──────────────────────────────────────────────────────────────
+
+export default function PricingPage() {
+  const navigate = useNavigate();
+
+  const { data: tenantRes, isLoading: tenantLoading } = useGetMyTenant();
+  const { data: plansRes,  isLoading: plansLoading  } = useGetTenantPlans({
+    query: { staleTime: 1000 * 60 * 10 },
+  });
+
+  const currentPlanName = tenantRes?.data?.plan ?? '';
+  const plans: Plan[]   = plansRes?.data ?? [];
+  const isLoading       = tenantLoading || plansLoading;
+
+  // Contact Us mailto
+  const CONTACT_EMAIL   = 'support@coredevai.com';
+  const contactSubject  = encodeURIComponent('Custom Plan Enquiry — Gym Management');
+  const contactBody     = encodeURIComponent(
+    `Hi,\n\nI'm interested in a custom plan for my gym.\n\nBusiness: ${tenantRes?.data?.businessName ?? ''}\nCurrent Plan: ${currentPlanName}\n\nPlease share more details.`,
+  );
+
+  return (
+    <div className="max-w-5xl space-y-6">
+      {/* Page header */}
+      <div className="flex items-start justify-between gap-4">
+        <div>
+          <div className="flex items-center gap-2 mb-1">
+            <Button
+              variant="ghost"
+              size="sm"
+              className="h-7 px-2 -ml-2"
+              onClick={() => navigate(-1)}
+            >
+              <ArrowLeft className="h-4 w-4" />
+            </Button>
+            <h1 className="text-2xl font-bold tracking-tight">Plans & Pricing</h1>
+          </div>
+          <p className="text-sm text-muted-foreground">
+            Compare plans and see what features are included in each tier.
+          </p>
+        </div>
+
+        <a href={`mailto:${CONTACT_EMAIL}?subject=${contactSubject}&body=${contactBody}`}>
+          <Button variant="outline" className="gap-2 flex-shrink-0">
+            <Mail className="h-4 w-4" />
+            Contact Us
+          </Button>
+        </a>
+      </div>
+
+      {/* Current plan callout */}
+      {!tenantLoading && currentPlanName && (
+        <div className="flex items-center gap-3 rounded-lg border bg-muted/50 px-4 py-3">
+          <Sparkles className="h-4 w-4 text-primary flex-shrink-0" />
+          <p className="text-sm">
+            You are currently on the{' '}
+            <span className="font-semibold capitalize">{currentPlanName}</span> plan.
+            {' '}To upgrade or make changes, contact us using the button above.
+          </p>
+        </div>
+      )}
+
+      {/* Plans grid */}
+      {isLoading ? (
+        <div className="grid gap-6 md:grid-cols-3">
+          {[1, 2, 3].map((i) => (
+            <Skeleton key={i} className="h-[620px] rounded-xl" />
+          ))}
+        </div>
+      ) : plans.length === 0 ? (
+        <div className="flex flex-col items-center justify-center py-24 text-center gap-3">
+          <p className="text-muted-foreground text-sm">No plans configured yet. Contact us for details.</p>
+          <a href={`mailto:${CONTACT_EMAIL}?subject=${contactSubject}`}>
+            <Button variant="outline" className="gap-2">
+              <Mail className="h-4 w-4" />
+              Get in Touch
+            </Button>
+          </a>
+        </div>
+      ) : (
+        <div className="grid gap-6 md:grid-cols-3">
+          {plans
+            .slice()
+            .sort((a, b) => (a.price ?? 0) - (b.price ?? 0))
+            .map((plan) => {
+              const flags = (plan.featureFlags ?? {}) as Record<string, boolean>;
+              return (
+                <PlanCard
+                  key={plan._id ?? plan.name}
+                  plan={plan}
+                  isCurrent={plan.name === currentPlanName}
+                  featureFlags={flags}
+                />
+              );
+            })}
+        </div>
+      )}
+
+      {/* Custom plan CTA */}
+      <div className="rounded-xl border-2 border-dashed p-6 text-center space-y-3">
+        <div className="flex justify-center">
+          <div className="rounded-full bg-primary/10 p-3">
+            <Sparkles className="h-6 w-6 text-primary" />
+          </div>
+        </div>
+        <h3 className="font-semibold text-base">Need a Custom Plan?</h3>
+        <p className="text-sm text-muted-foreground max-w-md mx-auto">
+          Have specific requirements — more branches, higher member limits, or custom integrations?
+          We can build a plan tailored to your business.
+        </p>
+        <a href={`mailto:${CONTACT_EMAIL}?subject=${contactSubject}&body=${contactBody}`}>
+          <Button className="gap-2 mt-1">
+            <Mail className="h-4 w-4" />
+            Request a Custom Plan
+          </Button>
+        </a>
+        <p className="text-xs text-muted-foreground">{CONTACT_EMAIL}</p>
+      </div>
+    </div>
+  );
+}

@@ -1,12 +1,22 @@
 import { useState } from 'react';
 import { format, addMonths, subMonths } from 'date-fns';
-import { ChevronLeft, ChevronRight, TrendingUp } from 'lucide-react';
+import { ChevronLeft, ChevronRight, TrendingUp, Settings2 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import PageShell from '@/components/layout/PageShell';
 import PageHeader from '@/components/layout/PageHeader';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 import GoalSetupFlow from './GoalSetupFlow';
 import StreakCard from './components/StreakCard';
 import CalendarView from './components/CalendarView';
@@ -23,6 +33,10 @@ export default function FitPlanPage() {
   const navigate = useNavigate();
   const [currentDate, setCurrentDate] = useState(new Date());
   const [selectedDay, setSelectedDay] = useState<string | null>(null);
+
+  // Edit plan flow state
+  const [showConfirm, setShowConfirm] = useState(false);
+  const [editMode, setEditMode]       = useState(false);
 
   const month = currentDate.getMonth() + 1;
   const year  = currentDate.getFullYear();
@@ -46,6 +60,16 @@ export default function FitPlanPage() {
   function handleFreeze() {
     const today = format(new Date(), 'yyyy-MM-dd');
     useFreeze.mutate({ data: { date: today } });
+  }
+
+  function handleEditConfirmed() {
+    setShowConfirm(false);
+    setEditMode(true);
+  }
+
+  function handleEditComplete() {
+    setEditMode(false);
+    void refetchPlan();
   }
 
   if (loadingPlan) {
@@ -74,16 +98,43 @@ export default function FitPlanPage() {
 
   const plan = planData!.plan!;
 
+  // ── Edit mode — show pre-filled setup flow ────────────────────────────────
+  if (editMode) {
+    return (
+      <PageShell>
+        <GoalSetupFlow
+          mode="edit"
+          initialValues={{
+            goal:                (plan.goal as 'weight_loss' | 'muscle_gain' | 'maintain' | 'endurance' | 'recovery') ?? 'weight_loss',
+            currentWeight:       plan.currentWeight,
+            targetWeight:        plan.targetWeight ?? '',
+            activityLevel:       (plan.activityLevel as 'sedentary' | 'light' | 'moderate' | 'active' | 'very_active') ?? 'moderate',
+            fitnessLevel:        (plan.fitnessLevel as 'beginner' | 'intermediate' | 'advanced') ?? 'beginner',
+            trainingDaysPerWeek: plan.trainingDaysPerWeek ?? 4,
+            dietaryRestrictions: plan.dietaryRestrictions ?? [],
+          }}
+          onComplete={handleEditComplete}
+        />
+      </PageShell>
+    );
+  }
+
   return (
     <PageShell>
       <PageHeader
         title="My FitPlan"
         description={`${plan.goal?.replace('_', ' ')} · ${plan.fitnessLevel} · ${plan.trainingDaysPerWeek}×/week`}
         actions={
-          <Button variant="outline" size="sm" onClick={() => navigate('/member/fit-plan/progress')}>
-            <TrendingUp className="h-4 w-4 mr-1.5" />
-            Progress
-          </Button>
+          <div className="flex items-center gap-2">
+            <Button variant="outline" size="sm" onClick={() => navigate('/member/fit-plan/progress')}>
+              <TrendingUp className="h-4 w-4 mr-1.5" />
+              Progress
+            </Button>
+            <Button variant="outline" size="sm" onClick={() => setShowConfirm(true)}>
+              <Settings2 className="h-4 w-4 mr-1.5" />
+              Change Goal
+            </Button>
+          </div>
         }
       />
 
@@ -164,6 +215,25 @@ export default function FitPlanPage() {
         calendarParams={calendarParams}
         onClose={() => setSelectedDay(null)}
       />
+
+      {/* Change goal confirmation dialog */}
+      <AlertDialog open={showConfirm} onOpenChange={setShowConfirm}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Change your FitPlan goal?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Switching goals will regenerate your upcoming workouts based on your new settings.
+              Your completed workouts, streak, and progress history are fully preserved.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={handleEditConfirmed}>
+              Yes, update my plan
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </PageShell>
   );
 }

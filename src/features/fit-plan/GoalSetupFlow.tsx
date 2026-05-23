@@ -109,20 +109,26 @@ function StepIndicator({ step, total }: { step: number; total: number }) {
 
 interface GoalSetupFlowProps {
   onComplete?: () => void;
+  /** Pre-filled values when editing an existing plan */
+  initialValues?: Partial<FormValues>;
+  /** 'setup' = first-time creation, 'edit' = changing goal mid-plan */
+  mode?: 'setup' | 'edit';
 }
 
-export default function GoalSetupFlow({ onComplete }: GoalSetupFlowProps) {
+export default function GoalSetupFlow({ onComplete, initialValues, mode = 'setup' }: GoalSetupFlowProps) {
   const [step, setStep] = useState(0);
   const setup = useSetupFitPlanMutation();
 
   const form = useForm<FormValues>({
     resolver: zodResolver(schema),
     defaultValues: {
-      goal:                "weight_loss",
-      activityLevel:       "moderate",
-      fitnessLevel:        "beginner",
-      trainingDaysPerWeek: 4,
-      dietaryRestrictions: [],
+      goal:                initialValues?.goal                ?? "weight_loss",
+      currentWeight:       initialValues?.currentWeight       ?? ('' as unknown as number),
+      targetWeight:        initialValues?.targetWeight        ?? '',
+      activityLevel:       initialValues?.activityLevel       ?? "moderate",
+      fitnessLevel:        initialValues?.fitnessLevel        ?? "beginner",
+      trainingDaysPerWeek: initialValues?.trainingDaysPerWeek ?? 4,
+      dietaryRestrictions: initialValues?.dietaryRestrictions ?? [],
     },
   });
 
@@ -164,7 +170,9 @@ export default function GoalSetupFlow({ onComplete }: GoalSetupFlowProps) {
         <div className="inline-flex items-center justify-center w-12 h-12 rounded-full bg-primary/10 mb-3">
           <Target className="h-6 w-6 text-primary" />
         </div>
-        <h1 className="text-2xl font-bold">Set Up Your FitPlan</h1>
+        <h1 className="text-2xl font-bold">
+          {mode === 'edit' ? 'Update Your FitPlan' : 'Set Up Your FitPlan'}
+        </h1>
         <p className="text-muted-foreground text-sm mt-1">
           Step {step + 1} of 3 — {STEP_TITLES[step]}
         </p>
@@ -421,7 +429,7 @@ export default function GoalSetupFlow({ onComplete }: GoalSetupFlowProps) {
                 onClick={handleSubmit}
               >
                 {setup.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                Create My FitPlan 🚀
+                {mode === 'edit' ? 'Update My FitPlan 🔄' : 'Create My FitPlan 🚀'}
               </Button>
             )}
           </div>

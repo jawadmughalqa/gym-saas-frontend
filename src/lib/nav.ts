@@ -21,6 +21,7 @@ import {
   Home,
   BadgeCheck,
   ClipboardCheck,
+  Flame,
   type LucideIcon,
 } from 'lucide-react';
 import type { UserRole } from '@/types/api.types';
@@ -159,10 +160,11 @@ export const NAV_GROUPS: NavGroup[] = [
   {
     label: 'My Account',
     items: [
-      { to: '/member/home',     label: 'Home',       icon: Home,       roles: ['member'] },
-      { to: '/member/plan',     label: 'My Plan',    icon: BadgeCheck, roles: ['member'] },
-      { to: '/member/invoices', label: 'Invoices',   icon: Receipt,    roles: ['member'] },
-      { to: '/member/trainer',  label: 'My Trainer', icon: Dumbbell,   roles: ['member'] },
+      { to: '/member/home',         label: 'Home',       icon: Home,       roles: ['member'] },
+      { to: '/member/plan',         label: 'My Plan',    icon: BadgeCheck, roles: ['member'] },
+      { to: '/member/fit-plan',     label: 'FitPlan',    icon: Flame,      roles: ['member'] },
+      { to: '/member/invoices',     label: 'Invoices',   icon: Receipt,    roles: ['member'] },
+      { to: '/member/trainer',      label: 'My Trainer', icon: Dumbbell,   roles: ['member'] },
     ],
   },
 

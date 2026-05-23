@@ -45,7 +45,6 @@ import type {
   MemberTimelineResponse,
   NotFoundResponse,
   PostMembersMemberIdSubscriptionsSubscriptionIdCancelBody,
-  PostMembersMemberIdSubscriptionsSubscriptionIdChangePlanBody,
   SubscriptionListResponse,
   SubscriptionResponse,
   SuccessResponse,
@@ -891,73 +890,6 @@ export const usePostMembersMemberIdSubscriptionsSubscriptionIdCancel = <TError =
         TContext
       > => {
       return useMutation(getPostMembersMemberIdSubscriptionsSubscriptionIdCancelMutationOptions(options), queryClient);
-    }
-    /**
- * Cancels the current subscription (reason: plan_changed) and immediately creates a new active subscription on the specified plan. Optionally auto-creates a new invoice for the first cycle.
-
- * @summary Change subscription plan
- */
-export const postMembersMemberIdSubscriptionsSubscriptionIdChangePlan = (
-    memberId: string,
-    subscriptionId: string,
-    postMembersMemberIdSubscriptionsSubscriptionIdChangePlanBody: BodyType<PostMembersMemberIdSubscriptionsSubscriptionIdChangePlanBody>,
- signal?: AbortSignal
-) => {
-
-
-      return orvalMutator<void>(
-      {url: `/members/${memberId}/subscriptions/${subscriptionId}/change-plan`, method: 'POST',
-      headers: {'Content-Type': 'application/json', },
-      data: postMembersMemberIdSubscriptionsSubscriptionIdChangePlanBody, signal
-    },
-      );
-    }
-
-
-
-export const getPostMembersMemberIdSubscriptionsSubscriptionIdChangePlanMutationOptions = <TError = ErrorType<BadRequestResponse | NotFoundResponse>,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof postMembersMemberIdSubscriptionsSubscriptionIdChangePlan>>, TError,{memberId: string;subscriptionId: string;data: BodyType<PostMembersMemberIdSubscriptionsSubscriptionIdChangePlanBody>}, TContext>, }
-): UseMutationOptions<Awaited<ReturnType<typeof postMembersMemberIdSubscriptionsSubscriptionIdChangePlan>>, TError,{memberId: string;subscriptionId: string;data: BodyType<PostMembersMemberIdSubscriptionsSubscriptionIdChangePlanBody>}, TContext> => {
-
-const mutationKey = ['postMembersMemberIdSubscriptionsSubscriptionIdChangePlan'];
-const {mutation: mutationOptions} = options ?
-      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
-      options
-      : {...options, mutation: {...options.mutation, mutationKey}}
-      : {mutation: { mutationKey, }};
-
-
-
-
-      const mutationFn: MutationFunction<Awaited<ReturnType<typeof postMembersMemberIdSubscriptionsSubscriptionIdChangePlan>>, {memberId: string;subscriptionId: string;data: BodyType<PostMembersMemberIdSubscriptionsSubscriptionIdChangePlanBody>}> = (props) => {
-          const {memberId,subscriptionId,data} = props ?? {};
-
-          return  postMembersMemberIdSubscriptionsSubscriptionIdChangePlan(memberId,subscriptionId,data,)
-        }
-
-
-
-
-
-
-  return  { mutationFn, ...mutationOptions }}
-
-    export type PostMembersMemberIdSubscriptionsSubscriptionIdChangePlanMutationResult = NonNullable<Awaited<ReturnType<typeof postMembersMemberIdSubscriptionsSubscriptionIdChangePlan>>>
-    export type PostMembersMemberIdSubscriptionsSubscriptionIdChangePlanMutationBody = BodyType<PostMembersMemberIdSubscriptionsSubscriptionIdChangePlanBody>
-    export type PostMembersMemberIdSubscriptionsSubscriptionIdChangePlanMutationError = ErrorType<BadRequestResponse | NotFoundResponse>
-
-    /**
- * @summary Change subscription plan
- */
-export const usePostMembersMemberIdSubscriptionsSubscriptionIdChangePlan = <TError = ErrorType<BadRequestResponse | NotFoundResponse>,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof postMembersMemberIdSubscriptionsSubscriptionIdChangePlan>>, TError,{memberId: string;subscriptionId: string;data: BodyType<PostMembersMemberIdSubscriptionsSubscriptionIdChangePlanBody>}, TContext>, }
- , queryClient?: QueryClient): UseMutationResult<
-        Awaited<ReturnType<typeof postMembersMemberIdSubscriptionsSubscriptionIdChangePlan>>,
-        TError,
-        {memberId: string;subscriptionId: string;data: BodyType<PostMembersMemberIdSubscriptionsSubscriptionIdChangePlanBody>},
-        TContext
-      > => {
-      return useMutation(getPostMembersMemberIdSubscriptionsSubscriptionIdChangePlanMutationOptions(options), queryClient);
     }
     /**
  * @summary Get check-in history for a member

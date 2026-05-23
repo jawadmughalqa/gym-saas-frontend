@@ -20,12 +20,34 @@ import {
   Select, SelectContent, SelectItem,
   SelectTrigger, SelectValue,
 } from '@/components/ui/select';
+import { useMutation } from '@tanstack/react-query';
 import { toast } from '@/hooks/use-toast';
 import { useGetMembershipPlans } from '@/api/generated/membership-plans/membership-plans';
-import { usePostMembersMemberIdSubscriptionsSubscriptionIdChangePlan } from '@/api/generated/members/members';
 import type { MembershipPlan } from '@/api/generated/schemas';
 import { CURRENCY } from '@/config/tenant.config';
 import { formatCurrency } from '@/lib/utils';
+import { api } from '@/lib/axios';
+
+// ─── Inline mutation (endpoint not yet in Orval snapshot) ────────────────────
+
+interface ChangePlanBody {
+  newPlanId:          string;
+  discountAmount?:    number;
+  autoCreateInvoice?: boolean;
+}
+
+function useChangePlan() {
+  return useMutation({
+    mutationFn: ({ memberId, subscriptionId, data }: {
+      memberId:       string;
+      subscriptionId: string;
+      data:           ChangePlanBody;
+    }) =>
+      api
+        .post(`/members/${memberId}/subscriptions/${subscriptionId}/change-plan`, data)
+        .then((r) => r.data),
+  });
+}
 
 // ─── Props ────────────────────────────────────────────────────────────────────
 
@@ -60,25 +82,24 @@ export function ChangePlanDialog({
   const currency     = selectedPlan?.currency ?? CURRENCY;
 
   // ── Mutation ───────────────────────────────────────────────────────────────
-  const changeMutation = usePostMembersMemberIdSubscriptionsSubscriptionIdChangePlan({
-    mutation: {
-      onSuccess: () => {
-        toast({
-          title: 'Plan changed',
-          description: `Switched to ${selectedPlan?.name ?? 'new plan'}. An invoice has been created.`,
-        });
-        handleClose(false);
-        onSuccess();
-      },
-      onError: (err: any) => {
-        toast({
-          variant: 'destructive',
-          title: 'Failed to change plan',
-          description: err?.response?.data?.message ?? 'Something went wrong.',
-        });
-      },
-    },
-  });
+  const changeMutation = useChangePlan();
+
+  function handleMutationSuccess() {
+    toast({
+      title: 'Plan changed',
+      description: `Switched to ${selectedPlan?.name ?? 'new plan'}. An invoice has been created.`,
+    });
+    handleClose(false);
+    onSuccess();
+  }
+
+  function handleMutationError(err: any) {
+    toast({
+      variant: 'destructive',
+      title: 'Failed to change plan',
+      description: err?.response?.data?.message ?? 'Something went wrong.',
+    });
+  }
 
   // ── Helpers ────────────────────────────────────────────────────────────────
   function handleClose(open: boolean) {
@@ -91,15 +112,18 @@ export function ChangePlanDialog({
 
   function handleConfirm() {
     if (!selectedPlanId) return;
-    changeMutation.mutate({
-      memberId,
-      subscriptionId,
-      data: {
-        newPlanId:          selectedPlanId,
-        discountAmount:     discountNum,
-        autoCreateInvoice:  true,
+    changeMutation.mutate(
+      {
+        memberId,
+        subscriptionId,
+        data: {
+          newPlanId:         selectedPlanId,
+          discountAmount:    discountNum,
+          autoCreateInvoice: true,
+        },
       },
-    });
+      { onSuccess: handleMutationSuccess, onError: handleMutationError },
+    );
   }
 
   return (

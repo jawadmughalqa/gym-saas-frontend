@@ -41,6 +41,8 @@ const MemberHomePage          = lazy(() => import("@/features/member-portal/Memb
 const MemberPlanPage          = lazy(() => import("@/features/member-portal/MemberPlanPage"));
 const MemberInvoicesPage      = lazy(() => import("@/features/member-portal/MemberInvoicesPage"));
 const MemberTrainerPage       = lazy(() => import("@/features/member-portal/MemberTrainerPage"));
+const FitPlanPage             = lazy(() => import("@/features/fit-plan/FitPlanPage"));
+const FitPlanProgressPage     = lazy(() => import("@/features/fit-plan/ProgressPage"));
 const TrainerDashboardPage    = lazy(() => import("@/features/trainer-portal/TrainerDashboardPage"));
 const TrainerClientsPage      = lazy(() => import("@/features/trainer-portal/TrainerClientsPage"));
 const TrainerNotesPage        = lazy(() => import("@/features/trainer-portal/TrainerNotesPage"));
@@ -256,6 +258,18 @@ const router = createBrowserRouter([
                 path: "trainer",
                 element: <Lazy><MemberTrainerPage /></Lazy>,
                 handle: { crumb: "My Trainer" },
+              },
+              {
+                path: "fit-plan",
+                handle: { crumb: "FitPlan" },
+                children: [
+                  { index: true, element: <Lazy><FitPlanPage /></Lazy> },
+                  {
+                    path: "progress",
+                    element: <Lazy><FitPlanProgressPage /></Lazy>,
+                    handle: { crumb: "Progress" },
+                  },
+                ],
               },
             ],
           },

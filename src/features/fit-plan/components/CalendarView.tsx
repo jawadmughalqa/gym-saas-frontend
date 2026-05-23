@@ -1,35 +1,61 @@
 import { useMemo } from 'react';
-import { format, startOfMonth, endOfMonth, eachDayOfInterval, getDay, isToday, parseISO } from 'date-fns';
+import {
+  format, startOfMonth, endOfMonth, eachDayOfInterval,
+  getDay, isToday, isBefore, startOfDay,
+} from 'date-fns';
+import { CheckCircle2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Skeleton } from '@/components/ui/skeleton';
 import type { WorkoutDay } from '@/api/generated/schemas';
 
-// ─── Status colour map ────────────────────────────────────────────────────────
+// ─── Day type master config ───────────────────────────────────────────────────
 
-const STATUS_CLASSES: Record<string, string> = {
-  completed: 'bg-green-500 text-white',
-  missed:    'bg-red-400 text-white',
-  planned:   'bg-blue-100 text-blue-800 dark:bg-blue-900/40 dark:text-blue-300',
-  rest:      'bg-muted text-muted-foreground',
-  frozen:    'bg-blue-200 text-blue-700 dark:bg-blue-800/50',
+const DAY_TYPE_CONFIG: Record<string, {
+  emoji:  string;
+  short:  string;      // shown inside the cell
+  label:  string;      // shown in the legend
+  planned: string;     // cell classes when status = planned
+  text:    string;     // text colour for planned
+}> = {
+  chest:     { emoji: '💪', short: 'Chest',  label: 'Chest Day',   planned: 'bg-rose-50   border-rose-200   dark:bg-rose-950/40  dark:border-rose-800',   text: 'text-rose-700   dark:text-rose-300'   },
+  back:      { emoji: '🏋️', short: 'Back',   label: 'Back Day',    planned: 'bg-blue-50   border-blue-200   dark:bg-blue-950/40  dark:border-blue-800',   text: 'text-blue-700   dark:text-blue-300'   },
+  legs:      { emoji: '🦵', short: 'Legs',   label: 'Legs Day',    planned: 'bg-orange-50 border-orange-200 dark:bg-orange-950/40 dark:border-orange-800', text: 'text-orange-700 dark:text-orange-300' },
+  arms:      { emoji: '🤜', short: 'Arms',   label: 'Arms Day',    planned: 'bg-purple-50 border-purple-200 dark:bg-purple-950/40 dark:border-purple-800', text: 'text-purple-700 dark:text-purple-300' },
+  full_body: { emoji: '⚡', short: 'Full',   label: 'Full Body',   planned: 'bg-amber-50  border-amber-200  dark:bg-amber-950/40  dark:border-amber-800',  text: 'text-amber-700  dark:text-amber-300'  },
+  cardio:    { emoji: '🏃', short: 'Cardio', label: 'Cardio',      planned: 'bg-green-50  border-green-200  dark:bg-green-950/40  dark:border-green-800',  text: 'text-green-700  dark:text-green-300'  },
+  rest:      { emoji: '🧘', short: 'Rest',   label: 'Rest Day',    planned: 'bg-slate-50  border-slate-200  dark:bg-slate-900/40  dark:border-slate-700',  text: 'text-slate-500  dark:text-slate-400'  },
 };
 
-// ─── Day-type short labels ────────────────────────────────────────────────────
+// ─── Status-level overrides (applied on top of day-type colour) ───────────────
 
-const DAY_LABELS: Record<string, string> = {
-  chest:      'CH',
-  legs:       'LG',
-  back:       'BK',
-  full_body:  'FB',
-  cardio:     'CA',
-  arms:       'AR',
-  rest:       '—',
+const STATUS_OVERRIDE: Record<string, string> = {
+  completed: 'bg-emerald-500 border-emerald-400 dark:bg-emerald-600 dark:border-emerald-500',
+  missed:    'bg-red-100     border-red-300     dark:bg-red-950/50  dark:border-red-800',
+  frozen:    'bg-sky-100     border-sky-300     dark:bg-sky-950/40  dark:border-sky-700',
 };
+
+const STATUS_TEXT_OVERRIDE: Record<string, string> = {
+  completed: 'text-white',
+  missed:    'text-red-600   dark:text-red-400',
+  frozen:    'text-sky-600   dark:text-sky-300',
+};
+
+// ─── Legend items ─────────────────────────────────────────────────────────────
+
+const LEGEND = [
+  { label: 'Completed', dot: 'bg-emerald-500' },
+  { label: 'Planned',   dot: 'bg-primary/60' },
+  { label: 'Missed',    dot: 'bg-red-400' },
+  { label: 'Rest',      dot: 'bg-slate-300 dark:bg-slate-600' },
+  { label: 'Frozen ❄️', dot: 'bg-sky-400' },
+];
+
+// ─── Component ────────────────────────────────────────────────────────────────
 
 interface CalendarViewProps {
-  year:   number;
-  month:  number; // 1-12
-  days:   WorkoutDay[];
+  year:       number;
+  month:      number; // 1-12
+  days:       WorkoutDay[];
   isLoading?: boolean;
   onDayClick?: (date: string) => void;
 }
@@ -44,60 +70,112 @@ export default function CalendarView({ year, month, days, isLoading, onDayClick 
   const monthStart  = startOfMonth(new Date(year, month - 1));
   const monthEnd    = endOfMonth(monthStart);
   const allDays     = eachDayOfInterval({ start: monthStart, end: monthEnd });
-  const startOffset = getDay(monthStart); // 0=Sun
+  const startOffset = getDay(monthStart); // 0 = Sun
 
   if (isLoading) {
     return (
-      <div className="grid grid-cols-7 gap-1">
-        {Array.from({ length: 35 }).map((_, i) => (
-          <Skeleton key={i} className="h-10 rounded-md" />
-        ))}
+      <div className="space-y-2">
+        <div className="grid grid-cols-7 gap-1.5">
+          {Array.from({ length: 35 }).map((_, i) => (
+            <Skeleton key={i} className="h-14 rounded-xl" />
+          ))}
+        </div>
       </div>
     );
   }
 
   return (
-    <div className="space-y-2">
-      {/* Week day headers */}
-      <div className="grid grid-cols-7 gap-1 text-center">
-        {['Su', 'Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa'].map((d) => (
-          <div key={d} className="text-[11px] font-medium text-muted-foreground py-1">{d}</div>
+    <div className="space-y-3">
+
+      {/* ── Weekday headers ─────────────────────────────────────────── */}
+      <div className="grid grid-cols-7 gap-1.5 text-center">
+        {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map((d) => (
+          <div key={d} className="text-[10px] font-semibold text-muted-foreground tracking-wide uppercase py-0.5">
+            {d}
+          </div>
         ))}
       </div>
 
-      {/* Days grid */}
-      <div className="grid grid-cols-7 gap-1">
+      {/* ── Days grid ───────────────────────────────────────────────── */}
+      <div className="grid grid-cols-7 gap-1.5">
         {/* Leading empty cells */}
         {Array.from({ length: startOffset }).map((_, i) => (
           <div key={`empty-${i}`} />
         ))}
 
         {allDays.map((date) => {
-          const dateStr = format(date, 'yyyy-MM-dd');
-          const day     = dayMap[dateStr];
-          const status  = day?.status;
-          const dayType = day?.dayType;
-          const today   = isToday(date);
+          const dateStr  = format(date, 'yyyy-MM-dd');
+          const day      = dayMap[dateStr];
+          const status   = day?.status ?? null;
+          const dayType  = day?.dayType ?? null;
+          const today    = isToday(date);
+          const isPast   = isBefore(startOfDay(date), startOfDay(new Date()));
+          const cfg      = dayType ? DAY_TYPE_CONFIG[dayType] : null;
+          const hasData  = !!day;
+
+          // Build cell classes
+          const baseCell = cfg?.planned ?? '';
+          const ovr      = status && STATUS_OVERRIDE[status];
+          const bgClass  = ovr ?? (hasData ? baseCell : '');
+          const textClass = status && STATUS_TEXT_OVERRIDE[status]
+            ? STATUS_TEXT_OVERRIDE[status]
+            : (cfg?.text ?? 'text-foreground');
+
+          const isInteractive = hasData;
 
           return (
             <button
               key={dateStr}
-              onClick={() => day && onDayClick?.(dateStr)}
-              disabled={!day}
+              type="button"
+              onClick={() => isInteractive && onDayClick?.(dateStr)}
+              disabled={!isInteractive}
               className={cn(
-                'relative flex flex-col items-center justify-center h-10 rounded-md text-xs font-medium transition-all',
-                'focus-visible:outline-none focus-visible:ring-2',
-                day
-                  ? 'hover:ring-2 hover:ring-primary/30 cursor-pointer'
-                  : 'cursor-default',
-                status ? STATUS_CLASSES[status] : 'text-foreground hover:bg-accent',
-                today && !status && 'ring-2 ring-primary',
+                'relative flex flex-col items-center justify-between py-1.5 px-0.5 h-14',
+                'rounded-xl border transition-all duration-150 overflow-hidden',
+                // Base colours
+                bgClass || 'border-transparent',
+                // Interactive states
+                isInteractive
+                  ? 'hover:scale-[1.04] hover:shadow-md cursor-pointer active:scale-100'
+                  : 'cursor-default opacity-40',
+                // Today ring
+                today && 'ring-2 ring-primary ring-offset-1',
+                // Past planned days get a subtle dimming so users know they may have missed
+                !today && isPast && status === 'planned' && 'opacity-75',
               )}
             >
-              <span className="leading-none">{format(date, 'd')}</span>
-              {dayType && (
-                <span className="text-[9px] leading-none opacity-80 mt-0.5">
-                  {DAY_LABELS[dayType] ?? dayType.slice(0, 2).toUpperCase()}
+              {/* Date number */}
+              <span className={cn(
+                'text-xs font-bold leading-none',
+                textClass,
+                today && status !== 'completed' && 'text-primary',
+              )}>
+                {format(date, 'd')}
+              </span>
+
+              {/* Emoji */}
+              {cfg && (
+                <span className="text-sm leading-none select-none">
+                  {status === 'missed'  ? '❌'
+                  : status === 'frozen' ? '❄️'
+                  : cfg.emoji}
+                </span>
+              )}
+
+              {/* Short label */}
+              {cfg && (
+                <span className={cn(
+                  'text-[8px] font-semibold leading-none truncate w-full text-center',
+                  status === 'completed' ? 'text-white/90' : textClass,
+                )}>
+                  {cfg.short}
+                </span>
+              )}
+
+              {/* Completed checkmark badge */}
+              {status === 'completed' && (
+                <span className="absolute top-0.5 right-0.5">
+                  <CheckCircle2 className="h-2.5 w-2.5 text-white/80" />
                 </span>
               )}
             </button>
@@ -105,15 +183,16 @@ export default function CalendarView({ year, month, days, isLoading, onDayClick 
         })}
       </div>
 
-      {/* Legend */}
-      <div className="flex flex-wrap gap-3 pt-1">
-        {Object.entries(STATUS_CLASSES).map(([status, cls]) => (
-          <div key={status} className="flex items-center gap-1.5 text-xs text-muted-foreground">
-            <span className={cn('w-3 h-3 rounded-sm inline-block', cls)} />
-            <span className="capitalize">{status}</span>
+      {/* ── Legend ──────────────────────────────────────────────────── */}
+      <div className="flex flex-wrap gap-x-4 gap-y-1.5 pt-1 border-t border-border/50">
+        {LEGEND.map(({ label, dot }) => (
+          <div key={label} className="flex items-center gap-1.5">
+            <span className={cn('w-2.5 h-2.5 rounded-full flex-shrink-0', dot)} />
+            <span className="text-[10px] text-muted-foreground">{label}</span>
           </div>
         ))}
       </div>
+
     </div>
   );
 }

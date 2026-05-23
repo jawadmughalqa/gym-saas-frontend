@@ -416,3 +416,49 @@ export const usePatchDiscountsDiscountId = <TError = ErrorType<unknown>,
       > => {
       return useMutation(getPatchDiscountsDiscountIdMutationOptions(options), queryClient);
     }
+
+/**
+ * @summary Delete a discount code
+ */
+export const deleteDiscountsDiscountId = (
+    discountId: string,
+) => {
+      return orvalMutator<void>(
+      {url: `/discounts/${discountId}`, method: 'DELETE'},
+      );
+    }
+
+export const getDeleteDiscountsDiscountIdMutationOptions = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof deleteDiscountsDiscountId>>, TError,{discountId: string}, TContext>, }
+): UseMutationOptions<Awaited<ReturnType<typeof deleteDiscountsDiscountId>>, TError,{discountId: string}, TContext> => {
+
+const mutationKey = ['deleteDiscountsDiscountId'];
+const {mutation: mutationOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }};
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof deleteDiscountsDiscountId>>, {discountId: string}> = (props) => {
+          const {discountId} = props ?? {};
+          return deleteDiscountsDiscountId(discountId)
+        }
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type DeleteDiscountsDiscountIdMutationResult = NonNullable<Awaited<ReturnType<typeof deleteDiscountsDiscountId>>>
+    export type DeleteDiscountsDiscountIdMutationError = ErrorType<unknown>
+
+    /**
+ * @summary Delete a discount code
+ */
+export const useDeleteDiscountsDiscountId = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof deleteDiscountsDiscountId>>, TError,{discountId: string}, TContext>, }
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof deleteDiscountsDiscountId>>,
+        TError,
+        {discountId: string},
+        TContext
+      > => {
+      return useMutation(getDeleteDiscountsDiscountIdMutationOptions(options), queryClient);
+    }

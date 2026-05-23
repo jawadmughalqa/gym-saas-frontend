@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { format, parseISO } from 'date-fns';
+import { format, parseISO, isToday } from 'date-fns';
 import {
   CheckCircle2, Loader2, Utensils, Dumbbell, Droplets,
   Flame, Clock, ChevronRight, Apple, ArrowLeftRight,
@@ -54,7 +54,8 @@ export default function DayDetailSheet({ date, calendarParams, days, onClose }: 
   const exercises = detail?.exercises ?? [];
   const nutrition = detail?.nutrition;
 
-  const canComplete = day?.status === 'planned';
+  const isSelectedToday = date ? isToday(parseISO(date)) : false;
+  const canComplete     = day?.status === 'planned' && isSelectedToday;
   const alreadyDone = day?.status === 'completed';
 
   const typeConfig   = DAY_TYPE_CONFIG[day?.dayType ?? ''] ?? DAY_TYPE_CONFIG['full_body'];
@@ -281,22 +282,25 @@ export default function DayDetailSheet({ date, calendarParams, days, onClose }: 
         </div>
 
         {/* ── Sticky footer CTA ────────────────────────────────────────── */}
-        {canComplete && (
+        {(canComplete || (day?.status === 'planned' && day?.dayType !== 'rest')) && (
           <div className="px-6 py-4 border-t bg-background space-y-2">
-            <Button
-              className="w-full h-11 gap-2 text-sm font-semibold"
-              onClick={() => complete.mutate({ date: date! })}
-              disabled={complete.isPending}
-            >
-              {complete.isPending ? (
-                <Loader2 className="h-4 w-4 animate-spin" />
-              ) : (
-                <CheckCircle2 className="h-5 w-5" />
-              )}
-              Mark as Complete
-            </Button>
-            {/* Swap button — only for planned non-rest days */}
-            {day?.dayType !== 'rest' && (
+            {/* Mark complete — today only */}
+            {canComplete && (
+              <Button
+                className="w-full h-11 gap-2 text-sm font-semibold"
+                onClick={() => complete.mutate({ date: date! })}
+                disabled={complete.isPending}
+              >
+                {complete.isPending ? (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                ) : (
+                  <CheckCircle2 className="h-5 w-5" />
+                )}
+                Mark as Complete
+              </Button>
+            )}
+            {/* Swap — any planned non-rest day (past, today, or future) */}
+            {day?.status === 'planned' && day?.dayType !== 'rest' && (
               <Button
                 variant="outline"
                 className="w-full h-10 gap-2 text-sm"

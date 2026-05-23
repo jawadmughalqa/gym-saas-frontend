@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { format, addMonths, subMonths } from 'date-fns';
 import { ChevronLeft, ChevronRight, TrendingUp, Settings2 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+import FeatureGate from '@/components/shared/FeatureGate';
 import PageShell from '@/components/layout/PageShell';
 import PageHeader from '@/components/layout/PageHeader';
 import { Button } from '@/components/ui/button';
@@ -30,6 +31,14 @@ import {
 } from './hooks/use-fit-plan';
 
 export default function FitPlanPage() {
+  return (
+    <FeatureGate feature="fitPlan" featureName="FitPlan">
+      <FitPlanPageContent />
+    </FeatureGate>
+  );
+}
+
+function FitPlanPageContent() {
   const navigate = useNavigate();
   const [currentDate, setCurrentDate] = useState(new Date());
   const [selectedDay, setSelectedDay] = useState<string | null>(null);

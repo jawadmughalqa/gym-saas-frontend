@@ -163,11 +163,11 @@ export const NAV_GROUPS: NavGroup[] = [
   {
     label: 'My Account',
     items: [
-      { to: '/member/home',         label: 'Home',       icon: Home,       roles: ['member'] },
-      { to: '/member/plan',         label: 'My Plan',    icon: BadgeCheck, roles: ['member'] },
-      { to: '/member/fit-plan',     label: 'FitPlan',    icon: Flame,      roles: ['member'] },
-      { to: '/member/invoices',     label: 'Invoices',   icon: Receipt,    roles: ['member'] },
-      { to: '/member/trainer',      label: 'My Trainer', icon: Dumbbell,   roles: ['member'] },
+      { to: '/member/home',         label: 'Home',       icon: Home,       roles: ['member'], featureFlag: 'memberPortal' },
+      { to: '/member/plan',         label: 'My Plan',    icon: BadgeCheck, roles: ['member'], featureFlag: 'memberPortal' },
+      { to: '/member/fit-plan',     label: 'FitPlan',    icon: Flame,      roles: ['member'], featureFlag: 'fitPlan'      },
+      { to: '/member/invoices',     label: 'Invoices',   icon: Receipt,    roles: ['member'], featureFlag: 'memberPortal' },
+      { to: '/member/trainer',      label: 'My Trainer', icon: Dumbbell,   roles: ['member'], featureFlag: 'memberPortal' },
     ],
   },
 
@@ -180,18 +180,21 @@ export const NAV_GROUPS: NavGroup[] = [
         label: 'Dashboard',
         icon: LayoutDashboard,
         roles: ['trainer'],
+        featureFlag: 'trainers',
       },
       {
         to: '/trainer/clients',
         label: 'My Clients',
         icon: Users,
         roles: ['trainer'],
+        featureFlag: 'trainers',
       },
       {
         to: '/trainer/notes',
         label: 'Training Notes',
         icon: ClipboardCheck,
         roles: ['trainer'],
+        featureFlag: 'trainers',
       },
       {
         to: '/notifications',
@@ -199,6 +202,7 @@ export const NAV_GROUPS: NavGroup[] = [
         icon: Bell,
         roles: ['trainer'],
         permission: 'notification.read',
+        featureFlag: 'notifications',
       },
     ],
   },

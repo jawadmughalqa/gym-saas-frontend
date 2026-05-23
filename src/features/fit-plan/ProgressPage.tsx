@@ -5,6 +5,7 @@ import {
   LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip,
   ResponsiveContainer,
 } from 'recharts';
+import FeatureGate from '@/components/shared/FeatureGate';
 import PageShell from '@/components/layout/PageShell';
 import PageHeader from '@/components/layout/PageHeader';
 import { Button } from '@/components/ui/button';
@@ -68,6 +69,7 @@ export default function ProgressPage() {
     : null;
 
   return (
+    <FeatureGate feature="fitPlan" featureName="FitPlan">
     <PageShell>
       <PageHeader
         title="Progress"
@@ -236,5 +238,6 @@ export default function ProgressPage() {
 
       <CheckInDialog open={checkInOpen} onClose={() => setCheckInOpen(false)} />
     </PageShell>
+    </FeatureGate>
   );
 }

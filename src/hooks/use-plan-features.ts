@@ -2,7 +2,7 @@ import { useAuthStore } from '@/stores/auth.store';
 import { useGetMyTenant } from '@/api/generated/tenants/tenants';
 import type { TenantFeatureFlags } from '@/api/generated/schemas/tenantFeatureFlags';
 
-// All features ON — used for super_admin, non-tenant roles, and loading state
+// All features ON — used only for super_admin (no tenant) and while loading
 const ALL_FEATURES_ENABLED: Required<TenantFeatureFlags> = {
   members:       true,
   trainers:      true,
@@ -28,34 +28,46 @@ export interface UsePlanFeaturesResult {
 }
 
 /**
- * Returns the current tenant's feature flags.
+ * Returns the feature flags from the current user's tenant plan.
  *
- * - Super admin: all features enabled (they manage everything)
- * - Members / trainers: all features enabled (they only see their own portal)
- * - Gym owner + staff: reads live from /tenants/me
+ * - super_admin: no tenant — all features enabled (they manage everything)
+ * - Everyone else (gym_owner, branch_manager, staff, trainer, member):
+ *   reads live from /tenants/me using the tenantId in their JWT
  *
  * During loading the hook returns all-features-enabled so the UI
  * doesn't flicker/hide nav items while the request resolves.
+ *
+ * This intentionally applies to member and trainer roles too, so that
+ * plan-level restrictions (e.g. fitPlan disabled on Starter) are
+ * enforced in the member portal.
  */
 export function usePlanFeatures(): UsePlanFeaturesResult {
-  const role = useAuthStore((s) => s.user?.role);
+  const role     = useAuthStore((s) => s.user?.role);
+  const tenantId = useAuthStore((s) => s.user?.tenantId);
 
-  // Only fetch for gym-tenant roles — everyone else gets full access
-  const shouldFetch =
-    role === 'gym_owner' || role === 'branch_manager' || role === 'staff';
+  // super_admin has no tenant — give them full access to everything
+  const isSuperAdmin = role === 'super_admin';
+  // Any user with a tenantId should respect that tenant's plan feature flags
+  const shouldFetch  = !isSuperAdmin && !!tenantId;
 
   const { data, isLoading } = useGetMyTenant({
     query: {
       enabled:   shouldFetch,
-      staleTime: 1000 * 60 * 5, // 5-min cache
+      staleTime: 1000 * 60 * 5, // 5-min cache — plan changes are infrequent
     },
   });
 
-  if (!shouldFetch) {
+  // Super admin: all features on
+  if (isSuperAdmin) {
     return { features: ALL_FEATURES_ENABLED, isLoading: false, hasFeature: () => true };
   }
 
-  // While loading, show all items (prevent nav flicker)
+  // No tenant associated with this user (shouldn't happen in practice)
+  if (!tenantId) {
+    return { features: ALL_FEATURES_ENABLED, isLoading: false, hasFeature: () => true };
+  }
+
+  // While loading, show all items to prevent nav flicker on first render
   if (isLoading || !data?.data?.featureFlags) {
     return {
       features:   ALL_FEATURES_ENABLED,

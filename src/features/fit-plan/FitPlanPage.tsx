@@ -213,6 +213,7 @@ export default function FitPlanPage() {
       <DayDetailSheet
         date={selectedDay}
         calendarParams={calendarParams}
+        days={days}
         onClose={() => setSelectedDay(null)}
       />
 

@@ -1,4 +1,5 @@
-import { useQueryClient } from '@tanstack/react-query';
+import { useQueryClient, useMutation } from '@tanstack/react-query';
+import { orvalMutator } from '@/lib/orval-mutator';
 import { toast } from '@/hooks/use-toast';
 import { getErrorMessage } from '@/utils/error';
 import {
@@ -197,6 +198,28 @@ export function useCheckInMutation() {
       onError: (err) => {
         toast({ variant: 'destructive', title: 'Check-in failed', description: getErrorMessage(err) });
       },
+    },
+  });
+}
+
+export function useSwapDays(calendarParams: GetFitPlanCalendarParams) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({ date1, date2 }: { date1: string; date2: string }) =>
+      orvalMutator<unknown>({
+        url:    '/fit-plan/calendar/swap',
+        method: 'POST',
+        data:   { date1, date2 },
+      }),
+    onSuccess: (_data, vars) => {
+      // Invalidate both individual day queries and the calendar
+      qc.invalidateQueries({ queryKey: getGetFitPlanDayQueryKey(vars.date1) });
+      qc.invalidateQueries({ queryKey: getGetFitPlanDayQueryKey(vars.date2) });
+      qc.invalidateQueries({ queryKey: getGetFitPlanCalendarQueryKey(calendarParams) });
+      toast({ title: 'Days swapped! 🔄', description: 'Your workout schedule has been updated.' });
+    },
+    onError: (err) => {
+      toast({ variant: 'destructive', title: 'Swap failed', description: getErrorMessage(err) });
     },
   });
 }

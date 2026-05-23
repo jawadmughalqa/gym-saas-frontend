@@ -1,7 +1,8 @@
+import { useState } from 'react';
 import { format, parseISO } from 'date-fns';
 import {
   CheckCircle2, Loader2, Utensils, Dumbbell, Droplets,
-  Flame, Clock, ChevronRight, Apple,
+  Flame, Clock, ChevronRight, Apple, ArrowLeftRight,
 } from 'lucide-react';
 import {
   Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription,
@@ -11,7 +12,8 @@ import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
 import { cn } from '@/lib/utils';
 import { useFitPlanDay, useCompleteDay } from '../hooks/use-fit-plan';
-import type { GetFitPlanCalendarParams } from '@/api/generated/schemas';
+import type { GetFitPlanCalendarParams, WorkoutDay } from '@/api/generated/schemas';
+import SwapDaySheet from './SwapDaySheet';
 
 // ─── Day type config ──────────────────────────────────────────────────────────
 
@@ -36,10 +38,13 @@ const STATUS_CONFIG: Record<string, { label: string; className: string }> = {
 interface DayDetailSheetProps {
   date:           string | null;
   calendarParams: GetFitPlanCalendarParams;
+  /** Full calendar days array — used by SwapDaySheet to list candidates */
+  days:           WorkoutDay[];
   onClose:        () => void;
 }
 
-export default function DayDetailSheet({ date, calendarParams, onClose }: DayDetailSheetProps) {
+export default function DayDetailSheet({ date, calendarParams, days, onClose }: DayDetailSheetProps) {
+  const [swapOpen, setSwapOpen] = useState(false);
   const open = !!date;
   const { data: res, isLoading, isError } = useFitPlanDay(date ?? '');
   const complete = useCompleteDay(date ?? '', calendarParams);
@@ -277,7 +282,7 @@ export default function DayDetailSheet({ date, calendarParams, onClose }: DayDet
 
         {/* ── Sticky footer CTA ────────────────────────────────────────── */}
         {canComplete && (
-          <div className="px-6 py-4 border-t bg-background">
+          <div className="px-6 py-4 border-t bg-background space-y-2">
             <Button
               className="w-full h-11 gap-2 text-sm font-semibold"
               onClick={() => complete.mutate({ date: date! })}
@@ -290,6 +295,17 @@ export default function DayDetailSheet({ date, calendarParams, onClose }: DayDet
               )}
               Mark as Complete
             </Button>
+            {/* Swap button — only for planned non-rest days */}
+            {day?.dayType !== 'rest' && (
+              <Button
+                variant="outline"
+                className="w-full h-10 gap-2 text-sm"
+                onClick={() => setSwapOpen(true)}
+              >
+                <ArrowLeftRight className="h-4 w-4" />
+                Swap with Another Day
+              </Button>
+            )}
           </div>
         )}
 
@@ -303,6 +319,20 @@ export default function DayDetailSheet({ date, calendarParams, onClose }: DayDet
         )}
 
       </SheetContent>
+
+      {/* Swap picker — nested sheet */}
+      {date && day && day.dayType !== 'rest' && (
+        <SwapDaySheet
+          sourceDate={date}
+          sourceDayType={day.dayType ?? ''}
+          days={days}
+          calendarParams={calendarParams}
+          open={swapOpen}
+          onClose={() => setSwapOpen(false)}
+          onSwapComplete={onClose}
+        />
+      )}
+
     </Sheet>
   );
 }

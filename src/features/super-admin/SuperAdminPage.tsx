@@ -197,6 +197,9 @@ export default function SuperAdminPage() {
         subtitle="Platform-wide tenant and billing management"
         actions={
           <div className="flex items-center gap-2">
+            <Button variant="outline" size="sm" onClick={() => navigate('/super-admin/leads')}>
+              Lead Management
+            </Button>
             <Button variant="outline" size="sm" onClick={() => navigate('/super-admin/plans')}>
               Manage Plans
             </Button>

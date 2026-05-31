@@ -33,6 +33,7 @@ const RolesPage           = lazy(() => import("@/features/roles/RolesPage"));
 const SuperAdminPage      = lazy(() => import("@/features/super-admin/SuperAdminPage"));
 const TenantDetailPage    = lazy(() => import("@/features/super-admin/TenantDetailPage"));
 const PlansPage           = lazy(() => import("@/features/super-admin/PlansPage"));
+const LeadsPage           = lazy(() => import("@/features/super-admin/LeadsPage"));
 const MembershipPlansPage   = lazy(() => import("@/features/membership-plans/MembershipPlansPage"));
 const ExpensesPage          = lazy(() => import("@/features/expenses/ExpensesPage"));
 const ExpenseAnalyticsPage  = lazy(() => import("@/features/expenses/ExpenseAnalyticsPage"));
@@ -351,6 +352,16 @@ const router = createBrowserRouter([
             path: "plans",
             element: <Lazy><PlansPage /></Lazy>,
             handle: { crumb: "Plans" },
+          },
+          {
+            path: "leads",
+            element: <Lazy><LeadsPage /></Lazy>,
+            handle: { crumb: "Leads" },
+          },
+          {
+            path: "leads/:leadId",
+            element: <Lazy><LeadsPage /></Lazy>,
+            handle: { crumb: "Lead Detail" },
           },
         ],
       },

@@ -22,6 +22,7 @@ import {
   BadgeCheck,
   ClipboardCheck,
   Flame,
+  Inbox,
   type LucideIcon,
 } from 'lucide-react';
 import type { UserRole } from '@/types/api.types';
@@ -362,6 +363,12 @@ export const BOTTOM_NAV_ITEMS: NavItem[] = [
   //   icon: Settings,
   //   roles: ['gym_owner', 'branch_manager'],
   // },
+  {
+    to: '/super-admin/leads',
+    label: 'Leads',
+    icon: Inbox,
+    roles: ['super_admin'],
+  },
   {
     to: '/super-admin',
     label: 'Super Admin',

@@ -145,3 +145,15 @@ dist
 ⚛️React Not Detected
 React is not detected on this page.
 Please ensure you're visiting a React application.
+# ─── Environment files (all gitignored — contain API URLs/keys) ──────────────
+.env
+.env.local
+.env.development
+.env.staging
+.env.production
+.env.development.local
+.env.staging.local
+.env.production.local
+.env.test.local
+# Keep example tracked (template, no real secrets)
+!.env.example

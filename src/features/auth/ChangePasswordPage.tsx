@@ -16,6 +16,9 @@ import {
 } from "@/components/ui/card";
 import { usePostAuthPasswordChange } from "@/api/generated/auth/auth";
 import { useToast } from "@/hooks/use-toast";
+import { useAuthStore } from "@/stores/auth.store";
+import { getDefaultRouteForRole } from "@/features/auth/hooks/use-auth";
+import type { UserRole } from "@/types/api.types";
 
 const schema = z
   .object({
@@ -81,6 +84,7 @@ function PasswordField({
 export default function ChangePasswordPage() {
   const navigate = useNavigate();
   const { toast } = useToast();
+  const { user } = useAuthStore();
 
   const { mutate, isPending, isError, error } = usePostAuthPasswordChange();
 
@@ -108,9 +112,12 @@ export default function ChangePasswordPage() {
             title: "Password updated",
             description: "Your password has been changed successfully.",
           });
-          // Redirect to dashboard — handles both the forced first-login flow
-          // and regular password changes from the Settings menu
-          navigate("/dashboard", { replace: true });
+          // Redirect to the role's correct home page — covers both the
+          // forced first-login flow and regular settings password changes
+          const destination = user?.role
+            ? getDefaultRouteForRole(user.role as UserRole)
+            : '/dashboard';
+          navigate(destination, { replace: true });
         },
       },
     );

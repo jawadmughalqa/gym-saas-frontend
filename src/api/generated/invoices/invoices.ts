@@ -27,7 +27,6 @@ import type {
 import type {
   ApplyDiscountRequest,
   CreateInvoiceRequest,
-  GetInvoicesInvoiceIdPayments200,
   GetInvoicesParams,
   InvoiceListResponse,
   InvoiceResponse,
@@ -204,99 +203,6 @@ export const usePostInvoices = <TError = ErrorType<unknown>,
       return useMutation(getPostInvoicesMutationOptions(options), queryClient);
     }
     /**
- * Returns the invoice summary plus all payments recorded against it, sorted oldest-first. Used to render the per-invoice payment history timeline.
- * @summary Get payment timeline for an invoice
- */
-export const getInvoicesInvoiceIdPayments = (
-    invoiceId: string,
- signal?: AbortSignal
-) => {
-
-
-      return orvalMutator<GetInvoicesInvoiceIdPayments200>(
-      {url: `/invoices/${invoiceId}/payments`, method: 'GET', signal
-    },
-      );
-    }
-
-
-
-
-export const getGetInvoicesInvoiceIdPaymentsQueryKey = (invoiceId: string,) => {
-    return [
-    `/invoices/${invoiceId}/payments`
-    ] as const;
-    }
-
-
-export const getGetInvoicesInvoiceIdPaymentsQueryOptions = <TData = Awaited<ReturnType<typeof getInvoicesInvoiceIdPayments>>, TError = ErrorType<NotFoundResponse>>(invoiceId: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getInvoicesInvoiceIdPayments>>, TError, TData>>, }
-) => {
-
-const {query: queryOptions} = options ?? {};
-
-  const queryKey =  queryOptions?.queryKey ?? getGetInvoicesInvoiceIdPaymentsQueryKey(invoiceId);
-
-
-
-    const queryFn: QueryFunction<Awaited<ReturnType<typeof getInvoicesInvoiceIdPayments>>> = ({ signal }) => getInvoicesInvoiceIdPayments(invoiceId, signal);
-
-
-
-
-
-   return  { queryKey, queryFn, enabled: !!(invoiceId), ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getInvoicesInvoiceIdPayments>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
-}
-
-export type GetInvoicesInvoiceIdPaymentsQueryResult = NonNullable<Awaited<ReturnType<typeof getInvoicesInvoiceIdPayments>>>
-export type GetInvoicesInvoiceIdPaymentsQueryError = ErrorType<NotFoundResponse>
-
-
-export function useGetInvoicesInvoiceIdPayments<TData = Awaited<ReturnType<typeof getInvoicesInvoiceIdPayments>>, TError = ErrorType<NotFoundResponse>>(
- invoiceId: string, options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof getInvoicesInvoiceIdPayments>>, TError, TData>> & Pick<
-        DefinedInitialDataOptions<
-          Awaited<ReturnType<typeof getInvoicesInvoiceIdPayments>>,
-          TError,
-          Awaited<ReturnType<typeof getInvoicesInvoiceIdPayments>>
-        > , 'initialData'
-      >, }
- , queryClient?: QueryClient
-  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
-export function useGetInvoicesInvoiceIdPayments<TData = Awaited<ReturnType<typeof getInvoicesInvoiceIdPayments>>, TError = ErrorType<NotFoundResponse>>(
- invoiceId: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getInvoicesInvoiceIdPayments>>, TError, TData>> & Pick<
-        UndefinedInitialDataOptions<
-          Awaited<ReturnType<typeof getInvoicesInvoiceIdPayments>>,
-          TError,
-          Awaited<ReturnType<typeof getInvoicesInvoiceIdPayments>>
-        > , 'initialData'
-      >, }
- , queryClient?: QueryClient
-  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
-export function useGetInvoicesInvoiceIdPayments<TData = Awaited<ReturnType<typeof getInvoicesInvoiceIdPayments>>, TError = ErrorType<NotFoundResponse>>(
- invoiceId: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getInvoicesInvoiceIdPayments>>, TError, TData>>, }
- , queryClient?: QueryClient
-  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
-/**
- * @summary Get payment timeline for an invoice
- */
-
-export function useGetInvoicesInvoiceIdPayments<TData = Awaited<ReturnType<typeof getInvoicesInvoiceIdPayments>>, TError = ErrorType<NotFoundResponse>>(
- invoiceId: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getInvoicesInvoiceIdPayments>>, TError, TData>>, }
- , queryClient?: QueryClient
- ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
-
-  const queryOptions = getGetInvoicesInvoiceIdPaymentsQueryOptions(invoiceId,options)
-
-  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
-
-  return { ...query, queryKey: queryOptions.queryKey };
-}
-
-
-
-
-
-
-/**
  * @summary Get invoice details
  */
 export const getInvoicesInvoiceId = (

@@ -22,9 +22,9 @@ import { defineConfig } from 'orval';
 export default defineConfig({
   gymApi: {
     input: {
-      // Run `npm run api:gen` with backend running on port 9000
-      // target: 'http://localhost:9000/api/docs/swagger.json',
-      target: 'https://api.coredevai.com/api/docs/swagger.json',
+      // api:gen  → reads from local backend (must be running on :9000)
+      // api:gen:file → reads from the local openapi.json snapshot
+      target: process.env.ORVAL_TARGET ?? 'http://localhost:9000/api/docs/swagger.json',
 
       // Treat all validation warnings as non-fatal so a minor schema issue
       // does not block the entire generation run.

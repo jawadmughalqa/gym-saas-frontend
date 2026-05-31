@@ -6,19 +6,7 @@
  * OpenAPI spec version: 1.0.0
  */
 
-export type PostMembersMemberIdSubscriptionsSubscriptionIdCancelBodyCancelMode =
-  | 'end_of_period'
-  | 'immediate_prorated'
-  | 'immediate_no_refund';
-
 export type PostMembersMemberIdSubscriptionsSubscriptionIdCancelBody = {
   /** @maxLength 500 */
   reason: string;
-  /**
-   * How to cancel the subscription.
-   * end_of_period       — keep access until nextRenewalDate, no refund (default)
-   * immediate_prorated  — cancel now, unused days credited to wallet
-   * immediate_no_refund — cancel now, no refund
-   */
-  cancelMode?: PostMembersMemberIdSubscriptionsSubscriptionIdCancelBodyCancelMode;
 };

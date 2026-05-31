@@ -29,7 +29,6 @@ import type {
   CreateDiscountRequest,
   DiscountListResponse,
   DiscountResponse,
-  NotFoundResponse,
   UpdateDiscountRequest,
   ValidateDiscountRequest,
   ValidateDiscountResponse
@@ -417,25 +416,19 @@ export const usePatchDiscountsDiscountId = <TError = ErrorType<unknown>,
       > => {
       return useMutation(getPatchDiscountsDiscountIdMutationOptions(options), queryClient);
     }
-    /**
- * Permanently deletes a discount code. Only codes with zero usage can be deleted; deactivate codes that have been used.
+
+/**
  * @summary Delete a discount code
  */
 export const deleteDiscountsDiscountId = (
     discountId: string,
- signal?: AbortSignal
 ) => {
-
-
       return orvalMutator<void>(
-      {url: `/discounts/${discountId}`, method: 'DELETE', signal
-    },
+      {url: `/discounts/${discountId}`, method: 'DELETE'},
       );
     }
 
-
-
-export const getDeleteDiscountsDiscountIdMutationOptions = <TError = ErrorType<void | NotFoundResponse>,
+export const getDeleteDiscountsDiscountIdMutationOptions = <TError = ErrorType<unknown>,
     TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof deleteDiscountsDiscountId>>, TError,{discountId: string}, TContext>, }
 ): UseMutationOptions<Awaited<ReturnType<typeof deleteDiscountsDiscountId>>, TError,{discountId: string}, TContext> => {
 
@@ -446,30 +439,20 @@ const {mutation: mutationOptions} = options ?
       : {...options, mutation: {...options.mutation, mutationKey}}
       : {mutation: { mutationKey, }};
 
-
-
-
       const mutationFn: MutationFunction<Awaited<ReturnType<typeof deleteDiscountsDiscountId>>, {discountId: string}> = (props) => {
           const {discountId} = props ?? {};
-
-          return  deleteDiscountsDiscountId(discountId,)
+          return deleteDiscountsDiscountId(discountId)
         }
-
-
-
-
-
 
   return  { mutationFn, ...mutationOptions }}
 
     export type DeleteDiscountsDiscountIdMutationResult = NonNullable<Awaited<ReturnType<typeof deleteDiscountsDiscountId>>>
-
-    export type DeleteDiscountsDiscountIdMutationError = ErrorType<void | NotFoundResponse>
+    export type DeleteDiscountsDiscountIdMutationError = ErrorType<unknown>
 
     /**
  * @summary Delete a discount code
  */
-export const useDeleteDiscountsDiscountId = <TError = ErrorType<void | NotFoundResponse>,
+export const useDeleteDiscountsDiscountId = <TError = ErrorType<unknown>,
     TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof deleteDiscountsDiscountId>>, TError,{discountId: string}, TContext>, }
  , queryClient?: QueryClient): UseMutationResult<
         Awaited<ReturnType<typeof deleteDiscountsDiscountId>>,

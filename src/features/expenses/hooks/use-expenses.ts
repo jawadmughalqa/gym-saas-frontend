@@ -12,13 +12,15 @@ import {
   getGetExpensesExpenseIdQueryKey,
   getGetExpensesSummaryQueryKey,
   getGetExpensesAnalyticsQueryKey,
-  type GetExpensesParams,
-  type CreateExpenseRequest,
-  type UpdateExpenseRequest,
-  type AddReceiptRequest,
-  type ExpenseSummaryParams,
-  type ExpenseAnalyticsParams,
 } from '@/api/generated/expenses/expenses';
+import type {
+  GetExpensesParams,
+  CreateExpenseRequest,
+  UpdateExpenseRequest,
+  AddReceiptRequest,
+  GetExpensesSummaryParams as ExpenseSummaryParams,
+  GetExpensesAnalyticsParams as ExpenseAnalyticsParams,
+} from '@/api/generated/schemas';
 import { toast } from '@/hooks/use-toast';
 import { getErrorMessage } from '@/utils/error';
 

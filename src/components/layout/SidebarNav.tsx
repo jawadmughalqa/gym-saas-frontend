@@ -3,6 +3,7 @@ import { cn } from '@/lib/utils';
 import { usePermission } from '@/hooks/use-permission';
 import { NAV_GROUPS, BOTTOM_NAV_ITEMS, type NavItem } from '@/lib/nav';
 import { useAuthStore } from '@/stores/auth.store';
+import { usePlanFeatures } from '@/hooks/use-plan-features';
 import type { UserRole } from '@/types/api.types';
 
 interface SidebarNavProps {
@@ -41,12 +42,14 @@ function NavItemLink({
 }
 
 export default function SidebarNav({ collapsed, onNavigate }: SidebarNavProps) {
-  const { can } = usePermission();
-  const userRole = useAuthStore((s) => s.user?.role);
+  const { can }    = usePermission();
+  const userRole   = useAuthStore((s) => s.user?.role);
+  const { hasFeature } = usePlanFeatures();
 
   function isVisible(item: NavItem): boolean {
     if (item.roles && userRole && !item.roles.includes(userRole as UserRole)) return false;
     if (item.permission && !can(item.permission)) return false;
+    if (item.featureFlag && !hasFeature(item.featureFlag)) return false;
     return true;
   }
 

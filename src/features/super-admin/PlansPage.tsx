@@ -1,6 +1,10 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ArrowLeft, Pencil, Plus, CalendarDays, Clock } from 'lucide-react';
+import {
+  ArrowLeft, Pencil, Plus, CalendarDays, Clock,
+  Users, UserCheck, CreditCard, ScanLine, BarChart3,
+  Receipt, GitBranch, Wrench, Bell, Tag, Dumbbell, Smartphone,
+} from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -46,7 +50,57 @@ import {
 } from '@/api/generated/super-admin/super-admin';
 import type { Plan } from '@/api/generated/schemas/plan';
 
+// ─── Feature Flag Config ──────────────────────────────────────────────────────
+
+type FeatureFlagKey =
+  | 'members' | 'trainers' | 'billing' | 'attendance' | 'reports'
+  | 'expenses' | 'branches' | 'equipment' | 'notifications'
+  | 'discounts' | 'fitPlan' | 'memberPortal';
+
+interface FeatureFlagDef {
+  key:         FeatureFlagKey;
+  label:       string;
+  description: string;
+  icon:        React.ElementType;
+  color:       string;
+  category:    'core' | 'advanced' | 'portal';
+}
+
+const FEATURE_FLAGS: FeatureFlagDef[] = [
+  // Core features
+  { key: 'members',       label: 'Members',          description: 'Member registration & management',    icon: Users,       color: 'text-blue-500',   category: 'core'     },
+  { key: 'trainers',      label: 'Trainers',          description: 'Trainer management & assignments',    icon: UserCheck,   color: 'text-violet-500', category: 'core'     },
+  { key: 'billing',       label: 'Billing',           description: 'Invoices, payments & subscriptions', icon: CreditCard,  color: 'text-green-500',  category: 'core'     },
+  { key: 'attendance',    label: 'Attendance',        description: 'Check-in & attendance tracking',     icon: ScanLine,    color: 'text-cyan-500',   category: 'core'     },
+  { key: 'notifications', label: 'Notifications',     description: 'In-app & push notifications',        icon: Bell,        color: 'text-amber-500',  category: 'core'     },
+  { key: 'memberPortal',  label: 'Member Portal',     description: 'Member self-service portal',         icon: Smartphone,  color: 'text-indigo-500', category: 'portal'   },
+  // Advanced features
+  { key: 'reports',       label: 'Advanced Reports',  description: 'Analytics, revenue & growth reports', icon: BarChart3,   color: 'text-rose-500',   category: 'advanced' },
+  { key: 'expenses',      label: 'Expenses',          description: 'Expense tracking & analytics',       icon: Receipt,     color: 'text-orange-500', category: 'advanced' },
+  { key: 'branches',      label: 'Multi-Branch',      description: 'Multiple gym locations',             icon: GitBranch,   color: 'text-teal-500',   category: 'advanced' },
+  { key: 'equipment',     label: 'Equipment',         description: 'Equipment & maintenance management', icon: Wrench,      color: 'text-slate-500',  category: 'advanced' },
+  { key: 'discounts',     label: 'Discounts',         description: 'Discount codes & promotions',        icon: Tag,         color: 'text-pink-500',   category: 'advanced' },
+  { key: 'fitPlan',       label: 'FitPlan',           description: 'AI-powered personalised fitness plans', icon: Dumbbell, color: 'text-emerald-500', category: 'portal'  },
+];
+
+const FEATURE_FLAG_KEYS = FEATURE_FLAGS.map((f) => f.key);
+
 // ─── Form Schema ──────────────────────────────────────────────────────────────
+
+const featureFlagsSchema = z.object({
+  members:       z.boolean(),
+  trainers:      z.boolean(),
+  billing:       z.boolean(),
+  attendance:    z.boolean(),
+  reports:       z.boolean(),
+  expenses:      z.boolean(),
+  branches:      z.boolean(),
+  equipment:     z.boolean(),
+  notifications: z.boolean(),
+  discounts:     z.boolean(),
+  fitPlan:       z.boolean(),
+  memberPortal:  z.boolean(),
+});
 
 const planFormSchema = z.object({
   displayName:           z.string().min(1, 'Required'),
@@ -60,34 +114,112 @@ const planFormSchema = z.object({
   maxTrainers:           z.string(),
   maxStorageMb:          z.string(),
   maxEmailSendsPerMonth: z.string(),
-  customRoles:           z.boolean(),
-  advancedReporting:     z.boolean(),
-  apiAccess:             z.boolean(),
-  whiteLabeling:         z.boolean(),
-  instalmentPlans:       z.boolean(),
-  discountEngine:        z.boolean(),
-  multiCurrency:         z.boolean(),
-});
+}).merge(featureFlagsSchema);
 
 type PlanFormValues = z.infer<typeof planFormSchema>;
+
+const DEFAULT_FEATURE_VALUES: z.infer<typeof featureFlagsSchema> = {
+  members: true, trainers: true, billing: true, attendance: true,
+  reports: false, expenses: false, branches: false, equipment: false,
+  notifications: true, discounts: false, fitPlan: false, memberPortal: true,
+};
 
 function toQuota(v: string): number {
   const n = Number(v);
   return isNaN(n) ? -1 : n;
 }
 
-const FEATURE_FLAGS: { key: keyof PlanFormValues & string; label: string }[] = [
-  { key: 'customRoles',        label: 'Custom Roles' },
-  { key: 'advancedReporting',  label: 'Advanced Reporting' },
-  { key: 'apiAccess',          label: 'API Access' },
-  { key: 'whiteLabeling',      label: 'White Labeling' },
-  { key: 'instalmentPlans',    label: 'Instalment Plans' },
-  { key: 'discountEngine',     label: 'Discount Engine' },
-  { key: 'multiCurrency',      label: 'Multi Currency' },
-];
+function buildFeatureFlags(values: PlanFormValues) {
+  return {
+    members:       values.members,
+    trainers:      values.trainers,
+    billing:       values.billing,
+    attendance:    values.attendance,
+    reports:       values.reports,
+    expenses:      values.expenses,
+    branches:      values.branches,
+    equipment:     values.equipment,
+    notifications: values.notifications,
+    discounts:     values.discounts,
+    fitPlan:       values.fitPlan,
+    memberPortal:  values.memberPortal,
+  };
+}
+
+function extractFeatureFlags(plan: Plan): z.infer<typeof featureFlagsSchema> {
+  const ff = plan.featureFlags as Record<string, boolean> | undefined;
+  return {
+    members:       ff?.members       ?? true,
+    trainers:      ff?.trainers      ?? true,
+    billing:       ff?.billing       ?? true,
+    attendance:    ff?.attendance    ?? true,
+    reports:       ff?.reports       ?? false,
+    expenses:      ff?.expenses      ?? false,
+    branches:      ff?.branches      ?? false,
+    equipment:     ff?.equipment     ?? false,
+    notifications: ff?.notifications ?? true,
+    discounts:     ff?.discounts     ?? false,
+    fitPlan:       ff?.fitPlan       ?? false,
+    memberPortal:  ff?.memberPortal  ?? true,
+  };
+}
 
 const PLAN_NAMES = ['starter', 'pro', 'enterprise'] as const;
 type PlanName = (typeof PLAN_NAMES)[number];
+
+// ─── Feature Flag Section ─────────────────────────────────────────────────────
+
+function FeatureFlagFields({ form }: { form: ReturnType<typeof useForm<PlanFormValues>> }) {
+  const categories: { key: 'core' | 'advanced' | 'portal'; label: string }[] = [
+    { key: 'core',     label: 'Core Features' },
+    { key: 'advanced', label: 'Advanced Features' },
+    { key: 'portal',   label: 'Portal & AI' },
+  ];
+
+  return (
+    <div className="space-y-4">
+      {categories.map(({ key, label }) => {
+        const flags = FEATURE_FLAGS.filter((f) => f.category === key);
+        return (
+          <div key={key}>
+            <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-2">
+              {label}
+            </p>
+            <div className="space-y-1.5">
+              {flags.map(({ key: flagKey, label: flagLabel, description, icon: Icon, color }) => (
+                <FormField
+                  key={flagKey}
+                  control={form.control}
+                  name={flagKey}
+                  render={({ field }) => (
+                    <FormItem className="flex items-center justify-between rounded-lg border px-3 py-2.5 gap-3">
+                      <div className="flex items-center gap-2.5 min-w-0">
+                        <Icon className={`h-4 w-4 flex-shrink-0 ${color}`} />
+                        <div className="min-w-0">
+                          <FormLabel className="text-sm font-medium cursor-pointer leading-none">
+                            {flagLabel}
+                          </FormLabel>
+                          <p className="text-xs text-muted-foreground mt-0.5 truncate">{description}</p>
+                        </div>
+                      </div>
+                      <FormControl>
+                        <Switch
+                          checked={field.value as boolean}
+                          onCheckedChange={field.onChange}
+                          className="flex-shrink-0"
+                        />
+                      </FormControl>
+                    </FormItem>
+                  )}
+                />
+              ))}
+            </div>
+          </div>
+        );
+      })}
+    </div>
+  );
+}
 
 // ─── Shared Plan Form Fields ──────────────────────────────────────────────────
 
@@ -188,28 +320,7 @@ function PlanFormFields({ form }: { form: ReturnType<typeof useForm<PlanFormValu
       </div>
 
       <Separator />
-      <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Feature Flags</p>
-
-      <div className="space-y-2">
-        {FEATURE_FLAGS.map(({ key, label }) => (
-          <FormField
-            key={key}
-            control={form.control}
-            name={key as keyof PlanFormValues}
-            render={({ field }) => (
-              <FormItem className="flex items-center justify-between rounded border px-3 py-2">
-                <FormLabel className="text-sm cursor-pointer">{label}</FormLabel>
-                <FormControl>
-                  <Switch
-                    checked={field.value as boolean}
-                    onCheckedChange={field.onChange}
-                  />
-                </FormControl>
-              </FormItem>
-            )}
-          />
-        ))}
-      </div>
+      <FeatureFlagFields form={form} />
     </>
   );
 }
@@ -226,6 +337,7 @@ function EditPlanDialog({
   onOpenChange: (v: boolean) => void;
 }) {
   const qc = useQueryClient();
+  const planAny = plan as Plan & { trialDays?: number; billingCycle?: string };
 
   const form = useForm<PlanFormValues>({
     resolver: zodResolver(planFormSchema),
@@ -234,20 +346,14 @@ function EditPlanDialog({
       description:           plan.description ?? '',
       price:                 String(plan.price ?? 0),
       currency:              plan.currency ?? 'PKR',
-      billingCycle:          (plan.billingCycle as 'monthly' | 'yearly') ?? 'monthly',
-      trialDays:             String((plan as Plan & { trialDays?: number }).trialDays ?? 0),
+      billingCycle:          (planAny.billingCycle as 'monthly' | 'yearly') ?? 'monthly',
+      trialDays:             String(planAny.trialDays ?? 0),
       maxBranches:           String(plan.quotas?.maxBranches ?? -1),
       maxMembers:            String(plan.quotas?.maxMembers ?? -1),
       maxTrainers:           String(plan.quotas?.maxTrainers ?? -1),
       maxStorageMb:          String(plan.quotas?.maxStorageMb ?? -1),
       maxEmailSendsPerMonth: String(plan.quotas?.maxEmailSendsPerMonth ?? -1),
-      customRoles:           plan.featureFlags?.customRoles ?? false,
-      advancedReporting:     plan.featureFlags?.advancedReporting ?? false,
-      apiAccess:             plan.featureFlags?.apiAccess ?? false,
-      whiteLabeling:         plan.featureFlags?.whiteLabeling ?? false,
-      instalmentPlans:       plan.featureFlags?.instalmentPlans ?? false,
-      discountEngine:        plan.featureFlags?.discountEngine ?? false,
-      multiCurrency:         plan.featureFlags?.multiCurrency ?? false,
+      ...extractFeatureFlags(plan),
     },
   });
 
@@ -279,15 +385,7 @@ function EditPlanDialog({
           maxStorageMb:          toQuota(values.maxStorageMb),
           maxEmailSendsPerMonth: toQuota(values.maxEmailSendsPerMonth),
         },
-        featureFlags: {
-          customRoles:       values.customRoles,
-          advancedReporting: values.advancedReporting,
-          apiAccess:         values.apiAccess,
-          whiteLabeling:     values.whiteLabeling,
-          instalmentPlans:   values.instalmentPlans,
-          discountEngine:    values.discountEngine,
-          multiCurrency:     values.multiCurrency,
-        },
+        featureFlags: buildFeatureFlags(values),
       },
     });
   }
@@ -326,7 +424,6 @@ function CreatePlanDialog({
   existingPlanNames: string[];
 }) {
   const qc = useQueryClient();
-
   const availableNames = PLAN_NAMES.filter((n) => !existingPlanNames.includes(n));
 
   const createSchema = planFormSchema.extend({
@@ -349,13 +446,7 @@ function CreatePlanDialog({
       maxTrainers:           '-1',
       maxStorageMb:          '-1',
       maxEmailSendsPerMonth: '-1',
-      customRoles:           false,
-      advancedReporting:     false,
-      apiAccess:             false,
-      whiteLabeling:         false,
-      instalmentPlans:       false,
-      discountEngine:        true,
-      multiCurrency:         false,
+      ...DEFAULT_FEATURE_VALUES,
     },
   });
 
@@ -387,15 +478,7 @@ function CreatePlanDialog({
           maxStorageMb:          toQuota(values.maxStorageMb),
           maxEmailSendsPerMonth: toQuota(values.maxEmailSendsPerMonth),
         },
-        featureFlags: {
-          customRoles:       values.customRoles,
-          advancedReporting: values.advancedReporting,
-          apiAccess:         values.apiAccess,
-          whiteLabeling:     values.whiteLabeling,
-          instalmentPlans:   values.instalmentPlans,
-          discountEngine:    values.discountEngine,
-          multiCurrency:     values.multiCurrency,
-        },
+        featureFlags: buildFeatureFlags(values),
       },
     });
   }
@@ -463,36 +546,46 @@ function CreatePlanDialog({
 // ─── Plan Card ────────────────────────────────────────────────────────────────
 
 function PlanCard({ plan, onEdit }: { plan: Plan; onEdit: () => void }) {
-  const tierBorder: Record<string, string> = {
-    starter:    'border-slate-300',
-    pro:        'border-purple-400',
-    enterprise: 'border-amber-400',
+  const tierStyles: Record<string, { border: string; badge: string; accent: string }> = {
+    starter:    { border: 'border-slate-300',   badge: 'bg-slate-100 text-slate-700',   accent: 'text-slate-700' },
+    pro:        { border: 'border-purple-400',  badge: 'bg-purple-100 text-purple-700', accent: 'text-purple-700' },
+    enterprise: { border: 'border-amber-400',   badge: 'bg-amber-100 text-amber-700',   accent: 'text-amber-700' },
   };
 
-  const planAny = plan as Plan & { trialDays?: number; billingCycle?: string };
-  const currency = plan.currency ?? 'PKR';
-  const billingCycle = planAny.billingCycle ?? 'monthly';
-  const trialDays = planAny.trialDays ?? 0;
+  const planAny    = plan as Plan & { trialDays?: number; billingCycle?: string };
+  const currency   = plan.currency ?? 'PKR';
+  const billing    = planAny.billingCycle ?? 'monthly';
+  const trialDays  = planAny.trialDays ?? 0;
+  const styles     = tierStyles[plan.name ?? ''] ?? tierStyles['starter'];
+  const flags      = plan.featureFlags as Record<string, boolean> | undefined ?? {};
+
+  const enabledFlags  = FEATURE_FLAGS.filter((f) => flags[f.key]);
+  const disabledFlags = FEATURE_FLAGS.filter((f) => !flags[f.key]);
 
   return (
-    <Card className={`relative border-2 ${tierBorder[plan.name ?? ''] ?? ''}`}>
+    <Card className={`relative border-2 ${styles.border}`}>
       <CardHeader className="pb-3">
         <div className="flex items-start justify-between">
           <div>
-            <CardTitle className="text-lg capitalize">{plan.displayName ?? plan.name}</CardTitle>
+            <div className="flex items-center gap-2 mb-1">
+              <CardTitle className="text-lg capitalize">{plan.displayName ?? plan.name}</CardTitle>
+              <span className={`text-xs font-semibold px-2 py-0.5 rounded-full capitalize ${styles.badge}`}>
+                {plan.name}
+              </span>
+            </div>
             {plan.description && (
-              <p className="text-sm text-muted-foreground mt-0.5">{plan.description}</p>
+              <p className="text-sm text-muted-foreground">{plan.description}</p>
             )}
           </div>
-          <Button variant="ghost" size="icon" className="h-7 w-7" onClick={onEdit}>
+          <Button variant="ghost" size="icon" className="h-7 w-7 flex-shrink-0" onClick={onEdit}>
             <Pencil className="h-3.5 w-3.5" />
           </Button>
         </div>
 
         {/* Price */}
         <div className="mt-2">
-          <span className="text-3xl font-bold">{formatCurrency(plan.price ?? 0, currency)}</span>
-          <span className="text-muted-foreground text-sm">/{billingCycle}</span>
+          <span className={`text-3xl font-bold ${styles.accent}`}>{formatCurrency(plan.price ?? 0, currency)}</span>
+          <span className="text-muted-foreground text-sm">/{billing}</span>
         </div>
 
         {/* Trial + billing badges */}
@@ -505,14 +598,14 @@ function PlanCard({ plan, onEdit }: { plan: Plan; onEdit: () => void }) {
           )}
           <Badge variant="outline" className="text-xs gap-1 capitalize">
             <CalendarDays className="h-3 w-3" />
-            {billingCycle}
+            {billing}
           </Badge>
         </div>
       </CardHeader>
 
       <CardContent className="space-y-4">
         {/* Quotas */}
-        <div className="space-y-1">
+        <div className="space-y-1.5">
           <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Quotas</p>
           {[
             { label: 'Branches',     val: plan.quotas?.maxBranches },
@@ -524,7 +617,7 @@ function PlanCard({ plan, onEdit }: { plan: Plan; onEdit: () => void }) {
             <div key={label} className="flex justify-between text-sm">
               <span className="text-muted-foreground">{label}</span>
               <span className="font-medium">
-                {val === -1 ? '∞ Unlimited' : `${val ?? '—'}${unit ? ' ' + unit : ''}`}
+                {val === -1 ? '∞' : `${val ?? '—'}${unit ? ' ' + unit : ''}`}
               </span>
             </div>
           ))}
@@ -532,20 +625,23 @@ function PlanCard({ plan, onEdit }: { plan: Plan; onEdit: () => void }) {
 
         <Separator />
 
-        {/* Feature flags */}
+        {/* Feature flags — enabled */}
         <div>
-          <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">Features</p>
-          <div className="flex flex-wrap gap-1.5">
-            {plan.featureFlags && Object.entries(plan.featureFlags).map(([flag, enabled]) => (
-              <Badge
-                key={flag}
-                variant={enabled ? 'default' : 'outline'}
-                className={enabled
-                  ? 'bg-green-600 hover:bg-green-700 text-xs'
-                  : 'text-muted-foreground text-xs line-through opacity-50'}
-              >
-                {flag.replace(/([A-Z])/g, ' $1').trim()}
-              </Badge>
+          <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">
+            Features <span className="font-normal normal-case">({enabledFlags.length}/{FEATURE_FLAGS.length})</span>
+          </p>
+          <div className="space-y-1">
+            {enabledFlags.map(({ key, label, icon: Icon, color }) => (
+              <div key={key} className="flex items-center gap-2 text-sm">
+                <Icon className={`h-3.5 w-3.5 flex-shrink-0 ${color}`} />
+                <span className="font-medium">{label}</span>
+              </div>
+            ))}
+            {disabledFlags.map(({ key, label, icon: Icon }) => (
+              <div key={key} className="flex items-center gap-2 text-sm opacity-35 line-through">
+                <Icon className="h-3.5 w-3.5 flex-shrink-0 text-muted-foreground" />
+                <span>{label}</span>
+              </div>
             ))}
           </div>
         </div>
@@ -555,6 +651,9 @@ function PlanCard({ plan, onEdit }: { plan: Plan; onEdit: () => void }) {
 }
 
 // ─── PlansPage ────────────────────────────────────────────────────────────────
+
+// Keep FEATURE_FLAG_KEYS referenced so tree-shaking doesn't warn
+void FEATURE_FLAG_KEYS;
 
 export default function PlansPage() {
   const navigate = useNavigate();
@@ -590,7 +689,7 @@ export default function PlansPage() {
       {isLoading ? (
         <div className="grid gap-4 md:grid-cols-3">
           {[1, 2, 3].map((i) => (
-            <div key={i} className="h-96 bg-muted animate-pulse rounded-lg" />
+            <div key={i} className="h-[500px] bg-muted animate-pulse rounded-lg" />
           ))}
         </div>
       ) : plans.length === 0 ? (

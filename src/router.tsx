@@ -12,6 +12,7 @@ import DashboardPage from "@/features/dashboard/DashboardPage";
 // ─── Lazy pages ───────────────────────────────────────────────────────────────
 
 const ChangePasswordPage  = lazy(() => import("@/features/auth/ChangePasswordPage"));
+const PricingPage         = lazy(() => import("@/features/settings/PricingPage"));
 const ProfilePage         = lazy(() => import("@/features/auth/ProfilePage"));
 const MembersPage         = lazy(() => import("@/features/members/MembersPage"));
 const MemberDetailPage    = lazy(() => import("@/features/members/MemberDetailPage"));
@@ -32,6 +33,7 @@ const RolesPage           = lazy(() => import("@/features/roles/RolesPage"));
 const SuperAdminPage      = lazy(() => import("@/features/super-admin/SuperAdminPage"));
 const TenantDetailPage    = lazy(() => import("@/features/super-admin/TenantDetailPage"));
 const PlansPage           = lazy(() => import("@/features/super-admin/PlansPage"));
+const LeadsPage           = lazy(() => import("@/features/super-admin/LeadsPage"));
 const MembershipPlansPage   = lazy(() => import("@/features/membership-plans/MembershipPlansPage"));
 const ExpensesPage          = lazy(() => import("@/features/expenses/ExpensesPage"));
 const ExpenseAnalyticsPage  = lazy(() => import("@/features/expenses/ExpenseAnalyticsPage"));
@@ -41,6 +43,8 @@ const MemberHomePage          = lazy(() => import("@/features/member-portal/Memb
 const MemberPlanPage          = lazy(() => import("@/features/member-portal/MemberPlanPage"));
 const MemberInvoicesPage      = lazy(() => import("@/features/member-portal/MemberInvoicesPage"));
 const MemberTrainerPage       = lazy(() => import("@/features/member-portal/MemberTrainerPage"));
+const FitPlanPage             = lazy(() => import("@/features/fit-plan/FitPlanPage"));
+const FitPlanProgressPage     = lazy(() => import("@/features/fit-plan/ProgressPage"));
 const TrainerDashboardPage    = lazy(() => import("@/features/trainer-portal/TrainerDashboardPage"));
 const TrainerClientsPage      = lazy(() => import("@/features/trainer-portal/TrainerClientsPage"));
 const TrainerNotesPage        = lazy(() => import("@/features/trainer-portal/TrainerNotesPage"));
@@ -103,6 +107,11 @@ const router = createBrowserRouter([
                 path: "change-password",
                 element: <Lazy><ChangePasswordPage /></Lazy>,
                 handle: { crumb: "Change Password" },
+              },
+              {
+                path: "pricing",
+                element: <Lazy><PricingPage /></Lazy>,
+                handle: { crumb: "Plans & Pricing" },
               },
             ],
           },
@@ -257,6 +266,18 @@ const router = createBrowserRouter([
                 element: <Lazy><MemberTrainerPage /></Lazy>,
                 handle: { crumb: "My Trainer" },
               },
+              {
+                path: "fit-plan",
+                handle: { crumb: "FitPlan" },
+                children: [
+                  { index: true, element: <Lazy><FitPlanPage /></Lazy> },
+                  {
+                    path: "progress",
+                    element: <Lazy><FitPlanProgressPage /></Lazy>,
+                    handle: { crumb: "Progress" },
+                  },
+                ],
+              },
             ],
           },
 
@@ -331,6 +352,16 @@ const router = createBrowserRouter([
             path: "plans",
             element: <Lazy><PlansPage /></Lazy>,
             handle: { crumb: "Plans" },
+          },
+          {
+            path: "leads",
+            element: <Lazy><LeadsPage /></Lazy>,
+            handle: { crumb: "Leads" },
+          },
+          {
+            path: "leads/:leadId",
+            element: <Lazy><LeadsPage /></Lazy>,
+            handle: { crumb: "Lead Detail" },
           },
         ],
       },

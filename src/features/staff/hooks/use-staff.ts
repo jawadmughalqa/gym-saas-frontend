@@ -7,11 +7,13 @@ import {
   usePatchStaffStaffIdStatus,
   getGetStaffQueryKey,
   getGetStaffStaffIdQueryKey,
-  type GetStaffParams,
-  type CreateStaffRequest,
-  type UpdateStaffRequest,
-  type UpdateStaffStatusRequest,
 } from '@/api/generated/staff/staff';
+import type {
+  GetStaffParams,
+  CreateStaffRequest,
+  UpdateStaffRequest,
+  UpdateStaffStatusRequest,
+} from '@/api/generated/schemas';
 import {
   getGetNotificationsQueryKey,
   getGetNotificationsUnreadCountQueryKey,

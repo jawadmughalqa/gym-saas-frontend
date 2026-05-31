@@ -5,11 +5,13 @@
  * REST API for the SaaS Gym Management System. Built with Node.js, Express, MongoDB, and TypeScript.
  * OpenAPI spec version: 1.0.0
  */
-import type { CreateCheckInRequestMethod } from './createCheckInRequestMethod';
 
 export interface CreateCheckInRequest {
-  memberId: string;
-  branchId: string;
-  method?: CreateCheckInRequestMethod;
+  /**
+     * @minimum 20
+     * @maximum 400
+     */
+  weight: number;
+  date: string;
   notes?: string;
 }

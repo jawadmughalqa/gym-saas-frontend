@@ -8,16 +8,16 @@ import {
   CheckCircle2,
   Users,
 } from "lucide-react";
-import { useQueryClient } from "@tanstack/react-query";
+import { useQueryClient, useMutation } from "@tanstack/react-query";
 
 import {
   useGetMembershipPlans,
   usePostMembershipPlans,
   usePatchMembershipPlansPlanId,
   useDeleteMembershipPlansPlanId,
-  usePostMembershipPlansPlanIdRestore,
   getGetMembershipPlansQueryKey,
 } from "@/api/generated/membership-plans/membership-plans";
+import { api } from "@/lib/axios";
 import type {
   MembershipPlan,
   CreateMembershipPlanRequest,
@@ -349,29 +349,28 @@ export default function MembershipPlansPage() {
     },
   });
 
-  const restoreMutation = usePostMembershipPlansPlanIdRestore({
-    mutation: {
-      onSuccess: () => {
-        void queryClient.invalidateQueries({
-          queryKey: getGetMembershipPlansQueryKey(),
-        });
-        setRestorePlan(null);
-        toast({
-          title: "Plan restored",
-          description: "Membership plan restored successfully.",
-        });
-      },
-      onError: (err: unknown) => {
-        const error = err as { response?: { data?: { message?: string } } };
-        const message =
-          error?.response?.data?.message ?? "Failed to restore plan.";
-
-        toast({
-          title: "Cannot Restore Plan",
-          description: message,
-          variant: "destructive",
-        });
-      },
+  const restoreMutation = useMutation({
+    mutationFn: ({ planId }: { planId: string }) =>
+      api.post(`/membership-plans/${planId}/restore`).then((r) => r.data),
+    onSuccess: () => {
+      void queryClient.invalidateQueries({
+        queryKey: getGetMembershipPlansQueryKey(),
+      });
+      setRestorePlan(null);
+      toast({
+        title: "Plan restored",
+        description: "Membership plan restored successfully.",
+      });
+    },
+    onError: (err: unknown) => {
+      const error = err as { response?: { data?: { message?: string } } };
+      const message =
+        error?.response?.data?.message ?? "Failed to restore plan.";
+      toast({
+        title: "Cannot Restore Plan",
+        description: message,
+        variant: "destructive",
+      });
     },
   });
 

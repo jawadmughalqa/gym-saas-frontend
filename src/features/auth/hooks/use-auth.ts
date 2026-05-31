@@ -13,7 +13,7 @@ import type { UserRole } from '@/types/api.types';
  * This prevents a gym_owner's last-visited URL (/dashboard) from being shown
  * to a member who logs in next on the same browser.
  */
-function getDefaultRouteForRole(role: UserRole): string {
+export function getDefaultRouteForRole(role: UserRole): string {
   switch (role) {
     case 'super_admin':    return '/super-admin';
     case 'gym_owner':      return '/dashboard';

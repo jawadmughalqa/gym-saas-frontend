@@ -3,7 +3,7 @@ import {
   KeyRound, Mail, Shield, User, Building2,
   CreditCard, Sparkles, ArrowRight, Check,
   Users, UserCheck, CreditCard as CreditCardIcon, ScanLine, BarChart3,
-  Receipt, GitBranch, Wrench, Bell, Tag, Dumbbell, Smartphone,
+  Receipt, GitBranch, Wrench, Bell, Tag, Dumbbell, Smartphone, UserPlus,
 } from 'lucide-react';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
@@ -48,6 +48,7 @@ const FLAG_DISPLAY: Record<string, { label: string; icon: React.ElementType }> =
   equipment:     { label: 'Equipment',         icon: Wrench          },
   discounts:     { label: 'Discounts',         icon: Tag             },
   fitPlan:       { label: 'FitPlan',           icon: Dumbbell        },
+  walkInLeads:   { label: 'Walk-in Leads',     icon: UserPlus        },
 };
 
 // ─── Subscription Plan Card (gym_owner only) ──────────────────────────────────

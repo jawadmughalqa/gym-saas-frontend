@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import {
   ArrowLeft, Pencil, Plus, CalendarDays, Clock,
   Users, UserCheck, CreditCard, ScanLine, BarChart3,
-  Receipt, GitBranch, Wrench, Bell, Tag, Dumbbell, Smartphone,
+  Receipt, GitBranch, Wrench, Bell, Tag, Dumbbell, Smartphone, UserPlus,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -55,7 +55,7 @@ import type { Plan } from '@/api/generated/schemas/plan';
 type FeatureFlagKey =
   | 'members' | 'trainers' | 'billing' | 'attendance' | 'reports'
   | 'expenses' | 'branches' | 'equipment' | 'notifications'
-  | 'discounts' | 'fitPlan' | 'memberPortal';
+  | 'discounts' | 'fitPlan' | 'memberPortal' | 'walkInLeads';
 
 interface FeatureFlagDef {
   key:         FeatureFlagKey;
@@ -81,6 +81,7 @@ const FEATURE_FLAGS: FeatureFlagDef[] = [
   { key: 'equipment',     label: 'Equipment',         description: 'Equipment & maintenance management', icon: Wrench,      color: 'text-slate-500',  category: 'advanced' },
   { key: 'discounts',     label: 'Discounts',         description: 'Discount codes & promotions',        icon: Tag,         color: 'text-pink-500',   category: 'advanced' },
   { key: 'fitPlan',       label: 'FitPlan',           description: 'AI-powered personalised fitness plans', icon: Dumbbell, color: 'text-emerald-500', category: 'portal'  },
+  { key: 'walkInLeads',   label: 'Walk-in Leads',     description: 'Track walk-in visitors & prospect CRM', icon: UserPlus, color: 'text-fuchsia-500', category: 'advanced' },
 ];
 
 const FEATURE_FLAG_KEYS = FEATURE_FLAGS.map((f) => f.key);
@@ -100,6 +101,7 @@ const featureFlagsSchema = z.object({
   discounts:     z.boolean(),
   fitPlan:       z.boolean(),
   memberPortal:  z.boolean(),
+  walkInLeads:   z.boolean(),
 });
 
 const planFormSchema = z.object({
@@ -122,6 +124,7 @@ const DEFAULT_FEATURE_VALUES: z.infer<typeof featureFlagsSchema> = {
   members: true, trainers: true, billing: true, attendance: true,
   reports: false, expenses: false, branches: false, equipment: false,
   notifications: true, discounts: false, fitPlan: false, memberPortal: true,
+  walkInLeads: false,
 };
 
 function toQuota(v: string): number {
@@ -143,6 +146,7 @@ function buildFeatureFlags(values: PlanFormValues) {
     discounts:     values.discounts,
     fitPlan:       values.fitPlan,
     memberPortal:  values.memberPortal,
+    walkInLeads:   values.walkInLeads,
   };
 }
 
@@ -161,6 +165,7 @@ function extractFeatureFlags(plan: Plan): z.infer<typeof featureFlagsSchema> {
     discounts:     ff?.discounts     ?? false,
     fitPlan:       ff?.fitPlan       ?? false,
     memberPortal:  ff?.memberPortal  ?? true,
+    walkInLeads:   ff?.walkInLeads   ?? false,
   };
 }
 

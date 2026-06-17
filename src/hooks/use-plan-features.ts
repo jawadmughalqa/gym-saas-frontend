@@ -16,6 +16,7 @@ const ALL_FEATURES_ENABLED: Required<TenantFeatureFlags> = {
   discounts:     true,
   fitPlan:       true,
   memberPortal:  true,
+  walkInLeads:   true,
 };
 
 export type PlanFeatureKey = keyof Required<TenantFeatureFlags>;
@@ -91,6 +92,7 @@ export function usePlanFeatures(): UsePlanFeaturesResult {
     discounts:     raw['discounts']     ?? false,
     fitPlan:       raw['fitPlan']       ?? false,
     memberPortal:  raw['memberPortal']  ?? true,
+    walkInLeads:   raw['walkInLeads']   ?? false,
   };
 
   return {

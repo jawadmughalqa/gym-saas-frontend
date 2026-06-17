@@ -38,6 +38,7 @@ const MembershipPlansPage   = lazy(() => import("@/features/membership-plans/Mem
 const ExpensesPage          = lazy(() => import("@/features/expenses/ExpensesPage"));
 const ExpenseAnalyticsPage  = lazy(() => import("@/features/expenses/ExpenseAnalyticsPage"));
 const StaffPage             = lazy(() => import("@/features/staff/StaffPage"));
+const WalkInLeadsPage       = lazy(() => import("@/features/walk-in-leads/WalkInLeadsPage"));
 const RefundsPage           = lazy(() => import("@/features/refunds/RefundsPage"));
 const MemberHomePage          = lazy(() => import("@/features/member-portal/MemberHomePage"));
 const MemberPlanPage          = lazy(() => import("@/features/member-portal/MemberPlanPage"));
@@ -183,6 +184,13 @@ const router = createBrowserRouter([
             path: "refunds",
             element: <Lazy><RefundsPage /></Lazy>,
             handle: { crumb: "Refunds" },
+          },
+
+          // ── Walk-in Leads ────────────────────────────────────────────
+          {
+            path: "walk-in-leads",
+            element: <Lazy><WalkInLeadsPage /></Lazy>,
+            handle: { crumb: "Walk-in Leads" },
           },
 
           // ── Staff ────────────────────────────────────────────────────

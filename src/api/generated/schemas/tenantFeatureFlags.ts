@@ -19,4 +19,5 @@ export interface TenantFeatureFlags {
   discounts?:     boolean;
   fitPlan?:       boolean;
   memberPortal?:  boolean;
+  walkInLeads?:   boolean;
 }

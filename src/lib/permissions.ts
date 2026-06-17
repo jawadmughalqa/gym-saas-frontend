@@ -117,7 +117,14 @@ export type Permission =
 
   // ─── Billing Dashboard ────────────────────────────────────────────────────
   | 'billing.dashboard.read'
-  | 'billing.transactions.read';
+  | 'billing.transactions.read'
+
+  // ── Walk-in Leads (prospect CRM) ──────────────────────────────────────────
+  | 'walkin_lead.create'
+  | 'walkin_lead.read'
+  | 'walkin_lead.update'
+  | 'walkin_lead.delete'
+  | 'walkin_lead.convert';
 
 // ─── Role → Permission map ────────────────────────────────────────────────────
 
@@ -162,6 +169,9 @@ const ROLE_PERMISSIONS: Record<Exclude<UserRole, 'super_admin'>, Permission[]> =
     'expense.create', 'expense.read', 'expense.update', 'expense.delete',
     // Billing Dashboard — full access
     'billing.dashboard.read', 'billing.transactions.read',
+    // Walk-in Leads — full access
+    'walkin_lead.create', 'walkin_lead.read', 'walkin_lead.update',
+    'walkin_lead.delete', 'walkin_lead.convert',
   ],
 
   branch_manager: [
@@ -203,6 +213,8 @@ const ROLE_PERMISSIONS: Record<Exclude<UserRole, 'super_admin'>, Permission[]> =
     'expense.create', 'expense.read', 'expense.update',
     // Billing Dashboard — read access
     'billing.dashboard.read', 'billing.transactions.read',
+    // Walk-in Leads — create, read, update, convert (no delete)
+    'walkin_lead.create', 'walkin_lead.read', 'walkin_lead.update', 'walkin_lead.convert',
   ],
 
   staff: [
@@ -234,6 +246,8 @@ const ROLE_PERMISSIONS: Record<Exclude<UserRole, 'super_admin'>, Permission[]> =
     'expense.read',
     // Billing Dashboard — read access for staff
     'billing.dashboard.read', 'billing.transactions.read',
+    // Walk-in Leads — front-desk staff can log, update, and convert prospects
+    'walkin_lead.create', 'walkin_lead.read', 'walkin_lead.update', 'walkin_lead.convert',
   ],
 
   trainer: [

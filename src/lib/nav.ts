@@ -23,6 +23,7 @@ import {
   ClipboardCheck,
   Flame,
   Inbox,
+  UserPlus,
   type LucideIcon,
 } from 'lucide-react';
 import type { UserRole } from '@/types/api.types';
@@ -296,6 +297,14 @@ export const NAV_GROUPS: NavGroup[] = [
         permission: 'discount.read',
         roles: ADMIN_ROLES,
         featureFlag: 'discounts',
+      },
+      {
+        to: '/walk-in-leads',
+        label: 'Walk-in Leads',
+        icon: UserPlus,
+        permission: 'walkin_lead.read',
+        roles: ADMIN_ROLES,
+        featureFlag: 'walkInLeads',
       },
       {
         to: '/expenses',

@@ -34,6 +34,8 @@ export interface NavItem {
   to: string;
   label: string;
   icon: LucideIcon;
+  /** If true, only marks active on an exact path match — prevents /super-admin matching /super-admin/leads */
+  end?: boolean;
   /** If set, user must have this permission to see this item */
   permission?: Permission;
   /** If set, only these roles see this item */
@@ -383,5 +385,6 @@ export const BOTTOM_NAV_ITEMS: NavItem[] = [
     label: 'Super Admin',
     icon: ShieldCheck,
     roles: ['super_admin'],
+    end: true,
   },
 ];

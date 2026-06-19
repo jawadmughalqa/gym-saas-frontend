@@ -75,6 +75,13 @@ export async function freezeSubscription(memberId: string, subscriptionId: strin
   return data.data;
 }
 
+export async function resumeSubscription(memberId: string, subscriptionId: string) {
+  const { data } = await api.post<ApiResponse<Subscription>>(
+    `/members/${memberId}/subscriptions/${subscriptionId}/resume`,
+  );
+  return data.data;
+}
+
 export async function cancelSubscription(memberId: string, subscriptionId: string, body: CancelSubscriptionDto) {
   const { data } = await api.post<ApiResponse<Subscription>>(
     `/members/${memberId}/subscriptions/${subscriptionId}/cancel`,

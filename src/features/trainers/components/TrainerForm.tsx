@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { useForm, useFieldArray } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { Plus, Trash2, X, ChevronsUpDown, Check } from "lucide-react";
+import { Plus, Trash2, X, ChevronsUpDown, Check, Copy } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -119,7 +119,6 @@ const createTrainerSchema = profileFieldsSchema.extend({
   firstName: z.string().min(1, "First name is required").max(80),
   lastName: z.string().min(1, "Last name is required").max(80),
   email: z.string().email("Invalid email"),
-  password: z.string().min(8, "Password must be at least 8 characters"),
 });
 
 const editTrainerSchema = profileFieldsSchema;
@@ -277,6 +276,15 @@ export default function TrainerForm({
   trainer,
 }: TrainerFormProps) {
   const isEdit = !!trainer;
+  const [credentials, setCredentials] = useState<{ email: string; tempPassword: string } | null>(null);
+  const [copied, setCopied] = useState(false);
+
+  function copyPassword(pw: string) {
+    void navigator.clipboard.writeText(pw).then(() => {
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    });
+  }
 
   const { data: branchesData, isLoading: branchesLoading } = useGetBranches({
     limit: 100,
@@ -287,12 +295,17 @@ export default function TrainerForm({
 
   const createTrainer = usePostTrainersWithUser({
     mutation: {
-      onSuccess: () => {
+      onSuccess: (res) => {
         queryClient.invalidateQueries({ queryKey: getGetTrainersQueryKey() });
         queryClient.invalidateQueries({ queryKey: getGetNotificationsQueryKey() });
         queryClient.invalidateQueries({ queryKey: getGetNotificationsUnreadCountQueryKey() });
-        toast({ title: "Trainer created successfully" });
-        onOpenChange(false);
+        const data = (res as any)?.data;
+        if (data?.tempPassword) {
+          setCredentials({ email: data.email ?? '', tempPassword: data.tempPassword });
+        } else {
+          toast({ title: "Trainer created successfully" });
+          onOpenChange(false);
+        }
       },
       onError: (err: any) => {
         toast({
@@ -341,7 +354,6 @@ export default function TrainerForm({
       firstName: "",
       lastName: "",
       email: "",
-      password: "",
       branchIds: [],
       specializations: "",
       certifications: "",
@@ -438,7 +450,6 @@ export default function TrainerForm({
           firstName: values.firstName!,
           lastName: values.lastName!,
           email: values.email!,
-          password: values.password!,
           branchIds: values.branchIds,
           specializations,
           certifications,
@@ -456,10 +467,15 @@ export default function TrainerForm({
   const watchedBranchIds = watch("branchIds") ?? [];
 
   // ── Render ────────────────────────────────────────────────────────────────
+  function handleOpenChange(v: boolean) {
+    if (!v) setCredentials(null);
+    onOpenChange(v);
+  }
+
   return (
-    <Sheet open={open} onOpenChange={onOpenChange}>
-      <SheetContent side="right" className="w-full px-4 sm:max-w-xl overflow-y-auto">
-        <SheetHeader>
+    <Sheet open={open} onOpenChange={handleOpenChange}>
+      <SheetContent side="right" className="w-full sm:max-w-lg p-0 flex flex-col h-full">
+        <SheetHeader className="shrink-0 border-b px-4 py-4">
           <SheetTitle>{isEdit ? "Edit Trainer" : "Add Trainer"}</SheetTitle>
           <SheetDescription>
             {isEdit
@@ -467,8 +483,35 @@ export default function TrainerForm({
               : "Create a login account and trainer profile for a new trainer."}
           </SheetDescription>
         </SheetHeader>
+        <div className="flex-1 overflow-y-auto px-4 py-5">
 
-        <form onSubmit={handleSubmit(onSubmit)} className="mt-6 space-y-6">
+        {/* ── Credentials shown after successful creation ── */}
+        {credentials && (
+          <div className="mt-6 space-y-4">
+            <div className="rounded-lg border border-green-500 bg-green-50 dark:bg-green-950 p-3 text-sm text-green-700 dark:text-green-300 font-medium">
+              ✓ Trainer created successfully!
+            </div>
+            <div className="rounded-lg border p-4 space-y-3">
+              <div>
+                <p className="text-xs text-muted-foreground mb-1">Login Email</p>
+                <p className="font-mono text-sm">{credentials.email}</p>
+              </div>
+              <div>
+                <p className="text-xs text-muted-foreground mb-1">Temporary Password <span className="text-destructive font-semibold">— copy now</span></p>
+                <div className="flex items-center gap-2 rounded bg-muted px-3 py-2 font-mono text-sm">
+                  <span className="flex-1 select-all">{credentials.tempPassword}</span>
+                  <button type="button" onClick={() => copyPassword(credentials.tempPassword)} className="text-muted-foreground hover:text-foreground shrink-0">
+                    {copied ? <Check className="h-4 w-4 text-green-500" /> : <Copy className="h-4 w-4" />}
+                  </button>
+                </div>
+              </div>
+              <p className="text-xs text-muted-foreground">Credentials have also been emailed to the trainer.</p>
+            </div>
+            <Button className="w-full" onClick={() => handleOpenChange(false)}>Done</Button>
+          </div>
+        )}
+
+        <form id="trainer-form" onSubmit={handleSubmit(onSubmit)} className={credentials ? "hidden" : "space-y-6"}>
           {/* ── Account details (create only) ──────────────────────────── */}
           {!isEdit && (
             <div className="space-y-4 rounded-md border p-4 bg-muted/30">
@@ -528,22 +571,9 @@ export default function TrainerForm({
                 )}
               </div>
 
-              <div className="space-y-1.5">
-                <Label htmlFor="password">
-                  Temporary Password <span className="text-destructive">*</span>
-                </Label>
-                <Input
-                  id="password"
-                  type="password"
-                  placeholder="Min 8 characters"
-                  {...register("password")}
-                />
-                {errors.password && (
-                  <p className="text-xs text-destructive">
-                    {errors.password.message}
-                  </p>
-                )}
-              </div>
+              <p className="text-xs text-muted-foreground">
+                A secure temporary password will be auto-generated and shown after creation.
+              </p>
             </div>
           )}
 
@@ -782,24 +812,19 @@ export default function TrainerForm({
             </div>
           </div>
 
-          <SheetFooter className="pt-2">
-            <Button
-              type="button"
-              variant="outline"
-              onClick={() => onOpenChange(false)}
-              disabled={isPending}
-            >
+        </form>
+        </div>
+
+        {!credentials && (
+          <div className="shrink-0 border-t bg-background px-4 py-4 flex gap-3">
+            <Button type="button" variant="outline" className="flex-1" onClick={() => onOpenChange(false)} disabled={isPending}>
               Cancel
             </Button>
-            <Button type="submit" disabled={isPending || isSubmitting}>
-              {isPending || isSubmitting
-                ? "Saving…"
-                : isEdit
-                  ? "Save Changes"
-                  : "Create Trainer"}
+            <Button type="submit" form="trainer-form" className="flex-1" disabled={isPending || isSubmitting}>
+              {isPending || isSubmitting ? "Saving…" : isEdit ? "Save Changes" : "Create Trainer"}
             </Button>
-          </SheetFooter>
-        </form>
+          </div>
+        )}
       </SheetContent>
     </Sheet>
   );

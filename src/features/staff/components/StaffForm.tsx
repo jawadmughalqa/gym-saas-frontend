@@ -1,7 +1,8 @@
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
+import { Copy, Check } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -29,7 +30,6 @@ const CreateSchema = z.object({
   firstName: z.string().min(1, 'First name is required').max(80),
   lastName:  z.string().min(1, 'Last name is required').max(80),
   email:     z.string().email('Invalid email address'),
-  password:  z.string().min(8, 'Password must be at least 8 characters'),
   role:      z.enum(['branch_manager', 'staff', 'trainer']),
   branchIds: z.array(z.string()).min(1, 'Select at least one branch'),
 });
@@ -57,12 +57,34 @@ interface StaffFormProps {
 
 export default function StaffForm({ open, onClose, staff }: StaffFormProps) {
   const isEdit = !!staff;
+  const [credentials, setCredentials] = useState<{ email: string; tempPassword: string } | null>(null);
+  const [copied, setCopied] = useState(false);
 
   const { data: branchesData } = useGetBranches({ limit: 100 });
   const branches = branchesData?.data ?? [];
 
-  const createMutation = useCreateStaff({ onSuccess: onClose });
-  const updateMutation = useUpdateStaff(staff?._id ?? '', { onSuccess: onClose });
+  function handleClose() {
+    setCredentials(null);
+    onClose();
+  }
+
+  function copyPassword(pw: string) {
+    void navigator.clipboard.writeText(pw).then(() => {
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    });
+  }
+
+  const createMutation = useCreateStaff({
+    onSuccess: (data) => {
+      if (data.tempPassword) {
+        setCredentials(data);
+      } else {
+        handleClose();
+      }
+    },
+  });
+  const updateMutation = useUpdateStaff(staff?._id ?? '', { onSuccess: handleClose });
 
   // ── Create form ────────────────────────────────────────────────────────────
   const createForm = useForm<CreateValues>({
@@ -71,7 +93,6 @@ export default function StaffForm({ open, onClose, staff }: StaffFormProps) {
       firstName: '',
       lastName:  '',
       email:     '',
-      password:  '',
       role:      'staff',
       branchIds: [],
     },
@@ -128,20 +149,49 @@ export default function StaffForm({ open, onClose, staff }: StaffFormProps) {
   // ── Render ─────────────────────────────────────────────────────────────────
 
   return (
-    <Sheet open={open} onOpenChange={(v) => !v && onClose()}>
-      <SheetContent className="sm:max-w-md overflow-y-auto">
-        <SheetHeader>
+    <Sheet open={open} onOpenChange={(v) => !v && handleClose()}>
+      <SheetContent className="sm:max-w-md p-0 flex flex-col h-full">
+        <SheetHeader className="shrink-0 border-b px-4 py-4">
           <SheetTitle>{isEdit ? 'Edit Staff Account' : 'Add Staff Account'}</SheetTitle>
           <SheetDescription>
             {isEdit
               ? "Update this staff member's details and branch assignments."
-              : 'Create a new staff account. The user will be asked to change their password on first login.'}
+              : 'Create a new staff account. A temporary password will be auto-generated.'}
           </SheetDescription>
         </SheetHeader>
+        <div className="flex-1 overflow-y-auto px-4 py-5">
+
+        {/* ── Credentials shown after successful creation ── */}
+        {credentials && (
+          <div className="mt-6 space-y-4">
+            <div className="rounded-lg border border-green-500 bg-green-50 dark:bg-green-950 p-3 text-sm text-green-700 dark:text-green-300 font-medium">
+              ✓ Staff account created successfully!
+            </div>
+            <div className="rounded-lg border p-4 space-y-3">
+              <div>
+                <p className="text-xs text-muted-foreground mb-1">Login Email</p>
+                <p className="font-mono text-sm">{credentials.email}</p>
+              </div>
+              <div>
+                <p className="text-xs text-muted-foreground mb-1">
+                  Temporary Password <span className="text-destructive font-semibold">— copy now</span>
+                </p>
+                <div className="flex items-center gap-2 rounded bg-muted px-3 py-2 font-mono text-sm">
+                  <span className="flex-1 select-all">{credentials.tempPassword}</span>
+                  <button type="button" onClick={() => copyPassword(credentials.tempPassword)} className="text-muted-foreground hover:text-foreground shrink-0">
+                    {copied ? <Check className="h-4 w-4 text-green-500" /> : <Copy className="h-4 w-4" />}
+                  </button>
+                </div>
+              </div>
+              <p className="text-xs text-muted-foreground">Credentials have also been emailed to the staff member.</p>
+            </div>
+            <Button className="w-full" onClick={handleClose}>Done</Button>
+          </div>
+        )}
 
         {/* ── Create form ── */}
-        {!isEdit && (
-          <form onSubmit={handleCreate} className="mt-6 space-y-4 px-1">
+        {!isEdit && !credentials && (
+          <form id="staff-create-form" onSubmit={handleCreate} className="space-y-4">
             <div className="grid grid-cols-2 gap-3">
               <div className="space-y-1.5">
                 <Label htmlFor="c-firstName">First name</Label>
@@ -164,14 +214,6 @@ export default function StaffForm({ open, onClose, staff }: StaffFormProps) {
               <Input id="c-email" type="email" {...createForm.register('email')} />
               {createForm.formState.errors.email && (
                 <p className="text-xs text-destructive">{createForm.formState.errors.email.message}</p>
-              )}
-            </div>
-
-            <div className="space-y-1.5">
-              <Label htmlFor="c-password">Temporary password</Label>
-              <Input id="c-password" type="password" {...createForm.register('password')} />
-              {createForm.formState.errors.password && (
-                <p className="text-xs text-destructive">{createForm.formState.errors.password.message}</p>
               )}
             </div>
 
@@ -226,20 +268,12 @@ export default function StaffForm({ open, onClose, staff }: StaffFormProps) {
               )}
             </div>
 
-            <SheetFooter className="pt-2">
-              <Button type="button" variant="outline" onClick={onClose} disabled={isPending}>
-                Cancel
-              </Button>
-              <Button type="submit" disabled={isPending}>
-                {isPending ? 'Creating…' : 'Create account'}
-              </Button>
-            </SheetFooter>
           </form>
         )}
 
         {/* ── Edit form ── */}
         {isEdit && (
-          <form onSubmit={handleEdit} className="mt-6 space-y-4 px-1">
+          <form id="staff-edit-form" onSubmit={handleEdit} className="space-y-4">
             <div className="grid grid-cols-2 gap-3">
               <div className="space-y-1.5">
                 <Label htmlFor="e-firstName">First name</Label>
@@ -307,15 +341,24 @@ export default function StaffForm({ open, onClose, staff }: StaffFormProps) {
               )}
             </div>
 
-            <SheetFooter className="pt-2">
-              <Button type="button" variant="outline" onClick={onClose} disabled={isPending}>
-                Cancel
-              </Button>
-              <Button type="submit" disabled={isPending}>
-                {isPending ? 'Saving…' : 'Save changes'}
-              </Button>
-            </SheetFooter>
           </form>
+        )}
+        </div>
+
+        {!credentials && (
+          <div className="shrink-0 border-t bg-background px-4 py-4 flex gap-3">
+            <Button type="button" variant="outline" className="flex-1" onClick={handleClose} disabled={isPending}>
+              Cancel
+            </Button>
+            <Button
+              type="submit"
+              form={isEdit ? 'staff-edit-form' : 'staff-create-form'}
+              className="flex-1"
+              disabled={isPending}
+            >
+              {isPending ? (isEdit ? 'Saving…' : 'Creating…') : (isEdit ? 'Save Changes' : 'Create Account')}
+            </Button>
+          </div>
         )}
       </SheetContent>
     </Sheet>

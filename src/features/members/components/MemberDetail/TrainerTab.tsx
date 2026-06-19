@@ -26,6 +26,7 @@ import {
   Clock,
   ChevronDown,
   ChevronUp,
+  CalendarDays,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -65,9 +66,14 @@ interface AssignedBy {
   lastName?: string;
 }
 
+export interface ScheduledSlot {
+  day: number;
+  startTime: string;
+  endTime: string;
+}
+
 export interface TrainerAssignment {
   _id: string;
-  // trainerId may be a populated object or a raw string ID (before populate is wired)
   trainerId: TrainerProfile | string;
   status: "active" | "ended";
   startDate: string;
@@ -76,13 +82,15 @@ export interface TrainerAssignment {
   currency: string;
   goal?: string;
   sessionFrequencyPerWeek?: number;
+  scheduledSlots?: ScheduledSlot[];
   notes?: string;
-  // assignedBy/endedBy may be populated objects or raw string IDs
   assignedBy?: AssignedBy | string;
   endedBy?: AssignedBy | string;
   endReason?: string;
   createdAt: string;
 }
+
+const DAY_NAMES = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 
 // ─── Type guards ──────────────────────────────────────────────────────────────
 
@@ -231,7 +239,7 @@ export function TrainerTab({ memberId, branchId }: TrainerTabProps) {
             </div>
           </CardHeader>
 
-          <CardContent className="grid grid-cols-2 gap-4">
+          <CardContent className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <AssignmentInfoRow
               icon={Calendar}
               label="Assigned since"
@@ -250,6 +258,27 @@ export function TrainerTab({ memberId, branchId }: TrainerTabProps) {
                 label="Sessions"
                 value={`${current.sessionFrequencyPerWeek}x per week`}
               />
+            )}
+            {current.scheduledSlots && current.scheduledSlots.length > 0 && (
+              <div className="col-span-2 flex items-start gap-3">
+                <CalendarDays className="h-4 w-4 text-muted-foreground mt-0.5 shrink-0" />
+                <div>
+                  <p className="text-xs text-muted-foreground mb-1.5">Scheduled Slots</p>
+                  <div className="flex flex-wrap gap-1.5">
+                    {current.scheduledSlots
+                      .slice()
+                      .sort((a, b) => a.day - b.day)
+                      .map((s, i) => (
+                        <span
+                          key={i}
+                          className="inline-flex items-center rounded-md border bg-muted/50 px-2 py-0.5 text-xs font-medium"
+                        >
+                          {DAY_NAMES[s.day]} {s.startTime}–{s.endTime}
+                        </span>
+                      ))}
+                  </div>
+                </div>
+              </div>
             )}
             {current.goal && (
               <AssignmentInfoRow
@@ -372,7 +401,7 @@ export function TrainerTab({ memberId, branchId }: TrainerTabProps) {
 
                     <Separator className="my-2" />
 
-                    <div className="grid grid-cols-2 gap-x-4 gap-y-1 text-xs text-muted-foreground">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-1 text-xs text-muted-foreground">
                       <span>
                         <strong className="text-foreground">From:</strong>{" "}
                         {formatDate(a.startDate)}

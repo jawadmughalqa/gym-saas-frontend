@@ -132,6 +132,18 @@ export function PersonalInfoSection({
         )}
       </div>
 
+      {/* Date of Birth */}
+      <div className="space-y-1.5">
+        <Label htmlFor="dateOfBirth">Date of Birth <span className="text-muted-foreground font-normal">(optional)</span></Label>
+        <Input
+          id="dateOfBirth"
+          type="date"
+          disabled={isPending}
+          max={new Date().toISOString().split('T')[0]}
+          {...register('dateOfBirth')}
+        />
+      </div>
+
       {/* Age + Gender */}
       <div className="grid grid-cols-2 gap-3">
         <div className="space-y-1.5">

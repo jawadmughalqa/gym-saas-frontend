@@ -33,6 +33,7 @@ import {
   useGetSuperDashboard,
   useGetSuperTenants,
   getGetSuperTenantsQueryKey,
+  getGetSuperDashboardQueryKey,
 } from '@/api/generated/super-admin/super-admin';
 import { useQueryClient } from '@tanstack/react-query';
 import type { Tenant } from '@/api/generated/schemas/tenant';
@@ -99,7 +100,7 @@ export default function SuperAdminPage() {
 
   // Dashboard KPIs
   const { data: dashData } = useGetSuperDashboard({
-    query: { staleTime: 1000 * 60 },
+    query: { staleTime: 1000 * 10, refetchOnWindowFocus: true },
   });
   const dash = dashData?.data;
 
@@ -149,9 +150,10 @@ export default function SuperAdminPage() {
       header: 'Trial Ends',
       cell: (row) =>
         row.trialEndsAt ? (
-          <span className="text-sm text-muted-foreground">
-            {new Date(row.trialEndsAt).toLocaleDateString()}
-          </span>
+          <div className="flex flex-col">
+            <span className="text-sm">{new Date(row.trialEndsAt).toLocaleDateString()}</span>
+            <span className="text-xs text-muted-foreground">{new Date(row.trialEndsAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
+          </div>
         ) : (
           <span className="text-muted-foreground text-sm">—</span>
         ),
@@ -159,11 +161,12 @@ export default function SuperAdminPage() {
     {
       key: 'createdAt',
       header: 'Created',
-      cell: (row) => (
-        <span className="text-sm text-muted-foreground">
-          {row.createdAt ? new Date(row.createdAt).toLocaleDateString() : '—'}
-        </span>
-      ),
+      cell: (row) => row.createdAt ? (
+        <div className="flex flex-col">
+          <span className="text-sm">{new Date(row.createdAt).toLocaleDateString()}</span>
+          <span className="text-xs text-muted-foreground">{new Date(row.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
+        </div>
+      ) : <span className="text-muted-foreground text-sm">—</span>,
     },
     {
       key: '_id',
@@ -365,7 +368,10 @@ export default function SuperAdminPage() {
       <CreateTenantForm
         open={createOpen}
         onOpenChange={setCreateOpen}
-        onSuccess={() => qc.invalidateQueries({ queryKey: getGetSuperTenantsQueryKey() })}
+        onSuccess={() => {
+          qc.invalidateQueries({ queryKey: getGetSuperTenantsQueryKey() });
+          qc.invalidateQueries({ queryKey: getGetSuperDashboardQueryKey() });
+        }}
       />
     </PageShell>
   );

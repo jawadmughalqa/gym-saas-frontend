@@ -162,16 +162,17 @@ export default function BranchForm({ open, onOpenChange, branch }: BranchFormPro
 
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
-      <SheetContent className="w-full px-4 sm:max-w-lg overflow-y-auto">
-        <SheetHeader className="mb-6">
+      <SheetContent className="w-full sm:max-w-lg p-0 flex flex-col h-full">
+        <SheetHeader className="shrink-0 border-b px-4 py-4">
           <SheetTitle>{isEdit ? 'Edit Branch' : 'New Branch'}</SheetTitle>
           <SheetDescription>
             {isEdit ? 'Update branch information.' : 'Create a new gym location.'}
           </SheetDescription>
         </SheetHeader>
 
+        <div className="flex-1 overflow-y-auto px-4 py-5">
         <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-5">
+          <form id="branch-form" onSubmit={form.handleSubmit(onSubmit)} className="space-y-5">
 
             {/* Name */}
             <FormField
@@ -330,17 +331,18 @@ export default function BranchForm({ open, onOpenChange, branch }: BranchFormPro
               )}
             />
 
-            {/* Footer */}
-            <div className="flex justify-end gap-2 pt-2">
-              <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
-                Cancel
-              </Button>
-              <Button type="submit" disabled={isPending}>
-                {isPending ? 'Saving…' : isEdit ? 'Save Changes' : 'Create Branch'}
-              </Button>
-            </div>
           </form>
         </Form>
+        </div>
+
+        <div className="shrink-0 border-t bg-background px-4 py-4 flex gap-3">
+          <Button type="button" variant="outline" className="flex-1" onClick={() => onOpenChange(false)}>
+            Cancel
+          </Button>
+          <Button type="submit" form="branch-form" className="flex-1" disabled={isPending}>
+            {isPending ? 'Saving…' : isEdit ? 'Save Changes' : 'Create Branch'}
+          </Button>
+        </div>
       </SheetContent>
     </Sheet>
   );

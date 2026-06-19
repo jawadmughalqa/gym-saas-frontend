@@ -18,6 +18,7 @@ import {
   getGetMembersMemberIdSubscriptionsQueryKey,
   getGetMembersMemberIdQueryKey,
 } from '@/api/generated/members/members';
+import { useToast } from '@/hooks/use-toast';
 
 // ─── Schema ───────────────────────────────────────────────────────────────────
 
@@ -46,6 +47,7 @@ export function FreezeDialog({
   onOpenChange,
 }: FreezeDialogProps) {
   const queryClient = useQueryClient();
+  const { toast } = useToast();
 
   const freezeMutation = usePostMembersMemberIdSubscriptionsSubscriptionIdFreeze({
     mutation: {
@@ -56,7 +58,13 @@ export function FreezeDialog({
         void queryClient.invalidateQueries({
           queryKey: getGetMembersMemberIdQueryKey(memberId),
         });
+        toast({ title: 'Subscription frozen', description: 'Membership has been frozen successfully.' });
         onOpenChange(false);
+      },
+      onError: (err: unknown) => {
+        const message =
+          (err as Error)?.message ?? 'Failed to freeze subscription. Please try again.';
+        toast({ title: 'Freeze failed', description: message, variant: 'destructive' });
       },
     },
   });

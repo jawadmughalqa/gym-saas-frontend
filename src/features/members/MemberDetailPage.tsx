@@ -48,7 +48,9 @@ export default function MemberDetailPage() {
   const { can } = usePermission();
   const [editOpen, setEditOpen] = useState(false);
 
-  const { data: response, isLoading } = useGetMembersMemberId(memberId ?? "");
+  const { data: response, isLoading } = useGetMembersMemberId(memberId ?? "", {
+    query: { staleTime: 0, refetchOnWindowFocus: true },
+  });
   const member = response?.data;
   const activeSubscription =
     (member as { activeSubscription?: unknown } | undefined)
@@ -141,7 +143,7 @@ export default function MemberDetailPage() {
 
       {/* ── Tabs ──────────────────────────────────────────────────────────── */}
       <Tabs defaultValue="profile">
-        <TabsList className="w-full sm:w-auto">
+        <TabsList className="w-full sm:w-auto overflow-x-auto">
           <TabsTrigger value="profile" className="flex items-center gap-1.5">
             <User className="h-4 w-4" />
             <span className="hidden sm:inline">Profile</span>

@@ -20,6 +20,8 @@ interface StatusHistoryEntry {
   status: MemberStatus;
   changedAt: string;
   reason?: string;
+  freezeStartDate?: string;
+  freezeEndDate?: string;
 }
 
 interface MemberStatusData {
@@ -313,6 +315,10 @@ export function MemberStatusPanel({ member }: MemberStatusPanelProps) {
                   .slice(0, 5) // show last 5
                   .map((entry, i) => {
                     const entryConfig = STATUS_CONFIG[entry.status];
+                    const isFreezeEntry = entry.status === 'frozen' && entry.freezeStartDate && entry.freezeEndDate;
+                    const freezeDays = isFreezeEntry
+                      ? differenceInDays(new Date(entry.freezeEndDate!), new Date(entry.freezeStartDate!))
+                      : null;
                     return (
                       <div key={i} className="flex items-start gap-2">
                         <div className={`mt-0.5 ${entryConfig.color}`}>
@@ -322,11 +328,19 @@ export function MemberStatusPanel({ member }: MemberStatusPanelProps) {
                           <div className="flex items-center justify-between gap-2">
                             <span className="text-xs font-medium">
                               {HISTORY_STATUS_LABELS[entry.status]}
+                              {isFreezeEntry && freezeDays != null && (
+                                <span className="ml-1 text-blue-600">({freezeDays} day{freezeDays !== 1 ? 's' : ''})</span>
+                              )}
                             </span>
                             <span className="text-xs text-muted-foreground shrink-0">
                               {fmt(entry.changedAt)}
                             </span>
                           </div>
+                          {isFreezeEntry && (
+                            <p className="text-xs text-muted-foreground">
+                              {fmt(entry.freezeStartDate!)} → {fmt(entry.freezeEndDate!)}
+                            </p>
+                          )}
                           {entry.reason && (
                             <p className="text-xs text-muted-foreground truncate">
                               {entry.reason}

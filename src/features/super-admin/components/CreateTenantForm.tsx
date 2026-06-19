@@ -45,17 +45,12 @@ const schema = z.object({
   ownerFirstName:   z.string().min(1, 'Required'),
   ownerLastName:    z.string().min(1, 'Required'),
   ownerEmail:       z.string().email('Invalid email'),
-  ownerPassword:    z
-    .string()
-    .min(8, 'Min 8 characters')
-    .regex(/[A-Z]/, 'Must contain uppercase')
-    .regex(/[0-9]/, 'Must contain a number'),
   trialDays: z
     .string()
     .optional()
     .transform((v) => (v === '' || v === undefined ? undefined : Number(v)))
     .pipe(z.number().min(0).max(90).optional()),
-  firstInvoiceDate: z.string().optional(), // ISO date string from <input type="date">
+  firstInvoiceDate: z.string().optional(),
 });
 
 type FormValues = z.infer<typeof schema>;
@@ -124,7 +119,6 @@ function CopyField({
 
 export default function CreateTenantForm({ open, onOpenChange, onSuccess }: CreateTenantFormProps) {
   const [created, setCreated] = useState<CreateTenantResponseData | null>(null);
-  const [showPassword, setShowPassword] = useState(false);
 
   // Default firstInvoiceDate to today
   const todayStr = new Date().toISOString().split('T')[0]!;
@@ -140,7 +134,6 @@ export default function CreateTenantForm({ open, onOpenChange, onSuccess }: Crea
       ownerFirstName:   '',
       ownerLastName:    '',
       ownerEmail:       '',
-      ownerPassword:    '',
       trialDays:        undefined,
       firstInvoiceDate: todayStr,
     },
@@ -168,7 +161,6 @@ export default function CreateTenantForm({ open, onOpenChange, onSuccess }: Crea
         ownerFirstName: values.ownerFirstName,
         ownerLastName:  values.ownerLastName,
         ownerEmail:     values.ownerEmail,
-        ownerPassword:  values.ownerPassword,
         ...(values.trialDays !== undefined && { trialDays: values.trialDays }),
         ...(values.firstInvoiceDate && { firstInvoiceDate: values.firstInvoiceDate }),
       },
@@ -176,10 +168,7 @@ export default function CreateTenantForm({ open, onOpenChange, onSuccess }: Crea
   }
 
   function handleClose(v: boolean) {
-    if (!v) {
-      setCreated(null);
-      setShowPassword(false);
-    }
+    if (!v) setCreated(null);
     onOpenChange(v);
   }
 
@@ -404,33 +393,9 @@ export default function CreateTenantForm({ open, onOpenChange, onSuccess }: Crea
                 )}
               />
 
-              <FormField
-                control={form.control}
-                name="ownerPassword"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Temporary Password *</FormLabel>
-                    <div className="relative">
-                      <FormControl>
-                        <Input
-                          type={showPassword ? 'text' : 'password'}
-                          placeholder="Min 8 chars, 1 uppercase, 1 number"
-                          className="pr-10"
-                          {...field}
-                        />
-                      </FormControl>
-                      <button
-                        type="button"
-                        onClick={() => setShowPassword((s) => !s)}
-                        className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
-                      >
-                        {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                      </button>
-                    </div>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
+              <p className="text-xs text-muted-foreground">
+                A secure temporary password will be auto-generated and emailed to the owner.
+              </p>
 
               <div className="flex justify-end gap-2 pt-2">
                 <Button type="button" variant="outline" onClick={() => handleClose(false)}>

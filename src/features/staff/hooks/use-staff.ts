@@ -41,16 +41,16 @@ export function useStaffMember(staffId: string) {
 
 // ─── Mutations ────────────────────────────────────────────────────────────────
 
-export function useCreateStaff(options?: { onSuccess?: () => void }) {
+export function useCreateStaff(options?: { onSuccess?: (data: { email: string; tempPassword: string }) => void }) {
   const qc = useQueryClient();
   return usePostStaff({
     mutation: {
-      onSuccess: () => {
+      onSuccess: (res) => {
         qc.invalidateQueries({ queryKey: getGetStaffQueryKey() });
         qc.invalidateQueries({ queryKey: getGetNotificationsQueryKey() });
         qc.invalidateQueries({ queryKey: getGetNotificationsUnreadCountQueryKey() });
-        toast({ title: 'Staff account created', description: 'The user can now log in and will be prompted to set a new password.' });
-        options?.onSuccess?.();
+        const data = (res as any)?.data;
+        options?.onSuccess?.({ email: data?.email ?? '', tempPassword: data?.tempPassword ?? '' });
       },
       onError: (err) =>
         toast({

@@ -34,17 +34,17 @@ export default function Pagination({
   }
 
   return (
-    <div className={`flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between ${className ?? ''}`}>
+    <div className={`flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between ${className ?? ''}`}>
       {/* Count summary */}
       <p className="text-sm text-muted-foreground shrink-0">
         {total === 0 ? 'No results' : `${from}–${to} of ${total}`}
       </p>
 
-      <div className="flex items-center gap-3">
+      <div className="flex flex-wrap items-center gap-x-3 gap-y-2">
         {/* Rows per page */}
         {onLimitChange && (
           <div className="flex items-center gap-2">
-            <span className="text-sm text-muted-foreground whitespace-nowrap">Rows per page</span>
+            <span className="hidden sm:inline text-sm text-muted-foreground whitespace-nowrap">Rows per page</span>
             <Select
               value={String(limit)}
               onValueChange={(v) => onLimitChange(Number(v))}

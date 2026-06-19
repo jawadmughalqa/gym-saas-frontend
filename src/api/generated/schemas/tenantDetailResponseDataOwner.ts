@@ -15,4 +15,8 @@ export type TenantDetailResponseDataOwner = {
   email?: string;
   /** @nullable */
   lastLoginAt?: string | null;
+  /** Plaintext temp password — only set until the owner changes it for the first time */
+  tempPasswordPlain?: string;
+  forcePasswordChange?: boolean;
+  status?: string;
 } | null;

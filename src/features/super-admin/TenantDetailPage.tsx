@@ -1,9 +1,10 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import {
   ArrowLeft, Building2, Mail, Phone, Globe,
   RefreshCw, Ban, CheckCircle, Zap, CreditCard,
   User, Calendar, KeyRound, Copy, Check, Eye, EyeOff,
+  MoreHorizontal, Download, Printer, MessageCircle, Pencil,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -34,6 +35,13 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import PageShell from '@/components/layout/PageShell';
 import DataTable, { type ColumnDef } from '@/components/shared/DataTable';
@@ -46,15 +54,18 @@ import { getErrorMessage } from '@/utils/error';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { useQueryClient } from '@tanstack/react-query';
+import { useQueryClient, useMutation, useQuery } from '@tanstack/react-query';
 import { useAuthStore } from '@/stores/auth.store';
+import { orvalMutator } from '@/lib/orval-mutator';
 import { decodeJwt } from '@/utils/jwt';
+import { downloadSaasInvoicePdf, printSaasInvoicePdf, shareSaasInvoicePdfViaWhatsApp } from '@/utils/invoice-pdf';
 import type { JwtPayloadShape } from '@/utils/jwt';
 import type { Permission } from '@/lib/permissions';
 import {
   useGetSuperTenantsTenantId,
   usePatchSuperTenantsTenantIdStatus,
   usePatchSuperTenantsTenantIdPlan,
+  usePatchSuperTenantsTenantId,
   usePostSuperTenantsTenantIdImpersonate,
   useGetSuperTenantsTenantIdInvoices,
   usePostSuperTenantsTenantIdInvoicesInvoiceIdPay,
@@ -62,6 +73,8 @@ import {
   getGetSuperTenantsTenantIdQueryKey,
   getGetSuperTenantsQueryKey,
   getGetSuperTenantsTenantIdInvoicesQueryKey,
+  getGetSuperDashboardQueryKey,
+  getGetSuperPaymentsSummaryQueryKey,
 } from '@/api/generated/super-admin/super-admin';
 import type { ResetOwnerPasswordResponseData } from '@/api/generated/schemas/resetOwnerPasswordResponse';
 import type { Tenant } from '@/api/generated/schemas/tenant';
@@ -134,6 +147,7 @@ function ChangeStatusDialog({
       onSuccess: () => {
         qc.invalidateQueries({ queryKey: getGetSuperTenantsTenantIdQueryKey(tenantId) });
         qc.invalidateQueries({ queryKey: getGetSuperTenantsQueryKey() });
+        qc.invalidateQueries({ queryKey: getGetSuperDashboardQueryKey() });
         form.reset();
         onOpenChange(false);
       },
@@ -225,6 +239,7 @@ function ChangePlanDialog({
       onSuccess: () => {
         qc.invalidateQueries({ queryKey: getGetSuperTenantsTenantIdQueryKey(tenantId) });
         qc.invalidateQueries({ queryKey: getGetSuperTenantsQueryKey() });
+        qc.invalidateQueries({ queryKey: getGetSuperDashboardQueryKey() });
         form.reset();
         onOpenChange(false);
       },
@@ -403,6 +418,306 @@ function ResetPasswordDialog({
   );
 }
 
+// ─── Edit Tenant Details Dialog ──────────────────────────────────────────────
+
+// Pakistan: 03XXXXXXXXX | +923XXXXXXXXX | 00923XXXXXXXXX
+const PK_PHONE_RE = /^(?:\+92|0092|0)3[0-9]{9}$/;
+
+const editTenantSchema = z.object({
+  businessName: z.string().min(2, 'At least 2 characters').max(100),
+  contactEmail: z.string().email('Invalid email'),
+  contactPhone: z
+    .string()
+    .refine((v) => !v || PK_PHONE_RE.test(v), {
+      message: 'Enter a valid Pakistan number — e.g. 03001234567 or +923001234567',
+    })
+    .optional(),
+  country: z.string().min(2, 'Country is required').max(100),
+});
+type EditTenantValues = z.infer<typeof editTenantSchema>;
+
+function EditTenantDialog({
+  open,
+  onOpenChange,
+  tenantId,
+  defaultValues,
+}: {
+  open: boolean;
+  onOpenChange: (v: boolean) => void;
+  tenantId: string;
+  defaultValues: EditTenantValues;
+}) {
+  const qc = useQueryClient();
+  const form = useForm<EditTenantValues>({
+    resolver: zodResolver(editTenantSchema),
+    defaultValues,
+  });
+
+  // Reset form with latest tenant data every time the dialog opens
+  useEffect(() => {
+    if (open) {
+      form.reset(defaultValues);
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [open]);
+
+  const patch = usePatchSuperTenantsTenantId({
+    mutation: {
+      onSuccess: () => {
+        qc.invalidateQueries({ queryKey: getGetSuperTenantsTenantIdQueryKey(tenantId) });
+        qc.invalidateQueries({ queryKey: getGetSuperTenantsQueryKey() });
+        toast({ title: 'Tenant details updated' });
+        onOpenChange(false);
+      },
+      onError: (err) => toast({ variant: 'destructive', title: 'Update failed', description: getErrorMessage(err) }),
+    },
+  });
+
+  function onSubmit(values: EditTenantValues) {
+    patch.mutate({
+      tenantId,
+      data: {
+        businessName: values.businessName,
+        contactEmail: values.contactEmail,
+        contactPhone: values.contactPhone || undefined,
+        country: values.country,
+      },
+    });
+  }
+
+  return (
+    <Dialog open={open} onOpenChange={(v) => { if (!v) form.reset(defaultValues); onOpenChange(v); }}>
+      <DialogContent className="sm:max-w-md">
+        <DialogHeader>
+          <DialogTitle>Edit Organisation Details</DialogTitle>
+        </DialogHeader>
+        <Form {...form}>
+          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+            <FormField
+              control={form.control}
+              name="businessName"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Business Name</FormLabel>
+                  <FormControl><Input {...field} /></FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <FormField
+              control={form.control}
+              name="contactEmail"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Contact Email</FormLabel>
+                  <FormControl><Input type="email" {...field} /></FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <FormField
+              control={form.control}
+              name="contactPhone"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Contact Phone</FormLabel>
+                  <FormControl>
+                    <Input
+                      placeholder="e.g. 03001234567 or +923001234567"
+                      {...field}
+                      value={field.value ?? ''}
+                    />
+                  </FormControl>
+                  <p className="text-[11px] text-muted-foreground">Pakistan standard format: 03XX-XXXXXXX or +923XXXXXXXXX</p>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <FormField
+              control={form.control}
+              name="country"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Country</FormLabel>
+                  <FormControl><Input {...field} /></FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <DialogFooter>
+              <Button type="button" variant="outline" onClick={() => { form.reset(defaultValues); onOpenChange(false); }}>
+                Cancel
+              </Button>
+              <Button type="submit" disabled={patch.isPending}>
+                {patch.isPending ? 'Saving…' : 'Save Changes'}
+              </Button>
+            </DialogFooter>
+          </form>
+        </Form>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+// ─── Edit Trial Dialog ────────────────────────────────────────────────────────
+
+const editTrialSchema = z
+  .object({
+    mode: z.enum(['set', 'remove']),
+    trialEndsAt: z.string().optional(),
+  })
+  .superRefine((data, ctx) => {
+    if (data.mode === 'set') {
+      if (!data.trialEndsAt) {
+        ctx.addIssue({ code: z.ZodIssueCode.custom, message: 'Please pick a date and time', path: ['trialEndsAt'] });
+      } else if (new Date(data.trialEndsAt) <= new Date()) {
+        ctx.addIssue({ code: z.ZodIssueCode.custom, message: 'Trial end date must be in the future', path: ['trialEndsAt'] });
+      }
+    }
+  });
+type EditTrialValues = z.infer<typeof editTrialSchema>;
+
+function EditTrialDialog({
+  open,
+  onOpenChange,
+  tenantId,
+  currentTrialEndsAt,
+  onSuccess,
+}: {
+  open: boolean;
+  onOpenChange: (v: boolean) => void;
+  tenantId: string;
+  currentTrialEndsAt?: string | null;
+  onSuccess: () => void;
+}) {
+  const form = useForm<EditTrialValues>({
+    resolver: zodResolver(editTrialSchema),
+    defaultValues: { mode: 'set', trialEndsAt: '' },
+  });
+
+  const mode = form.watch('mode');
+
+  // When switching to 'remove', clear the date field so no stale validation errors remain
+  useEffect(() => {
+    if (mode === 'remove') {
+      form.setValue('trialEndsAt', '');
+      form.clearErrors('trialEndsAt');
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [mode]);
+
+  // datetime-local input expects "YYYY-MM-DDTHH:mm" (local time, no seconds/Z)
+  const toDateTimeLocal = (iso: string) => {
+    const d = new Date(iso);
+    const pad = (n: number) => String(n).padStart(2, '0');
+    return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
+  };
+
+  useEffect(() => {
+    if (open) {
+      // Pre-fill with current trial end (if future) or blank
+      const dateVal =
+        currentTrialEndsAt && new Date(currentTrialEndsAt) > new Date()
+          ? toDateTimeLocal(currentTrialEndsAt)
+          : '';
+      form.reset({ mode: 'set', trialEndsAt: dateVal });
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [open]);
+
+  const mutation = useMutation({
+    mutationFn: ({ trialEndsAt }: { trialEndsAt: string | null }) =>
+      orvalMutator({ url: `/super/tenants/${tenantId}/trial`, method: 'PATCH', headers: { 'Content-Type': 'application/json' }, data: { trialEndsAt } }),
+    onSuccess: () => {
+      toast({ title: 'Trial updated' });
+      onOpenChange(false);
+      onSuccess();
+    },
+    onError: (err: Error) => toast({ variant: 'destructive', title: 'Failed to update trial', description: err.message }),
+  });
+
+  function onSubmit(values: EditTrialValues) {
+    if (values.mode === 'remove') {
+      mutation.mutate({ trialEndsAt: null });
+    } else {
+      if (!values.trialEndsAt) { form.setError('trialEndsAt', { message: 'Please pick a date' }); return; }
+      mutation.mutate({ trialEndsAt: new Date(values.trialEndsAt).toISOString() });
+    }
+  }
+
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="sm:max-w-sm">
+        <DialogHeader>
+          <DialogTitle>Manage Trial Period</DialogTitle>
+        </DialogHeader>
+        <Form {...form}>
+          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+            <FormField
+              control={form.control}
+              name="mode"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Action</FormLabel>
+                  <Select value={field.value} onValueChange={field.onChange}>
+                    <FormControl>
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      <SelectItem value="set">Set / extend trial end date</SelectItem>
+                      <SelectItem value="remove">Remove trial (activate now)</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </FormItem>
+              )}
+            />
+
+            {mode === 'set' && (
+              <FormField
+                control={form.control}
+                name="trialEndsAt"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Trial ends on (date &amp; time)</FormLabel>
+                    <FormControl>
+                      <Input
+                        type="datetime-local"
+                        {...field}
+                        min={(() => {
+                          const now = new Date();
+                          now.setMinutes(now.getMinutes() + 1);
+                          const pad = (n: number) => String(n).padStart(2, '0');
+                          return `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}T${pad(now.getHours())}:${pad(now.getMinutes())}`;
+                        })()}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            )}
+
+            {mode === 'remove' && (
+              <p className="text-sm text-muted-foreground">
+                The tenant's status will change to <strong>active</strong> immediately and the trial end date will be cleared.
+              </p>
+            )}
+
+            <DialogFooter>
+              <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>Cancel</Button>
+              <Button type="submit" disabled={mutation.isPending}>
+                {mutation.isPending ? 'Saving…' : 'Save'}
+              </Button>
+            </DialogFooter>
+          </form>
+        </Form>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
 // ─── TenantDetailPage ─────────────────────────────────────────────────────────
 
 export default function TenantDetailPage() {
@@ -413,7 +728,10 @@ export default function TenantDetailPage() {
   const [statusOpen, setStatusOpen] = useState(false);
   const [planOpen, setPlanOpen] = useState(false);
   const [resetPasswordOpen, setResetPasswordOpen] = useState(false);
+  const [editOpen, setEditOpen] = useState(false);
   const [invoicesPage, setInvoicesPage] = useState(1);
+  const [passwordVisible, setPasswordVisible] = useState(false);
+  const [trialOpen, setTrialOpen] = useState(false);
 
   const enterImpersonation = useAuthStore((s) => s.enterImpersonation);
 
@@ -423,6 +741,23 @@ export default function TenantDetailPage() {
     tenantId!,
     { query: { staleTime: 1000 * 30 } },
   );
+
+  const { data: statsData } = useQuery({
+    queryKey: ['super', 'tenants', tenantId, 'stats'],
+    queryFn: () => orvalMutator<{
+      members: { total: number; active: number };
+      trainers: { total: number; active: number };
+      staff: { total: number };
+      branches: { total: number };
+      revenue: { total: number; currency: string };
+      overdueInvoices: number;
+      refunds: { total: number; count: number; currency: string };
+      checkInsThisMonth: number;
+    }>({ url: `/super/tenants/${tenantId}/stats`, method: 'GET' }),
+    enabled: !!tenantId,
+    staleTime: 1000 * 60,
+  });
+  const stats = (statsData as unknown as { data: typeof statsData })?.data ?? statsData;
 
   const { data: invoicesData, isLoading: invoicesLoading } = useGetSuperTenantsTenantIdInvoices(
     tenantId!,
@@ -461,6 +796,8 @@ export default function TenantDetailPage() {
     mutation: {
       onSuccess: () => {
         void qc.invalidateQueries({ queryKey: getGetSuperTenantsTenantIdInvoicesQueryKey(tenantId!) });
+        void qc.invalidateQueries({ queryKey: getGetSuperDashboardQueryKey() });
+        void qc.invalidateQueries({ queryKey: getGetSuperPaymentsSummaryQueryKey() });
         toast({ title: 'Invoice marked as paid' });
       },
       onError: (err) => toast({ variant: 'destructive', title: 'Failed to mark invoice paid', description: getErrorMessage(err) }),
@@ -507,6 +844,46 @@ export default function TenantDetailPage() {
     );
   }
 
+  function saasRowToPdfData(row: SaasInvoice) {
+    return {
+      invoiceNumber: row.invoiceNumber ?? 'INV',
+      status: row.status ?? 'unknown',
+      recipientName: tenant?.businessName ?? '',
+      currency: row.currency ?? 'PKR',
+      total: row.amount ?? 0,
+      amountDue: row.amount ?? 0,
+      dueDate: row.dueDate,
+      createdAt: row.createdAt,
+      lineLabel: 'SaaS Subscription',
+      tenantPlan: tenant?.plan,
+      senderName: 'Gymanger Platform',
+    };
+  }
+
+  function handleSaasInvoicePrint(row: SaasInvoice) {
+    printSaasInvoicePdf(saasRowToPdfData(row));
+  }
+
+  function handleSaasInvoiceDownload(row: SaasInvoice) {
+    downloadSaasInvoicePdf(saasRowToPdfData(row));
+  }
+
+  async function handleSaasInvoiceWhatsApp(row: SaasInvoice) {
+    const phone = tenant?.contactPhone;
+    if (!phone) {
+      toast({ variant: 'destructive', title: 'No phone number', description: 'This tenant has no contact phone on file.' });
+      return;
+    }
+    try {
+      const result = await shareSaasInvoicePdfViaWhatsApp(saasRowToPdfData(row), phone);
+      if (result === 'downloaded') {
+        toast({ title: 'PDF downloaded', description: 'WhatsApp is opening — attach the PDF to the tenant\'s chat.' });
+      }
+    } catch {
+      // user cancelled native share — no action needed
+    }
+  }
+
   const invoiceColumns: ColumnDef<SaasInvoice>[] = [
     {
       key: 'invoiceNumber',
@@ -535,26 +912,54 @@ export default function TenantDetailPage() {
     {
       key: 'dueDate',
       header: 'Due Date',
-      cell: (row) => row.dueDate ? <span className="text-sm text-muted-foreground">{new Date(row.dueDate).toLocaleDateString()}</span> : <span className="text-muted-foreground">—</span>,
+      cell: (row) => row.dueDate ? (
+        <div className="flex flex-col">
+          <span className="text-sm">{new Date(row.dueDate).toLocaleDateString()}</span>
+          <span className="text-xs text-muted-foreground">{new Date(row.dueDate).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
+        </div>
+      ) : <span className="text-muted-foreground">—</span>,
     },
     {
       key: '_id',
       header: '',
-      cell: (row) =>
-        row.status !== 'paid' ? (
-          <Button
-            variant="outline"
-            size="sm"
-            className="h-7 text-xs"
-            disabled={markInvoicePaid.isPending}
-            onClick={(e) => {
-              e.stopPropagation();
-              markInvoicePaid.mutate({ tenantId: tenantId!, invoiceId: row._id!, data: {} });
-            }}
-          >
-            Mark Paid
-          </Button>
-        ) : null,
+      width: 'w-10',
+      cell: (row) => (
+        <div className="flex justify-end" onClick={(e) => e.stopPropagation()}>
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="ghost" size="icon" className="h-7 w-7">
+                <MoreHorizontal className="h-3.5 w-3.5" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-48">
+              <DropdownMenuItem onClick={() => handleSaasInvoiceDownload(row)}>
+                <Download className="mr-2 h-4 w-4" />
+                Download PDF
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => handleSaasInvoicePrint(row)}>
+                <Printer className="mr-2 h-4 w-4" />
+                Print
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => handleSaasInvoiceWhatsApp(row)}>
+                <MessageCircle className="mr-2 h-4 w-4" />
+                Send via WhatsApp
+              </DropdownMenuItem>
+              {row.status !== 'paid' && (
+                <>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem
+                    disabled={markInvoicePaid.isPending}
+                    onClick={() => markInvoicePaid.mutate({ tenantId: tenantId!, invoiceId: row._id!, data: {} })}
+                  >
+                    <CheckCircle className="mr-2 h-4 w-4 text-green-600" />
+                    Mark Paid
+                  </DropdownMenuItem>
+                </>
+              )}
+            </DropdownMenuContent>
+          </DropdownMenu>
+        </div>
+      ),
     },
   ];
 
@@ -603,6 +1008,52 @@ export default function TenantDetailPage() {
       </div>
 
 
+      {/* ── Stats overview ── */}
+      {stats && (
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+          {/* Members */}
+          <Card className="p-4">
+            <p className="text-xs text-muted-foreground">Members</p>
+            <p className="text-2xl font-bold mt-1">{stats.members?.active ?? 0}</p>
+            <p className="text-xs text-muted-foreground">of {stats.members?.total ?? 0} total</p>
+          </Card>
+          {/* Trainers */}
+          <Card className="p-4">
+            <p className="text-xs text-muted-foreground">Trainers</p>
+            <p className="text-2xl font-bold mt-1">{stats.trainers?.active ?? 0}</p>
+            <p className="text-xs text-muted-foreground">of {stats.trainers?.total ?? 0} total</p>
+          </Card>
+          {/* Branches */}
+          <Card className="p-4">
+            <p className="text-xs text-muted-foreground">Branches</p>
+            <p className="text-2xl font-bold mt-1">{stats.branches?.total ?? 0}</p>
+            <p className="text-xs text-muted-foreground">Staff: {stats.staff?.total ?? 0}</p>
+          </Card>
+          {/* Check-ins */}
+          <Card className="p-4">
+            <p className="text-xs text-muted-foreground">Check-ins (this month)</p>
+            <p className="text-2xl font-bold mt-1">{stats.checkInsThisMonth ?? 0}</p>
+            <p className="text-xs text-muted-foreground">Overdue invoices: {stats.overdueInvoices ?? 0}</p>
+          </Card>
+          {/* Revenue */}
+          <Card className="p-4 sm:col-span-2">
+            <p className="text-xs text-muted-foreground">Total Revenue Collected</p>
+            <p className="text-2xl font-bold mt-1 text-green-600">
+              {new Intl.NumberFormat(undefined, { style: 'currency', currency: stats.revenue?.currency || 'PKR' }).format(stats.revenue?.total ?? 0)}
+            </p>
+            <p className="text-xs text-muted-foreground">From all paid invoices</p>
+          </Card>
+          {/* Refunds */}
+          <Card className="p-4 sm:col-span-2">
+            <p className="text-xs text-muted-foreground">Total Refunded</p>
+            <p className="text-2xl font-bold mt-1 text-destructive">
+              {new Intl.NumberFormat(undefined, { style: 'currency', currency: stats.refunds?.currency || 'PKR' }).format(stats.refunds?.total ?? 0)}
+            </p>
+            <p className="text-xs text-muted-foreground">{stats.refunds?.count ?? 0} approved refund{stats.refunds?.count !== 1 ? 's' : ''}</p>
+          </Card>
+        </div>
+      )}
+
       <Tabs defaultValue="details">
         <TabsList>
           <TabsTrigger value="details">Details</TabsTrigger>
@@ -620,16 +1071,41 @@ export default function TenantDetailPage() {
             {/* Organisation card */}
             <Card>
               <CardHeader className="pb-3">
-                <CardTitle className="text-sm font-medium text-muted-foreground flex items-center gap-2">
-                  <Building2 className="h-4 w-4" /> Organisation
-                </CardTitle>
+                <div className="flex items-center justify-between">
+                  <CardTitle className="text-sm font-medium text-muted-foreground flex items-center gap-2">
+                    <Building2 className="h-4 w-4" /> Organisation
+                  </CardTitle>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="h-7 text-xs"
+                    onClick={() => setEditOpen(true)}
+                  >
+                    <Pencil className="mr-1.5 h-3 w-3" />
+                    Edit
+                  </Button>
+                </div>
               </CardHeader>
               <CardContent className="divide-y divide-border">
                 <InfoRow icon={Globe}    label="Country"         value={tenant.country} />
                 <InfoRow icon={Mail}     label="Contact Email"   value={tenant.contactEmail} />
                 <InfoRow icon={Phone}    label="Contact Phone"   value={tenant.contactPhone} />
                 <InfoRow icon={Calendar} label="Created"         value={tenant.createdAt ? new Date(tenant.createdAt).toLocaleDateString() : undefined} />
-                <InfoRow icon={Calendar} label="Trial Ends"      value={tenant.trialEndsAt ? new Date(tenant.trialEndsAt).toLocaleDateString() : undefined} />
+                {/* Trial Ends row with Manage button */}
+                <div className="flex items-center justify-between py-2">
+                  <div className="flex items-center gap-2">
+                    <Calendar className="h-4 w-4 text-muted-foreground shrink-0" />
+                    <div>
+                      <p className="text-xs text-muted-foreground">Trial Ends</p>
+                      <p className="text-sm font-medium">
+                        {tenant.trialEndsAt ? new Date(tenant.trialEndsAt).toLocaleDateString() : <span className="text-muted-foreground font-normal">No trial</span>}
+                      </p>
+                    </div>
+                  </div>
+                  <Button variant="outline" size="sm" className="h-7 text-xs" onClick={() => setTrialOpen(true)}>
+                    Manage
+                  </Button>
+                </div>
                 <InfoRow icon={CreditCard} label="Billing Day"   value={tenant.billingCycleDay} />
               </CardContent>
             </Card>
@@ -659,6 +1135,33 @@ export default function TenantDetailPage() {
                   <>
                     <InfoRow icon={User}     label="Name"       value={`${owner.firstName ?? ''} ${owner.lastName ?? ''}`.trim() || undefined} />
                     <InfoRow icon={Mail}     label="Email"      value={owner.email} />
+                    {/* Password row — always visible to super admin */}
+                    <div className="flex items-center gap-2 py-2">
+                      <KeyRound className="h-4 w-4 text-muted-foreground shrink-0" />
+                      <span className="text-xs text-muted-foreground w-20 shrink-0">Password</span>
+                      {owner.tempPasswordPlain ? (
+                        <div className="flex items-center gap-2 flex-1 min-w-0">
+                          <span className="font-mono text-sm select-all truncate">
+                            {passwordVisible ? owner.tempPasswordPlain : '••••••••'}
+                          </span>
+                          <button
+                            type="button"
+                            onClick={() => setPasswordVisible((v) => !v)}
+                            className="text-muted-foreground hover:text-foreground shrink-0"
+                            title={passwordVisible ? 'Hide password' : 'Show password'}
+                          >
+                            {passwordVisible ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                          </button>
+                          {!owner.forcePasswordChange && (
+                            <span className="text-[10px] text-muted-foreground italic shrink-0">(owner set)</span>
+                          )}
+                        </div>
+                      ) : (
+                        <span className="text-xs text-muted-foreground italic">
+                          Use Reset Password to generate
+                        </span>
+                      )}
+                    </div>
                     <InfoRow icon={Calendar} label="Last Login" value={owner.lastLoginAt ? new Date(owner.lastLoginAt).toLocaleDateString() : 'Never'} />
                     {/* Status + forcePasswordChange badges */}
                     <div className="flex items-center gap-2 py-2 flex-wrap">
@@ -752,6 +1255,26 @@ export default function TenantDetailPage() {
           )}
         </TabsContent>
       </Tabs>
+
+      <EditTenantDialog
+        open={editOpen}
+        onOpenChange={setEditOpen}
+        tenantId={tenantId!}
+        defaultValues={{
+          businessName: tenant.businessName ?? '',
+          contactEmail: tenant.contactEmail ?? '',
+          contactPhone: tenant.contactPhone ?? '',
+          country: tenant.country ?? '',
+        }}
+      />
+
+      <EditTrialDialog
+        open={trialOpen}
+        onOpenChange={setTrialOpen}
+        tenantId={tenantId!}
+        currentTrialEndsAt={tenant.trialEndsAt}
+        onSuccess={() => qc.invalidateQueries({ queryKey: getGetSuperTenantsTenantIdQueryKey(tenantId!) })}
+      />
 
       <ChangeStatusDialog
         open={statusOpen}

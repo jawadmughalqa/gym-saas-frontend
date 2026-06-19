@@ -23,6 +23,7 @@ function NavItemLink({
   return (
     <NavLink
       to={item.to}
+      end={item.end}
       onClick={onNavigate}
       title={collapsed ? item.label : undefined}
       className={({ isActive }) =>

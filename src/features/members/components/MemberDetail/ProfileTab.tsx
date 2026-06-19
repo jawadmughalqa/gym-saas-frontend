@@ -1,6 +1,5 @@
 import { useState } from 'react';
 import { Mail, Phone, Calendar, MapPin, KeyRound, RefreshCw, Eye, EyeOff, Wallet, ArrowDownToLine } from 'lucide-react';
-import { Badge }   from '@/components/ui/badge';
 import { Button }  from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -66,7 +65,9 @@ interface ProfileTabProps {
 // ─── Component ────────────────────────────────────────────────────────────────
 
 export function ProfileTab({ memberId }: ProfileTabProps) {
-  const { data: response, isLoading } = useGetMembersMemberId(memberId);
+  const { data: response, isLoading } = useGetMembersMemberId(memberId, {
+    query: { staleTime: 0 },
+  });
   const member = response?.data;
   const { toast } = useToast();
   const { can } = usePermission();
@@ -119,11 +120,11 @@ export function ProfileTab({ memberId }: ProfileTabProps) {
       {((member as typeof member & { walletBalance?: number }).walletBalance ?? 0) > 0 && (
         <div className="md:col-span-2">
           <Card className="border-emerald-200 bg-emerald-50/50">
-            <CardContent className="flex items-center gap-3 py-3 px-4">
+            <CardContent className="flex flex-wrap items-center gap-3 py-3 px-4">
               <div className="flex h-9 w-9 items-center justify-center rounded-full bg-emerald-100 shrink-0">
                 <Wallet className="h-5 w-5 text-emerald-600" />
               </div>
-              <div>
+              <div className="min-w-0">
                 <p className="text-xs text-emerald-700 font-medium uppercase tracking-wide">
                   Wallet Credit
                 </p>
@@ -134,14 +135,14 @@ export function ProfileTab({ memberId }: ProfileTabProps) {
                   )}
                 </p>
               </div>
-              <p className="text-xs text-emerald-600 max-w-[140px] leading-snug">
+              <p className="text-xs text-emerald-600 leading-snug flex-1 min-w-[120px]">
                 Credited from prorated subscription cancellation
               </p>
               {can('member.update') && (
                 <Button
                   size="sm"
                   variant="outline"
-                  className="ml-auto shrink-0 border-emerald-300 text-emerald-700 hover:bg-emerald-100 hover:text-emerald-800"
+                  className="shrink-0 border-emerald-300 text-emerald-700 hover:bg-emerald-100 hover:text-emerald-800"
                   onClick={() => setPayoutOpen(true)}
                 >
                   <ArrowDownToLine className="h-3.5 w-3.5 mr-1.5" />
@@ -199,6 +200,14 @@ export function ProfileTab({ memberId }: ProfileTabProps) {
                   {member.phone}
                 </span>
               ) : undefined
+            }
+          />
+          <InfoRow
+            label="Date of Birth"
+            value={
+              (member as any).dateOfBirth
+                ? formatDate((member as any).dateOfBirth)
+                : undefined
             }
           />
           <InfoRow
@@ -262,33 +271,6 @@ export function ProfileTab({ memberId }: ProfileTabProps) {
             <p className="text-sm text-muted-foreground italic">
               No emergency contact on file.
             </p>
-          )}
-        </CardContent>
-      </Card>
-
-      {/* Consent & Health */}
-      <Card className="md:col-span-2">
-        <CardHeader className="pb-3">
-          <CardTitle className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">
-            Consent & Health
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="flex flex-wrap gap-2">
-          <Badge variant={member.consentMarketing ? 'default' : 'secondary'}>
-            Marketing: {member.consentMarketing ? 'Yes' : 'No'}
-          </Badge>
-          <Badge variant={member.consentDataProcessing ? 'default' : 'secondary'}>
-            Data Processing: {member.consentDataProcessing ? 'Yes' : 'No'}
-          </Badge>
-          {member.waiver && (
-            <Badge variant="outline">
-              Waiver signed {formatDate(member.waiver.signedAt)}
-            </Badge>
-          )}
-          {member.healthQuestionnaire?.completedAt && (
-            <Badge variant="outline">
-              Health form completed {formatDate(member.healthQuestionnaire.completedAt)}
-            </Badge>
           )}
         </CardContent>
       </Card>

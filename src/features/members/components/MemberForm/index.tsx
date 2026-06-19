@@ -49,7 +49,6 @@ import { CURRENCY } from '@/config/tenant.config';
 import { memberFormSchema, memberFormDefaults, type MemberFormValues } from './types';
 import { PersonalInfoSection }      from './PersonalInfoSection';
 import { EmergencyContactSection }  from './EmergencyContactSection';
-import { ConsentSection }           from './ConsentSection';
 import { AssignMembershipSection }  from './AssignMembershipSection';
 import { AssignTrainerSection }     from './AssignTrainerSection';
 import { MemberCredentialsDialog }  from '../MemberCredentialsDialog';
@@ -125,19 +124,20 @@ export default function MemberForm({
     if (member) {
       reset({
         ...memberFormDefaults,
-        branchId:              (typeof member.branchId === 'object' && member.branchId !== null ? (member.branchId as any)._id : member.branchId) ?? '',
-        firstName:             member.firstName,
-        lastName:              member.lastName,
-        email:                 member.email,
-        phone:                 member.phone,
-        age:                   (member as any).age ?? undefined,
-        gender:                member.gender,
-        notes:                 member.notes ?? '',
-        consentMarketing:      member.consentMarketing,
-        consentDataProcessing: member.consentDataProcessing,
-        ec_name:               member.emergencyContact?.name         ?? '',
-        ec_relationship:       member.emergencyContact?.relationship  ?? '',
-        ec_phone:              member.emergencyContact?.phone         ?? '',
+        branchId:        (typeof member.branchId === 'object' && member.branchId !== null ? (member.branchId as any)._id : member.branchId) ?? '',
+        firstName:       member.firstName,
+        lastName:        member.lastName,
+        email:           member.email,
+        phone:           member.phone,
+        age:             (member as any).age ?? undefined,
+        dateOfBirth:     (member as any).dateOfBirth
+                           ? new Date((member as any).dateOfBirth).toISOString().split('T')[0]
+                           : '',
+        gender:          member.gender,
+        notes:           member.notes ?? '',
+        ec_name:         member.emergencyContact?.name         ?? '',
+        ec_relationship: member.emergencyContact?.relationship  ?? '',
+        ec_phone:        member.emergencyContact?.phone         ?? '',
       });
     } else {
       reset({
@@ -170,13 +170,13 @@ export default function MemberForm({
           memberId: member!._id,
           data: {
             ...(branchChanged ? { branchId: values.branchId } : {}),
-            firstName:        values.firstName,
-            lastName:         values.lastName,
-            phone:            values.phone,
-            age:              values.age          || undefined,
-            gender:           values.gender,
-            notes:            values.notes        || undefined,
-            consentMarketing: values.consentMarketing,
+            firstName:   values.firstName,
+            lastName:    values.lastName,
+            phone:       values.phone,
+            age:         values.age    || undefined,
+            dateOfBirth: values.dateOfBirth ? values.dateOfBirth : undefined,
+            gender:      values.gender,
+            notes:       values.notes  || undefined,
             emergencyContact,
           },
         });
@@ -197,16 +197,15 @@ export default function MemberForm({
       // ── CREATE path ─────────────────────────────────────────────────────
       const created = await createMutation.mutateAsync({
         data: {
-          branchId:              values.branchId,
-          firstName:             values.firstName,
-          lastName:              values.lastName,
-          email:                 values.email,
-          phone:                 values.phone,
-          age:                   values.age          || undefined,
-          gender:                values.gender,
-          notes:                 values.notes        || undefined,
-          consentMarketing:      values.consentMarketing,
-          consentDataProcessing: values.consentDataProcessing,
+          branchId:    values.branchId,
+          firstName:   values.firstName,
+          lastName:    values.lastName,
+          email:       values.email,
+          phone:       values.phone,
+          age:         values.age    || undefined,
+          dateOfBirth: values.dateOfBirth ? values.dateOfBirth : undefined,
+          gender:      values.gender,
+          notes:       values.notes  || undefined,
           emergencyContact,
         },
       });
@@ -346,10 +345,10 @@ export default function MemberForm({
       />
     )}
     <Sheet open={open} onOpenChange={onOpenChange}>
-      <SheetContent side="right" className="w-full sm:max-w-lg overflow-y-auto p-0">
+      <SheetContent side="right" className="w-full sm:max-w-lg p-0 flex flex-col h-full">
 
         {/* Sticky header */}
-        <div className="sticky top-0 bg-background border-b px-6 py-4 z-10">
+        <div className="shrink-0 bg-background border-b px-6 py-4 z-10">
           <h2 className="text-lg font-semibold">
             {isEdit ? 'Edit Member' : 'Register New Member'}
           </h2>
@@ -360,92 +359,88 @@ export default function MemberForm({
           </p>
         </div>
 
-        <form onSubmit={handleSubmit(onSubmit)} className="px-6 py-5 space-y-6">
+        {/* Scrollable body */}
+        <div className="flex-1 overflow-y-auto">
+          <form id="member-form" onSubmit={handleSubmit(onSubmit)} className="px-6 py-5 space-y-6">
 
-          {/* No-branches warning — create mode only */}
-          {!isEdit && !branchesLoading && branches.length === 0 && (
-            <Alert variant="destructive">
-              <AlertTriangle className="h-4 w-4" />
-              <AlertDescription>
-                No active branches found. Please{' '}
-                <a href="/branches" className="underline font-medium">
-                  create a branch
-                </a>{' '}
-                first before registering members.
-              </AlertDescription>
-            </Alert>
-          )}
+            {/* No-branches warning — create mode only */}
+            {!isEdit && !branchesLoading && branches.length === 0 && (
+              <Alert variant="destructive">
+                <AlertTriangle className="h-4 w-4" />
+                <AlertDescription>
+                  No active branches found. Please{' '}
+                  <a href="/branches" className="underline font-medium">
+                    create a branch
+                  </a>{' '}
+                  first before registering members.
+                </AlertDescription>
+              </Alert>
+            )}
 
-          {/* Personal info */}
-          <PersonalInfoSection
-            register={register}
-            watch={watch}
-            setValue={setValue}
-            errors={errors}
-            isEdit={isEdit}
-            isPending={isPending}
-            branches={branches}
-            branchesLoading={branchesLoading}
-          />
+            {/* Personal info */}
+            <PersonalInfoSection
+              register={register}
+              watch={watch}
+              setValue={setValue}
+              errors={errors}
+              isEdit={isEdit}
+              isPending={isPending}
+              branches={branches}
+              branchesLoading={branchesLoading}
+            />
 
-          <Separator />
+            <Separator />
 
-          {/* Emergency contact */}
-          <EmergencyContactSection
-            register={register}
-            errors={errors}
-            isPending={isPending}
-          />
+            {/* Emergency contact */}
+            <EmergencyContactSection
+              register={register}
+              errors={errors}
+              isPending={isPending}
+            />
 
-          <Separator />
+            {/* Membership & trainer assignment — create only */}
+            {!isEdit && (
+              <>
+                <Separator />
+                <AssignMembershipSection
+                  control={control}
+                  errors={errors}
+                  isPending={isPending}
+                />
+                <AssignTrainerSection
+                  control={control}
+                  errors={errors}
+                  isPending={isPending}
+                  branchId={watch('branchId') || undefined}
+                />
+              </>
+            )}
 
-          {/* Consents */}
-          <ConsentSection
-            watch={watch}
-            setValue={setValue}
-            isEdit={isEdit}
-            isPending={isPending}
-          />
+          </form>
+        </div>
 
-          {/* Membership & trainer assignment — create only */}
-          {!isEdit && (
-            <>
-              <Separator />
-              <AssignMembershipSection
-                control={control}
-                errors={errors}
-                isPending={isPending}
-              />
-              <AssignTrainerSection
-                control={control}
-                errors={errors}
-                isPending={isPending}
-                branchId={watch('branchId') || undefined}
-              />
-            </>
-          )}
+        {/* Sticky footer — always visible at bottom */}
+        <div className="shrink-0 border-t bg-background px-6 py-4 flex gap-3">
+          <Button
+            type="button"
+            variant="outline"
+            className="flex-1"
+            onClick={() => onOpenChange(false)}
+            disabled={isPending}
+          >
+            Cancel
+          </Button>
+          <Button
+            type="submit"
+            form="member-form"
+            className="flex-1"
+            disabled={isPending || (!isEdit && !branchesLoading && branches.length === 0)}
+          >
+            {isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+            {isEdit ? 'Save Changes' : 'Register Member'}
+          </Button>
+        </div>
 
-          {/* Footer */}
-          <div className="flex gap-2 pt-2 pb-4">
-            <Button
-              type="button"
-              variant="outline"
-              className="flex-1"
-              onClick={() => onOpenChange(false)}
-              disabled={isPending}
-            >
-              Cancel
-            </Button>
-            <Button
-              type="submit"
-              className="flex-1"
-              disabled={isPending || (!isEdit && !branchesLoading && branches.length === 0)}
-            >
-              {isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-              {isEdit ? 'Save Changes' : 'Register Member'}
-            </Button>
-          </div>
-        </form>
       </SheetContent>
     </Sheet>
     </>

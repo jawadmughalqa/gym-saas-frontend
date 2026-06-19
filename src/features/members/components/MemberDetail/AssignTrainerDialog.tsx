@@ -1,7 +1,8 @@
 import { useState, useEffect, useMemo } from "react";
-import { User } from "lucide-react";
+import { User, Check } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Badge } from "@/components/ui/badge";
 import {
   Select,
   SelectContent,
@@ -34,6 +35,16 @@ import {
 } from "@/components/ui";
 import { CURRENCY } from "@/config/tenant.config";
 
+// ─── Constants ────────────────────────────────────────────────────────────────
+
+const DAY_NAMES = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+
+interface AvailabilitySlot {
+  day: number;
+  startTime: string;
+  endTime: string;
+}
+
 // ─── Props ────────────────────────────────────────────────────────────────────
 
 interface Props {
@@ -60,6 +71,7 @@ export default function AssignTrainerDialog({
   const [goal, setGoal] = useState("");
   const [sessionsPerWeek, setSessionsPerWeek] = useState<number | undefined>();
   const [monthlyCharge, setMonthlyCharge] = useState<string>("");
+  const [selectedSlots, setSelectedSlots] = useState<AvailabilitySlot[]>([]);
 
   // ── Fetch trainers ─────────────────────────────────────────────────────────
   const { data: trainersData, isLoading: loadingTrainers } = useGetTrainers(
@@ -69,7 +81,7 @@ export default function AssignTrainerDialog({
       ...(branchId ? { branchId } : {}),
       limit: 100,
     },
-    { query: { enabled: open } },
+    { query: { enabled: open, staleTime: 0 } },
   );
   // Filter out the currently-assigned trainer so they don't appear in the dropdown.
   // Memoized so the reference is stable — without this, every keystroke in the
@@ -88,16 +100,16 @@ export default function AssignTrainerDialog({
   );
 
   // ── Pre-fill monthlyCharge from trainer's default rate when trainer changes ─
-  // Runs only when the selected trainer changes, not on every keystroke.
   useEffect(() => {
     if (!selectedTrainerId) {
       setMonthlyCharge("");
+      setSelectedSlots([]);
       return;
     }
     const t = trainers.find((tr) => tr._id === selectedTrainerId);
-    // API stores the rate as 'hourlyRate' (model field name)
     const rate = (t as any)?.hourlyRate ?? (t as any)?.monthlyRate;
     setMonthlyCharge(rate != null ? String(rate) : "");
+    setSelectedSlots([]); // reset slot selection when trainer changes
   }, [selectedTrainerId, trainers]);
 
   // ── Mutation ───────────────────────────────────────────────────────────────
@@ -151,11 +163,45 @@ export default function AssignTrainerDialog({
     ? `${(selectedTrainer as any).userId?.firstName ?? ""} ${(selectedTrainer as any).userId?.lastName ?? ""}`.trim()
     : null;
 
+  // Derived: selected trainer's availability
+  const trainerAvailability: AvailabilitySlot[] =
+    ((trainers.find((t) => t._id === selectedTrainerId) as any)?.availability ?? []);
+
+  // Group slots by day for display
+  const slotsByDay = trainerAvailability.reduce<Record<number, AvailabilitySlot[]>>(
+    (acc, slot) => {
+      if (!acc[slot.day]) acc[slot.day] = [];
+      acc[slot.day].push(slot);
+      return acc;
+    },
+    {},
+  );
+
+  function toggleSlot(slot: AvailabilitySlot) {
+    setSelectedSlots((prev) => {
+      const exists = prev.some(
+        (s) => s.day === slot.day && s.startTime === slot.startTime && s.endTime === slot.endTime,
+      );
+      return exists
+        ? prev.filter(
+            (s) => !(s.day === slot.day && s.startTime === slot.startTime && s.endTime === slot.endTime),
+          )
+        : [...prev, slot];
+    });
+  }
+
+  function isSlotSelected(slot: AvailabilitySlot) {
+    return selectedSlots.some(
+      (s) => s.day === slot.day && s.startTime === slot.startTime && s.endTime === slot.endTime,
+    );
+  }
+
   function resetForm() {
     setSelectedTrainerId("");
     setGoal("");
     setSessionsPerWeek(undefined);
     setMonthlyCharge("");
+    setSelectedSlots([]);
   }
 
   function handleSubmit() {
@@ -184,6 +230,7 @@ export default function AssignTrainerDialog({
         branchId,
         goal: goal || undefined,
         sessionFrequencyPerWeek: sessionsPerWeek,
+        scheduledSlots: selectedSlots.length > 0 ? selectedSlots : undefined,
         monthlyCharge: charge,
         currency: CURRENCY,
       },
@@ -320,6 +367,63 @@ export default function AssignTrainerDialog({
                     ))}
                   </SelectContent>
                 </Select>
+              </div>
+
+              {/* Scheduled slots */}
+              <div className="space-y-1.5">
+                <Label>
+                  Scheduled Slots{" "}
+                  <span className="text-muted-foreground font-normal text-xs">(optional)</span>
+                </Label>
+                {trainerAvailability.length === 0 ? (
+                  <p className="text-xs text-muted-foreground italic">
+                    This trainer has no availability slots set.
+                  </p>
+                ) : (
+                  <div className="space-y-2 rounded-md border p-3">
+                    {Object.entries(slotsByDay)
+                      .sort(([a], [b]) => Number(a) - Number(b))
+                      .map(([day, slots]) => (
+                        <div key={day} className="space-y-1">
+                          <p className="text-xs font-medium text-muted-foreground">
+                            {DAY_NAMES[Number(day)]}
+                          </p>
+                          <div className="flex flex-wrap gap-1.5">
+                            {slots.map((slot, i) => {
+                              const selected = isSlotSelected(slot);
+                              return (
+                                <button
+                                  key={i}
+                                  type="button"
+                                  onClick={() => toggleSlot(slot)}
+                                  disabled={assignMutation.isPending}
+                                  className={`flex items-center gap-1 rounded-md border px-2.5 py-1 text-xs transition-colors ${
+                                    selected
+                                      ? "border-primary bg-primary text-primary-foreground"
+                                      : "border-border bg-background hover:border-primary/50 text-foreground"
+                                  }`}
+                                >
+                                  {selected && <Check className="h-3 w-3" />}
+                                  {slot.startTime} – {slot.endTime}
+                                </button>
+                              );
+                            })}
+                          </div>
+                        </div>
+                      ))}
+                  </div>
+                )}
+                {selectedSlots.length > 0 && (
+                  <div className="flex flex-wrap gap-1 pt-1">
+                    {selectedSlots
+                      .sort((a, b) => a.day - b.day)
+                      .map((s, i) => (
+                        <Badge key={i} variant="secondary" className="text-xs font-normal">
+                          {DAY_NAMES[s.day]} {s.startTime}–{s.endTime}
+                        </Badge>
+                      ))}
+                  </div>
+                )}
               </div>
 
               {/* Summary card */}

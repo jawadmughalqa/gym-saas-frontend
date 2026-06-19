@@ -193,11 +193,11 @@ export function BillingTab({ memberId, branchId, memberName }: BillingTabProps) 
   return (
     <div className="space-y-5 max-w-2xl">
       {/* ── Header actions ─────────────────────────────────────────────────── */}
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
         <p className="text-sm text-muted-foreground">
           Invoices and payment history for {memberName}
         </p>
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 shrink-0">
           <Button
             variant="ghost"
             size="sm"

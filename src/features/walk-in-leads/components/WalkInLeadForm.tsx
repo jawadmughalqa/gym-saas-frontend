@@ -216,8 +216,8 @@ export default function WalkInLeadForm({ open, onOpenChange, lead }: WalkInLeadF
 
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
-      <SheetContent className="w-full px-4 sm:max-w-xl overflow-y-auto">
-        <SheetHeader className="pb-4">
+      <SheetContent className="w-full sm:max-w-xl p-0 flex flex-col h-full">
+        <SheetHeader className="shrink-0 border-b px-4 py-4">
           <SheetTitle>{isEditing ? "Edit Walk-in Lead" : "Add Walk-in Lead"}</SheetTitle>
           <SheetDescription>
             {isEditing
@@ -226,7 +226,8 @@ export default function WalkInLeadForm({ open, onOpenChange, lead }: WalkInLeadF
           </SheetDescription>
         </SheetHeader>
 
-        <form onSubmit={onSubmit} className="space-y-5">
+        <div className="flex-1 overflow-y-auto px-4 py-5">
+        <form id="walkin-form" onSubmit={onSubmit} className="space-y-5">
           {/* Branch */}
           <div className="space-y-1.5">
             <Label htmlFor="branchId">
@@ -405,15 +406,17 @@ export default function WalkInLeadForm({ open, onOpenChange, lead }: WalkInLeadF
             </div>
           )}
 
-          <SheetFooter className="pt-4 gap-2">
-            <Button type="button" variant="outline" onClick={() => onOpenChange(false)} disabled={isPending}>
-              Cancel
-            </Button>
-            <Button type="submit" disabled={isPending || isSubmitting}>
-              {isPending ? "Saving…" : isEditing ? "Save Changes" : "Add Lead"}
-            </Button>
-          </SheetFooter>
         </form>
+        </div>
+
+        <div className="shrink-0 border-t bg-background px-4 py-4 flex gap-3">
+          <Button type="button" variant="outline" className="flex-1" onClick={() => onOpenChange(false)} disabled={isPending}>
+            Cancel
+          </Button>
+          <Button type="submit" form="walkin-form" className="flex-1" disabled={isPending || isSubmitting}>
+            {isPending ? "Saving…" : isEditing ? "Save Changes" : "Add Lead"}
+          </Button>
+        </div>
       </SheetContent>
     </Sheet>
   );

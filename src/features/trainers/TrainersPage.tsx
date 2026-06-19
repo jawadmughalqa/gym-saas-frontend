@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { UserPlus, Dumbbell, Star } from "lucide-react";
+import { useMutation } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import {
@@ -29,6 +30,7 @@ import {
   useDeleteTrainersTrainerId,
   getGetTrainersQueryKey,
 } from "@/api/generated/trainers/trainers";
+import { orvalMutator } from "@/lib/orval-mutator";
 import { useGetBranches } from "@/api/generated/branches/branches";
 import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "@/hooks/use-toast";
@@ -52,17 +54,19 @@ function StarRating({ avg, count }: { avg: number; count: number }) {
 // ─── Status badge ─────────────────────────────────────────────────────────────
 
 const STATUS_VARIANT: Record<
-  TrainerStatus,
-  "success" | "secondary" | "warning"
+  TrainerStatus | "archived",
+  "success" | "secondary" | "warning" | "destructive"
 > = {
   active: "success",
   inactive: "secondary",
   on_leave: "warning",
+  archived: "destructive",
 };
-const STATUS_LABEL: Record<TrainerStatus, string> = {
+const STATUS_LABEL: Record<TrainerStatus | "archived", string> = {
   active: "Active",
   inactive: "Inactive",
   on_leave: "On Leave",
+  archived: "Archived",
 };
 
 // ─── Helper to get branch names from IDs ──────────────────────────────────────
@@ -124,6 +128,22 @@ export default function TrainersPage() {
           description: err?.response?.data?.message || err?.message,
         });
       },
+    },
+  });
+
+  const reactivate = useMutation({
+    mutationFn: (trainerId: string) =>
+      orvalMutator<unknown>({ url: `/trainers/${trainerId}/reactivate`, method: "POST" }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: getGetTrainersQueryKey() });
+      toast({ title: "Trainer reactivated successfully" });
+    },
+    onError: (err: any) => {
+      toast({
+        variant: "destructive",
+        title: "Failed to reactivate trainer",
+        description: err?.response?.data?.message || err?.message,
+      });
     },
   });
 
@@ -225,54 +245,83 @@ export default function TrainersPage() {
       key: "status",
       header: "Status",
       sortable: true,
-      cell: (row) => (
-        <Badge variant={STATUS_VARIANT[row.status]}>
-          {STATUS_LABEL[row.status]}
-        </Badge>
-      ),
+      cell: (row) => {
+        const isArchived = !!(row as any).archivedAt;
+        const key = isArchived ? "archived" : row.status;
+        return (
+          <Badge variant={STATUS_VARIANT[key]}>
+            {STATUS_LABEL[key]}
+          </Badge>
+        );
+      },
     },
     {
       key: "actions",
       header: "",
-      width: "w-28",
-      cell: (row) => (
-        <div className="flex items-center gap-1 justify-end">
-          {can("trainer.update") && (
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={(e) => {
-                e.stopPropagation();
-                handleEdit(row);
-              }}
-            >
-              Edit
-            </Button>
-          )}
-          {can("trainer.update") && (
-            <Button
-              variant="ghost"
-              size="sm"
-              className="text-destructive hover:text-destructive"
-              onClick={(e) => {
-                e.stopPropagation();
-                confirm(
-                  {
-                    title: `Archive ${row.userId.firstName} ${row.userId.lastName}?`,
-                    description:
-                      "This will end all active assignments and archive the trainer profile.",
-                    variant: "destructive",
-                    confirmLabel: "Archive",
-                  },
-                  () => archive.mutate({ trainerId: row._id }),
-                );
-              }}
-            >
-              Archive
-            </Button>
-          )}
-        </div>
-      ),
+      width: "w-36",
+      cell: (row) => {
+        const isArchived = !!(row as any).archivedAt;
+        return (
+          <div className="flex items-center gap-1 justify-end">
+            {!isArchived && can("trainer.update") && (
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  handleEdit(row);
+                }}
+              >
+                Edit
+              </Button>
+            )}
+            {isArchived && can("trainer.update") ? (
+              <Button
+                variant="ghost"
+                size="sm"
+                className="text-primary hover:text-primary"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  confirm(
+                    {
+                      title: `Reactivate ${row.userId.firstName} ${row.userId.lastName}?`,
+                      description:
+                        "This will restore the trainer profile and set their status back to Active.",
+                      confirmLabel: "Reactivate",
+                    },
+                    () => reactivate.mutate(row._id),
+                  );
+                }}
+              >
+                Reactivate
+              </Button>
+            ) : (
+              can("trainer.update") && (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="text-destructive hover:text-destructive"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    confirm(
+                      {
+                        title: `Archive ${row.userId.firstName} ${row.userId.lastName}?`,
+                        description:
+                          "This will archive the trainer profile. The trainer must have no active member assignments before archiving.",
+                        variant: "destructive",
+                        confirmLabel: "Archive",
+                      },
+                      () => archive.mutate({ trainerId: row._id }),
+                    );
+                  }}
+                >
+                  Archive
+                </Button>
+              )
+            )}
+          </div>
+        );
+      },
     },
   ];
 
@@ -382,7 +431,7 @@ export default function TrainersPage() {
         description={confirmProps.description}
         confirmLabel={confirmProps.confirmLabel}
         variant={confirmProps.variant}
-        loading={archive.isPending}
+        loading={archive.isPending || reactivate.isPending}
       />
     </PageShell>
   );

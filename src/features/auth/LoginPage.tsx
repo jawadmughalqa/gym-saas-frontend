@@ -51,7 +51,7 @@ export default function LoginPage() {
               <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-primary shadow-sm">
                 <span className="text-sm font-bold text-primary-foreground">G</span>
               </div>
-              <span className="text-xl font-semibold tracking-tight">GymPro</span>
+              <span className="text-xl font-semibold tracking-tight">Gymanger</span>
             </div>
             <h1 className="text-2xl font-semibold tracking-tight">Welcome back</h1>
             <p className="text-sm text-muted-foreground">
@@ -147,7 +147,7 @@ export default function LoginPage() {
               Everything you need to run your gym — in one place.
             </h2>
             <p className="text-primary-foreground/70 text-base leading-relaxed">
-              GymPro brings members, trainers, equipment, billing, and analytics together in a single, streamlined platform.
+              Gymanger brings members, trainers, equipment, billing, and analytics together in a single, streamlined platform.
             </p>
           </div>
 
@@ -166,11 +166,11 @@ export default function LoginPage() {
           {/* Testimonial */}
           <div className="rounded-xl bg-white/10 px-5 py-4 border border-white/15">
             <p className="text-sm text-primary-foreground/80 italic leading-relaxed">
-              "GymPro cut our admin time in half. Everything from member check-ins to monthly invoices just works."
+              "Gymanger cut our admin time in half. Everything from member check-ins to monthly invoices just works."
             </p>
-            <p className="mt-3 text-xs font-medium text-primary-foreground/60">
+            {/* <p className="mt-3 text-xs font-medium text-primary-foreground/60">
               — Gym Owner, Apex Fitness
-            </p>
+            </p> */}
           </div>
         </div>
       </div>

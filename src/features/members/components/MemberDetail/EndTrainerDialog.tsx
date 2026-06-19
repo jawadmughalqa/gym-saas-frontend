@@ -11,7 +11,11 @@ import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import { toast } from '@/hooks/use-toast';
-import { usePostTrainersTrainerIdAssignmentsAssignmentIdEnd } from '@/api/generated/trainers/trainers';
+import { useQueryClient } from '@tanstack/react-query';
+import {
+  usePostTrainersTrainerIdAssignmentsAssignmentIdEnd,
+  getGetTrainersQueryKey,
+} from '@/api/generated/trainers/trainers';
 import type { TrainerAssignment } from './TrainerTab';
 
 // ─── Schema ───────────────────────────────────────────────────────────────────
@@ -42,6 +46,7 @@ function trainerName(a: TrainerAssignment): string {
 // ─── Component ────────────────────────────────────────────────────────────────
 
 export function EndTrainerDialog({ open, onOpenChange, assignment, onSuccess }: Props) {
+  const queryClient = useQueryClient();
   const { register, handleSubmit, reset } = useForm<FormValues>({
     resolver: zodResolver(schema),
     defaultValues: { endReason: '' },
@@ -54,6 +59,8 @@ export function EndTrainerDialog({ open, onOpenChange, assignment, onSuccess }: 
           title: 'Trainer removed',
           description: `Assignment with ${trainerName(assignment)} has been ended.`,
         });
+        // Invalidate trainers list so slot counts + availability refresh immediately
+        queryClient.invalidateQueries({ queryKey: getGetTrainersQueryKey() });
         reset();
         onOpenChange(false);
         onSuccess();

@@ -2,7 +2,7 @@ import { useEffect } from 'react';
 import { useForm, useFieldArray } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { Plus, Trash2 } from 'lucide-react';
+import { Plus, Trash2, Info } from 'lucide-react';
 
 import {
   Dialog,
@@ -30,6 +30,12 @@ import { Input }    from '@/components/ui/input';
 import { Button }   from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Separator } from '@/components/ui/separator';
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from '@/components/ui/tooltip';
 
 import type {
   MembershipPlan,
@@ -80,6 +86,29 @@ const planFormSchema = z.object({
 });
 
 type PlanFormValues = z.infer<typeof planFormSchema>;
+
+// ─── Pakistan-region gym preset features ──────────────────────────────────────
+
+const PRESET_FEATURES = [
+  'Locker',
+  'Changing Room',
+  'Treadmill',
+  'Free Weights',
+  'Cardio Machines',
+  'Swimming Pool',
+  'Steam Room',
+  'Sauna',
+  'Yoga Classes',
+  'Boxing / Martial Arts',
+  'Group Classes',
+  'Personal Trainer',
+  'Air Conditioning',
+  'WiFi',
+  'Parking',
+  'Water Dispenser',
+  'Towel Service',
+  'Juice Bar',
+] as const;
 
 // ─── Frequency display labels ─────────────────────────────────────────────────
 
@@ -330,7 +359,20 @@ export function PlanFormDialog({
                   name="durationDays"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Duration (days)</FormLabel>
+                      <FormLabel className="flex items-center gap-1.5">
+                        Duration (days)
+                        <TooltipProvider>
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <Info className="h-3.5 w-3.5 text-muted-foreground cursor-help" />
+                            </TooltipTrigger>
+                            <TooltipContent side="top" className="max-w-[220px] text-center">
+                              How many days this membership stays active after purchase.
+                              Leave empty for open-ended plans (e.g. monthly billing with no fixed expiry).
+                            </TooltipContent>
+                          </Tooltip>
+                        </TooltipProvider>
+                      </FormLabel>
                       <FormControl>
                         <Input
                           type="number"
@@ -350,7 +392,7 @@ export function PlanFormDialog({
             <Separator />
 
             {/* ── Freeze Settings ──────────────────────────────────────────── */}
-            {/* <div className="space-y-4">
+            <div className="space-y-4">
               <h3 className="text-sm font-medium text-muted-foreground uppercase tracking-wide">
                 Freeze Policy
               </h3>
@@ -361,7 +403,19 @@ export function PlanFormDialog({
                   name="maxFreezes"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Max Freezes per Cycle</FormLabel>
+                      <FormLabel className="flex items-center gap-1.5">
+                        Max Freezes per Cycle
+                        <TooltipProvider>
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <Info className="h-3.5 w-3.5 text-muted-foreground cursor-help" />
+                            </TooltipTrigger>
+                            <TooltipContent side="top" className="max-w-[200px] text-center">
+                              How many times a member can freeze their membership per billing cycle. Set to 0 to disable freezing.
+                            </TooltipContent>
+                          </Tooltip>
+                        </TooltipProvider>
+                      </FormLabel>
                       <FormControl>
                         <Input type="number" min={0} {...field} />
                       </FormControl>
@@ -375,7 +429,19 @@ export function PlanFormDialog({
                   name="freezeDurationDays"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Max Freeze Duration (days)</FormLabel>
+                      <FormLabel className="flex items-center gap-1.5">
+                        Max Freeze Duration (days)
+                        <TooltipProvider>
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <Info className="h-3.5 w-3.5 text-muted-foreground cursor-help" />
+                            </TooltipTrigger>
+                            <TooltipContent side="top" className="max-w-[200px] text-center">
+                              Maximum number of days a single freeze can last.
+                            </TooltipContent>
+                          </Tooltip>
+                        </TooltipProvider>
+                      </FormLabel>
                       <FormControl>
                         <Input type="number" min={1} {...field} />
                       </FormControl>
@@ -384,9 +450,9 @@ export function PlanFormDialog({
                   )}
                 />
               </div>
-            </div> */}
+            </div>
 
-            {/* <Separator /> */}
+            <Separator />
 
             {/* ── Features ────────────────────────────────────────────────── */}
             <div className="space-y-3">
@@ -404,6 +470,43 @@ export function PlanFormDialog({
                   <Plus className="h-3.5 w-3.5 mr-1" />
                   Add Feature
                 </Button>
+              </div>
+
+              {/* Preset quick-select chips */}
+              <div className="space-y-1.5">
+                <p className="text-xs text-muted-foreground">Quick add common amenities:</p>
+                <div className="flex flex-wrap gap-1.5">
+                  {PRESET_FEATURES.map((preset) => {
+                    const isActive = featureFields.some((f) => f.value === preset);
+                    return (
+                      <button
+                        key={preset}
+                        type="button"
+                        disabled={featureFields.length >= 20 && !isActive}
+                        onClick={() => {
+                          if (isActive) {
+                            const idx = featureFields.findIndex((f) => f.value === preset);
+                            if (idx !== -1) removeFeature(idx);
+                          } else {
+                            appendFeature({ value: preset });
+                          }
+                        }}
+                        className={`
+                          inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium
+                          border transition-colors cursor-pointer select-none
+                          ${isActive
+                            ? 'bg-primary text-primary-foreground border-primary'
+                            : 'bg-muted text-muted-foreground border-border hover:bg-accent hover:text-accent-foreground'
+                          }
+                          disabled:opacity-40 disabled:cursor-not-allowed
+                        `}
+                      >
+                        {isActive && <span className="mr-1">✓</span>}
+                        {preset}
+                      </button>
+                    );
+                  })}
+                </div>
               </div>
 
               {featureFields.length === 0 && (

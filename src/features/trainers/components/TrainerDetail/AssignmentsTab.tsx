@@ -15,6 +15,8 @@ import {
 } from "@/api/generated/trainers/trainers";
 import { useQueryClient } from "@tanstack/react-query";
 import type { TrainerAssignment, AssignmentStatus } from "@/types/trainer.types";
+
+const DAY_NAMES = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 import AssignMemberDialog from "./AssignMemberDialog";
 
 // ─── Constants ────────────────────────────────────────────────────────────────
@@ -66,11 +68,28 @@ export default function AssignmentsTab({ trainerId }: { trainerId: string }) {
       cell: (row) => row.goal ?? <span className="text-muted-foreground">—</span>,
     },
     {
-      key: "sessionFrequencyPerWeek",
-      header: "Freq / week",
+      key: "scheduledSlots",
+      header: "Schedule",
       hideOnMobile: true,
-      cell: (row) =>
-        row.sessionFrequencyPerWeek ?? <span className="text-muted-foreground">—</span>,
+      cell: (row) => {
+        const slots = (row as any).scheduledSlots as { day: number; startTime: string; endTime: string }[] | undefined;
+        if (!slots || slots.length === 0) return <span className="text-muted-foreground">—</span>;
+        return (
+          <div className="flex flex-wrap gap-1">
+            {slots
+              .slice()
+              .sort((a, b) => a.day - b.day)
+              .map((s, i) => (
+                <span
+                  key={i}
+                  className="inline-flex items-center rounded border bg-muted/50 px-1.5 py-0.5 text-[11px] font-medium whitespace-nowrap"
+                >
+                  {DAY_NAMES[s.day]} {s.startTime}
+                </span>
+              ))}
+          </div>
+        );
+      },
     },
     {
       key: "startDate",

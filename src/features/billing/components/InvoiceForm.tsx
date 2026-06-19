@@ -536,17 +536,18 @@ export default function InvoiceForm({
     <Sheet open={open} onOpenChange={handleClose}>
       <SheetContent
         side="right"
-        className="w-full p-0 overflow-y-auto sm:max-w-2xl"
+        className="w-full p-0 sm:max-w-2xl flex flex-col h-full"
       >
         {/* Header */}
-        <div className="sticky top-0 z-10 px-6 py-4 border-b bg-background">
+        <div className="shrink-0 px-6 py-4 border-b bg-background">
           <h2 className="text-lg font-semibold">Create Invoice</h2>
           <p className="text-sm text-muted-foreground">
             Add line items and billing details.
           </p>
         </div>
 
-        <form onSubmit={handleSubmit(onSubmit)} className="px-6 py-5 space-y-6">
+        <div className="flex-1 overflow-y-auto">
+        <form id="invoice-form" onSubmit={handleSubmit(onSubmit)} className="px-6 py-5 space-y-6">
           {/* ── Invoice details ── */}
           <section className="space-y-4">
             <h3 className="text-sm font-semibold tracking-wide uppercase text-muted-foreground">
@@ -984,29 +985,29 @@ export default function InvoiceForm({
             </div>
           </section>
 
-          {/* ── Footer ── */}
-          <div className="flex gap-2 pt-2 pb-4">
-            <Button
-              type="button"
-              variant="outline"
-              className="flex-1"
-              onClick={() => handleClose(false)}
-              disabled={isPending}
-            >
-              Cancel
-            </Button>
-            <Button
-              type="submit"
-              className="flex-1"
-              disabled={
-                isPending || (discountCode && !discountValidation?.isValid)
-              }
-            >
-              {isPending && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
-              Create Invoice
-            </Button>
-          </div>
         </form>
+        </div>
+
+        <div className="shrink-0 border-t bg-background px-6 py-4 flex gap-3">
+          <Button
+            type="button"
+            variant="outline"
+            className="flex-1"
+            onClick={() => handleClose(false)}
+            disabled={isPending}
+          >
+            Cancel
+          </Button>
+          <Button
+            type="submit"
+            form="invoice-form"
+            className="flex-1"
+            disabled={isPending || (discountCode && !discountValidation?.isValid)}
+          >
+            {isPending && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
+            Create Invoice
+          </Button>
+        </div>
       </SheetContent>
     </Sheet>
   );

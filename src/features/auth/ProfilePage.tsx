@@ -136,12 +136,12 @@ function SubscriptionCard() {
           <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-2">
             Active Features
           </p>
-          <div className="grid grid-cols-2 gap-1.5">
+          <div className="grid grid-cols-1 xs:grid-cols-2 gap-1.5">
             {enabledFeatures.map(([key, { label, icon: Icon }]) => (
-              <div key={key} className="flex items-center gap-1.5 text-xs">
+              <div key={key} className="flex items-center gap-1.5 text-xs min-w-0">
                 <Check className="h-3 w-3 text-emerald-500 flex-shrink-0" />
                 <Icon className="h-3 w-3 text-muted-foreground flex-shrink-0" />
-                <span className="font-medium">{label}</span>
+                <span className="font-medium truncate">{label}</span>
               </div>
             ))}
           </div>
@@ -204,10 +204,10 @@ export default function ProfilePage() {
   const isGymOwner = user.role === 'gym_owner';
 
   return (
-    <div className="max-w-2xl space-y-6">
+    <div className="w-full max-w-2xl space-y-6">
       {/* Page header */}
       <div>
-        <h1 className="text-2xl font-bold tracking-tight">My Profile</h1>
+        <h1 className="text-xl sm:text-2xl font-bold tracking-tight">My Profile</h1>
         <p className="text-sm text-muted-foreground">
           View your account details and manage settings.
         </p>
@@ -216,12 +216,12 @@ export default function ProfilePage() {
       {/* Profile card */}
       <Card>
         <CardHeader className="pb-4">
-          <div className="flex items-center gap-4">
-            <Avatar className="h-16 w-16">
-              <AvatarFallback className="text-xl font-bold">{initials}</AvatarFallback>
+          <div className="flex items-center gap-3 sm:gap-4 min-w-0">
+            <Avatar className="h-14 w-14 sm:h-16 sm:w-16 flex-shrink-0">
+              <AvatarFallback className="text-lg sm:text-xl font-bold">{initials}</AvatarFallback>
             </Avatar>
-            <div className="space-y-1">
-              <CardTitle className="text-xl">{user.name}</CardTitle>
+            <div className="space-y-1 min-w-0">
+              <CardTitle className="text-lg sm:text-xl truncate">{user.name}</CardTitle>
               <Badge variant={roleBadgeVariant(user.role)} className="capitalize">
                 {roleLabel(user.role)}
               </Badge>
@@ -233,22 +233,22 @@ export default function ProfilePage() {
 
         <CardContent className="pt-5 space-y-4">
           {/* Email */}
-          <div className="flex items-center gap-3">
-            <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-muted">
+          <div className="flex items-center gap-3 min-w-0">
+            <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-muted flex-shrink-0">
               <Mail className="h-4 w-4 text-muted-foreground" />
             </div>
-            <div>
+            <div className="min-w-0">
               <p className="text-xs text-muted-foreground">Email address</p>
-              <p className="text-sm font-medium">{user.email}</p>
+              <p className="text-sm font-medium truncate">{user.email}</p>
             </div>
           </div>
 
           {/* Role */}
-          <div className="flex items-center gap-3">
-            <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-muted">
+          <div className="flex items-center gap-3 min-w-0">
+            <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-muted flex-shrink-0">
               <User className="h-4 w-4 text-muted-foreground" />
             </div>
-            <div>
+            <div className="min-w-0">
               <p className="text-xs text-muted-foreground">Role</p>
               <p className="text-sm font-medium capitalize">{roleLabel(user.role)}</p>
             </div>
@@ -256,24 +256,24 @@ export default function ProfilePage() {
 
           {/* Tenant (if not super admin) */}
           {user.tenantId && (
-            <div className="flex items-center gap-3">
-              <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-muted">
+            <div className="flex items-center gap-3 min-w-0">
+              <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-muted flex-shrink-0">
                 <Building2 className="h-4 w-4 text-muted-foreground" />
               </div>
-              <div>
+              <div className="min-w-0">
                 <p className="text-xs text-muted-foreground">Workspace ID</p>
-                <p className="text-sm font-medium font-mono">{user.tenantId}</p>
+                <p className="text-sm font-medium font-mono truncate">{user.tenantId}</p>
               </div>
             </div>
           )}
 
           {/* Permissions count */}
           {(user.permissions?.length ?? 0) > 0 && (
-            <div className="flex items-center gap-3">
-              <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-muted">
+            <div className="flex items-center gap-3 min-w-0">
+              <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-muted flex-shrink-0">
                 <Shield className="h-4 w-4 text-muted-foreground" />
               </div>
-              <div>
+              <div className="min-w-0">
                 <p className="text-xs text-muted-foreground">Permissions</p>
                 <p className="text-sm font-medium">{user.permissions?.length ?? 0} granted</p>
               </div>

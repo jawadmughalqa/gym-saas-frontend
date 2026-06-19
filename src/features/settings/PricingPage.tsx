@@ -1,6 +1,6 @@
 import { useNavigate } from 'react-router-dom';
 import {
-  Check, X, ArrowLeft, Sparkles, Mail,
+  Check, X, ArrowLeft, Sparkles, Mail, MessageCircle,
   Users, UserCheck, CreditCard, ScanLine, BarChart3,
   Receipt, GitBranch, Wrench, Bell, Tag, Dumbbell, Smartphone,
 } from 'lucide-react';
@@ -185,17 +185,21 @@ export default function PricingPage() {
   const plans: Plan[]   = plansRes?.data ?? [];
   const isLoading       = tenantLoading || plansLoading;
 
-  // Contact Us mailto
-  const CONTACT_EMAIL   = 'support@coredevai.com';
-  const contactSubject  = encodeURIComponent('Custom Plan Enquiry — Gym Management');
-  const contactBody     = encodeURIComponent(
+  // Contact Us
+  const CONTACT_EMAIL    = 'mughaljawaddev@gmail.com';
+  const WHATSAPP_NUMBER  = '923343709700';
+  const contactSubject   = encodeURIComponent('Custom Plan Enquiry — Gym Management');
+  const contactBody      = encodeURIComponent(
     `Hi,\n\nI'm interested in a custom plan for my gym.\n\nBusiness: ${tenantRes?.data?.businessName ?? ''}\nCurrent Plan: ${currentPlanName}\n\nPlease share more details.`,
   );
+  const gmailUrl         = `https://mail.google.com/mail/?view=cm&to=${CONTACT_EMAIL}&su=${contactSubject}&body=${contactBody}`;
+  const whatsappMessage  = encodeURIComponent(`Hi, I'm interested in a custom plan for my gym (${tenantRes?.data?.businessName ?? ''}). Can you help me?`);
+  const whatsappUrl      = `https://wa.me/${WHATSAPP_NUMBER}?text=${whatsappMessage}`;
 
   return (
     <div className="max-w-5xl space-y-6">
       {/* Page header */}
-      <div className="flex items-start justify-between gap-4">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
         <div>
           <div className="flex items-center gap-2 mb-1">
             <Button
@@ -206,19 +210,27 @@ export default function PricingPage() {
             >
               <ArrowLeft className="h-4 w-4" />
             </Button>
-            <h1 className="text-2xl font-bold tracking-tight">Plans & Pricing</h1>
+            <h1 className="text-xl sm:text-2xl font-bold tracking-tight">Plans & Pricing</h1>
           </div>
           <p className="text-sm text-muted-foreground">
             Compare plans and see what features are included in each tier.
           </p>
         </div>
 
-        <a href={`mailto:${CONTACT_EMAIL}?subject=${contactSubject}&body=${contactBody}`}>
-          <Button variant="outline" className="gap-2 flex-shrink-0">
-            <Mail className="h-4 w-4" />
-            Contact Us
-          </Button>
-        </a>
+        <div className="flex items-center gap-2 sm:flex-shrink-0">
+          <a href={whatsappUrl} target="_blank" rel="noopener noreferrer" className="flex-1 sm:flex-none">
+            <Button variant="outline" className="w-full sm:w-auto gap-2 text-green-600 border-green-200 hover:bg-green-50 hover:text-green-700">
+              <MessageCircle className="h-4 w-4" />
+              WhatsApp
+            </Button>
+          </a>
+          <a href={gmailUrl} target="_blank" rel="noopener noreferrer" className="flex-1 sm:flex-none">
+            <Button variant="outline" className="w-full sm:w-auto gap-2">
+              <Mail className="h-4 w-4" />
+              Contact Us
+            </Button>
+          </a>
+        </div>
       </div>
 
       {/* Current plan callout */}
@@ -235,7 +247,7 @@ export default function PricingPage() {
 
       {/* Plans grid */}
       {isLoading ? (
-        <div className="grid gap-6 md:grid-cols-3">
+        <div className="grid gap-6 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
           {[1, 2, 3].map((i) => (
             <Skeleton key={i} className="h-[620px] rounded-xl" />
           ))}
@@ -243,15 +255,23 @@ export default function PricingPage() {
       ) : plans.length === 0 ? (
         <div className="flex flex-col items-center justify-center py-24 text-center gap-3">
           <p className="text-muted-foreground text-sm">No plans configured yet. Contact us for details.</p>
-          <a href={`mailto:${CONTACT_EMAIL}?subject=${contactSubject}`}>
-            <Button variant="outline" className="gap-2">
-              <Mail className="h-4 w-4" />
-              Get in Touch
-            </Button>
-          </a>
+          <div className="flex flex-col sm:flex-row items-center gap-2 w-full sm:w-auto">
+            <a href={whatsappUrl} target="_blank" rel="noopener noreferrer" className="w-full sm:w-auto">
+              <Button variant="outline" className="w-full sm:w-auto gap-2 text-green-600 border-green-200 hover:bg-green-50 hover:text-green-700">
+                <MessageCircle className="h-4 w-4" />
+                WhatsApp
+              </Button>
+            </a>
+            <a href={gmailUrl} target="_blank" rel="noopener noreferrer" className="w-full sm:w-auto">
+              <Button variant="outline" className="w-full sm:w-auto gap-2">
+                <Mail className="h-4 w-4" />
+                Get in Touch
+              </Button>
+            </a>
+          </div>
         </div>
       ) : (
-        <div className="grid gap-6 md:grid-cols-3">
+        <div className="grid gap-6 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
           {plans
             .slice()
             .sort((a, b) => (a.price ?? 0) - (b.price ?? 0))
@@ -281,12 +301,20 @@ export default function PricingPage() {
           Have specific requirements — more branches, higher member limits, or custom integrations?
           We can build a plan tailored to your business.
         </p>
-        <a href={`mailto:${CONTACT_EMAIL}?subject=${contactSubject}&body=${contactBody}`}>
-          <Button className="gap-2 mt-1">
-            <Mail className="h-4 w-4" />
-            Request a Custom Plan
-          </Button>
-        </a>
+        <div className="flex flex-col sm:flex-row items-center justify-center gap-3 mt-1">
+          <a href={whatsappUrl} target="_blank" rel="noopener noreferrer" className="w-full sm:w-auto">
+            <Button variant="outline" className="w-full sm:w-auto gap-2 text-green-600 border-green-200 hover:bg-green-50 hover:text-green-700">
+              <MessageCircle className="h-4 w-4" />
+              WhatsApp
+            </Button>
+          </a>
+          <a href={gmailUrl} target="_blank" rel="noopener noreferrer" className="w-full sm:w-auto">
+            <Button className="w-full sm:w-auto gap-2">
+              <Mail className="h-4 w-4" />
+              Request a Custom Plan
+            </Button>
+          </a>
+        </div>
         <p className="text-xs text-muted-foreground">{CONTACT_EMAIL}</p>
       </div>
     </div>

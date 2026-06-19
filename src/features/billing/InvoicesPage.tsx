@@ -1,8 +1,15 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { FilePlus, FileText } from 'lucide-react';
+import { FilePlus, FileText, MoreHorizontal, Eye, Download, Printer, MessageCircle, Ban } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 import PageHeader from '@/components/layout/PageHeader';
 import PageShell from '@/components/layout/PageShell';
 import DataTable, { type ColumnDef } from '@/components/shared/DataTable';
@@ -20,6 +27,12 @@ import { useQueryClient } from '@tanstack/react-query';
 import { toast } from '@/hooks/use-toast';
 import InvoiceForm from './components/InvoiceForm';
 import type { InvoiceStatus } from '@/types/billing.types';
+import { downloadInvoicePdf, printInvoicePdf, shareInvoicePdfViaWhatsApp } from '@/utils/invoice-pdf';
+
+// gym name helper: branchId may be populated object or plain string
+function gymBranchName(row: InvoiceRow): string | undefined {
+  return row.branchId && typeof row.branchId === 'object' ? row.branchId.name : undefined;
+}
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -53,6 +66,24 @@ function memberName(row: InvoiceRow): string {
   return typeof row.memberId === 'string' ? `…${row.memberId.slice(-6).toUpperCase()}` : '—';
 }
 
+function rowToPdfData(row: InvoiceRow) {
+  const member = row.memberId && typeof row.memberId === 'object' ? row.memberId : null;
+  return {
+    invoiceNumber: row.invoiceNumber,
+    status: row.status,
+    recipientName: memberName(row),
+    recipientEmail: member?.email,
+    currency: row.currency,
+    total: row.total,
+    amountPaid: row.amountPaid,
+    amountDue: row.amountDue,
+    dueDate: row.dueDate,
+    createdAt: row.createdAt,
+    lineLabel: 'Membership / Service Fee',
+    gymName: gymBranchName(row),
+  };
+}
+
 // ─── InvoicesPage ─────────────────────────────────────────────────────────────
 
 export default function InvoicesPage() {
@@ -63,8 +94,6 @@ export default function InvoicesPage() {
 
   const [statusFilter, setStatusFilter] = useState<InvoiceStatus | 'all'>('all');
   const [formOpen, setFormOpen] = useState(false);
-  const [voidingId, setVoidingId] = useState<string | null>(null);
-  const [voidingNumber, setVoidingNumber] = useState<string>('');
 
   const { confirm, confirmProps } = useConfirm();
 
@@ -82,7 +111,6 @@ export default function InvoicesPage() {
   const voidMutation = usePostInvoicesInvoiceIdVoid({
     mutation: {
       onSuccess: () => {
-        setVoidingId(null);
         qc.invalidateQueries({ queryKey: getGetInvoicesQueryKey() });
       },
       onError: () => {
@@ -92,8 +120,6 @@ export default function InvoicesPage() {
   });
 
   function handleVoid(row: InvoiceRow) {
-    setVoidingId(row._id);
-    setVoidingNumber(row.invoiceNumber);
     confirm(
       {
         title: `Void ${row.invoiceNumber}?`,
@@ -103,6 +129,33 @@ export default function InvoicesPage() {
       },
       () => voidMutation.mutate({ invoiceId: row._id, data: { reason: 'Voided by staff' } }),
     );
+  }
+
+  function handlePrint(row: InvoiceRow) {
+    printInvoicePdf(rowToPdfData(row));
+  }
+
+  function handleDownload(row: InvoiceRow) {
+    downloadInvoicePdf(rowToPdfData(row));
+  }
+
+  async function handleWhatsApp(row: InvoiceRow) {
+    const phone =
+      row.memberId && typeof row.memberId === 'object'
+        ? row.memberId.phone
+        : undefined;
+    if (!phone) {
+      toast({ variant: 'destructive', title: 'No phone number', description: 'This member has no phone number on file.' });
+      return;
+    }
+    try {
+      const result = await shareInvoicePdfViaWhatsApp(rowToPdfData(row), phone);
+      if (result === 'downloaded') {
+        toast({ title: 'PDF downloaded', description: 'WhatsApp is opening — attach the PDF to the member\'s chat.' });
+      }
+    } catch {
+      // user cancelled native share — no action needed
+    }
   }
 
   // ── Columns ────────────────────────────────────────────────────────────────
@@ -165,20 +218,48 @@ export default function InvoicesPage() {
     {
       key: 'actions',
       header: '',
-      width: 'w-20',
-      cell: (row) =>
-        can('invoice.void') && ['issued', 'partially_paid', 'overdue'].includes(row.status) ? (
-          <div className="flex justify-end">
-            <Button
-              variant="ghost"
-              size="sm"
-              className="text-destructive hover:text-destructive"
-              onClick={(e) => { e.stopPropagation(); handleVoid(row); }}
-            >
-              Void
-            </Button>
-          </div>
-        ) : null,
+      width: 'w-10',
+      cell: (row) => (
+        <div className="flex justify-end" onClick={(e) => e.stopPropagation()}>
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="ghost" size="icon" className="h-7 w-7">
+                <MoreHorizontal className="h-3.5 w-3.5" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-48">
+              <DropdownMenuItem onClick={() => navigate(`/billing/invoices/${row._id}`)}>
+                <Eye className="mr-2 h-4 w-4" />
+                View Invoice
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => handleDownload(row)}>
+                <Download className="mr-2 h-4 w-4" />
+                Download PDF
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => handlePrint(row)}>
+                <Printer className="mr-2 h-4 w-4" />
+                Print
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => handleWhatsApp(row)}>
+                <MessageCircle className="mr-2 h-4 w-4" />
+                Send via WhatsApp
+              </DropdownMenuItem>
+              {can('invoice.void') && ['issued', 'partially_paid', 'overdue'].includes(row.status) && (
+                <>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem
+                    className="text-destructive focus:text-destructive"
+                    onClick={() => handleVoid(row)}
+                  >
+                    <Ban className="mr-2 h-4 w-4" />
+                    Void Invoice
+                  </DropdownMenuItem>
+                </>
+              )}
+            </DropdownMenuContent>
+          </DropdownMenu>
+        </div>
+      ),
     },
   ];
 

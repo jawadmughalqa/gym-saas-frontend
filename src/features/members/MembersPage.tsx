@@ -19,6 +19,7 @@ import type { Member, MemberStatus } from '@/types/member.types';
 import {
   useGetMembers,
   getGetMembersQueryKey,
+  getGetMembersMemberIdQueryKey,
 } from '@/api/generated/members/members';
 import { api } from '@/lib/axios';
 
@@ -42,7 +43,11 @@ function useChangeMemberStatus() {
     setIsPending(true);
     try {
       await api.patch(`/members/${memberId}/status`, payload);
-      await queryClient.invalidateQueries({ queryKey: getGetMembersQueryKey() });
+      // Invalidate both the list AND the individual detail page cache
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: getGetMembersQueryKey() }),
+        queryClient.invalidateQueries({ queryKey: getGetMembersMemberIdQueryKey(memberId) }),
+      ]);
       toast({
         title:       'Status updated',
         description: `Member status changed to ${payload.status}.`,

@@ -2,7 +2,7 @@ import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { Eye, EyeOff, Loader2 } from "lucide-react";
+import { Eye, EyeOff, Loader2, ArrowLeft } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -133,9 +133,19 @@ export default function ChangePasswordPage() {
       : "Failed to update password.";
 
   return (
-    <div className="max-w-lg space-y-6">
+    <div className="w-full max-w-lg space-y-6">
       <div>
-        <h1 className="text-2xl font-bold tracking-tight">Change Password</h1>
+        <div className="flex items-center gap-2 mb-1">
+          <Button
+            variant="ghost"
+            size="sm"
+            className="h-7 px-2 -ml-2"
+            onClick={() => navigate(-1)}
+          >
+            <ArrowLeft className="h-4 w-4" />
+          </Button>
+          <h1 className="text-xl sm:text-2xl font-bold tracking-tight">Change Password</h1>
+        </div>
         <p className="text-sm text-muted-foreground">
           Update your account password.
         </p>

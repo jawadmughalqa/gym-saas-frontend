@@ -199,15 +199,16 @@ export default function EquipmentForm({ open, onOpenChange, equipment }: Equipme
 
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
-      <SheetContent side="right" className="w-full sm:max-w-xl overflow-y-auto">
-        <SheetHeader>
+      <SheetContent side="right" className="w-full sm:max-w-xl p-0 flex flex-col h-full">
+        <SheetHeader className="shrink-0 border-b px-4 py-4">
           <SheetTitle>{isEdit ? 'Edit Equipment' : 'Add Equipment'}</SheetTitle>
           <SheetDescription>
             {isEdit ? 'Update equipment details and maintenance schedule.' : 'Register new gym equipment.'}
           </SheetDescription>
         </SheetHeader>
 
-        <form onSubmit={handleSubmit(onSubmit)} className="mt-6 space-y-5">
+        <div className="flex-1 overflow-y-auto px-4 py-5">
+        <form id="equipment-form" onSubmit={handleSubmit(onSubmit)} className="space-y-5">
 
           {/* Branch — create only */}
           {!isEdit && (
@@ -368,13 +369,15 @@ export default function EquipmentForm({ open, onOpenChange, equipment }: Equipme
             <Textarea id="eq-notes" rows={2} placeholder="Any additional notes…" {...register('notes')} />
           </div>
 
-          <SheetFooter className="pt-2">
-            <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>Cancel</Button>
-            <Button type="submit" disabled={isPending}>
-              {isPending ? 'Saving…' : isEdit ? 'Save Changes' : 'Add Equipment'}
-            </Button>
-          </SheetFooter>
         </form>
+        </div>
+
+        <div className="shrink-0 border-t bg-background px-4 py-4 flex gap-3">
+          <Button type="button" variant="outline" className="flex-1" onClick={() => onOpenChange(false)}>Cancel</Button>
+          <Button type="submit" form="equipment-form" className="flex-1" disabled={isPending}>
+            {isPending ? 'Saving…' : isEdit ? 'Save Changes' : 'Add Equipment'}
+          </Button>
+        </div>
       </SheetContent>
     </Sheet>
   );

@@ -23,6 +23,7 @@ import {
   usePostMembersMemberIdSubscriptions,
   getGetMembersMemberIdSubscriptionsQueryKey,
   getGetMembersMemberIdQueryKey,
+  getGetMembersQueryKey,
 } from '@/api/generated/members/members';
 import { getGetInvoicesQueryKey } from '@/api/generated/invoices/invoices';
 import { useGetMembershipPlans } from '@/api/generated/membership-plans/membership-plans';
@@ -114,6 +115,10 @@ export default function SubscriptionForm({
         void queryClient.invalidateQueries({
           queryKey: getGetMembersMemberIdQueryKey(memberId),
         });
+        // Invalidate the members list so plan/next-due columns update immediately
+        void queryClient.invalidateQueries({
+          queryKey: getGetMembersQueryKey(),
+        });
         // Invalidate invoices so BillingTab immediately shows the auto-created invoice
         void queryClient.invalidateQueries({
           queryKey: getGetInvoicesQueryKey({ memberId }),
@@ -133,6 +138,9 @@ export default function SubscriptionForm({
     },
   });
 
+  // ── Today helper ──────────────────────────────────────────────────────────
+  const today = new Date().toISOString().slice(0, 10);
+
   // ── Plan form ─────────────────────────────────────────────────────────────
   const planForm = useForm<PlanFormValues>({
     resolver: zodResolver(planSchema),
@@ -140,7 +148,7 @@ export default function SubscriptionForm({
       pricingType:       'plan',
       planId:            '',
       discountAmount:    0,
-      startDate:         '',
+      startDate:         today,
       notes:             '',
       autoCreateInvoice: true,
     },
@@ -157,7 +165,7 @@ export default function SubscriptionForm({
       currency:               CURRENCY,
       discountAmount:         0,
       durationDays:           '',
-      startDate:              '',
+      startDate:              today,
       notes:                  '',
       autoCreateInvoice:      true,
     },
@@ -166,20 +174,31 @@ export default function SubscriptionForm({
   // ── Reset on open ─────────────────────────────────────────────────────────
   useEffect(() => {
     if (open) {
+      const resetDate = new Date().toISOString().slice(0, 10);
       planForm.reset({
         pricingType: 'plan', planId: '', discountAmount: 0,
-        startDate: '', notes: '', autoCreateInvoice: true,
+        startDate: resetDate, notes: '', autoCreateInvoice: true,
       });
       customForm.reset({
         pricingType: 'custom', customLabel: '', customPrice: 0,
         customBillingFrequency: 'monthly', currency: CURRENCY,
-        discountAmount: 0, durationDays: '', startDate: '',
+        discountAmount: 0, durationDays: '', startDate: resetDate,
         notes: '', autoCreateInvoice: true,
       });
       setSelectedPlan(null);
       setMode('plan');
     }
   }, [open]);
+
+  // ── Auto-select first plan once plans load ────────────────────────────────
+  useEffect(() => {
+    if (open && plans.length > 0 && !planForm.getValues('planId')) {
+      const first = plans[0];
+      planForm.setValue('planId', first._id ?? '', { shouldValidate: true });
+      setSelectedPlan(first);
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [plans, open]);
 
   // ── Price preview ─────────────────────────────────────────────────────────
   const planDiscount    = planForm.watch('discountAmount')  ?? 0;
@@ -232,17 +251,17 @@ export default function SubscriptionForm({
   // ── Render ────────────────────────────────────────────────────────────────
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
-      <SheetContent side="right" className="w-full sm:max-w-lg overflow-y-auto p-0">
+      <SheetContent side="right" className="w-full sm:max-w-lg p-0 flex flex-col h-full">
 
         {/* Header */}
-        <div className="sticky top-0 bg-background border-b px-6 py-4 z-10">
+        <div className="shrink-0 bg-background border-b px-6 py-4">
           <h2 className="text-lg font-semibold">Assign Membership</h2>
           <p className="text-sm text-muted-foreground">
             Assign a plan or set custom pricing for this member.
           </p>
         </div>
 
-        <div className="px-6 py-5 space-y-6">
+        <div className="flex-1 overflow-y-auto px-6 py-5 space-y-6">
 
           {/* ── Mode toggle ──────────────────────────────────────────────── */}
           <div className="grid grid-cols-2 gap-2">
@@ -276,7 +295,7 @@ export default function SubscriptionForm({
 
           {/* ── Plan mode ────────────────────────────────────────────────── */}
           {mode === 'plan' && (
-            <form onSubmit={planForm.handleSubmit(handlePlanSubmit)} className="space-y-4">
+            <form id="sub-plan-form" onSubmit={planForm.handleSubmit(handlePlanSubmit)} className="space-y-4">
 
               {/* Plan selector */}
               <div className="space-y-1.5">
@@ -402,17 +421,12 @@ export default function SubscriptionForm({
                 disabled={isPending}
               />
 
-              <FormFooter
-                onCancel={() => onOpenChange(false)}
-                isPending={isPending}
-                disabled={!selectedPlan}
-              />
             </form>
           )}
 
           {/* ── Custom mode ──────────────────────────────────────────────── */}
           {mode === 'custom' && (
-            <form onSubmit={customForm.handleSubmit(handleCustomSubmit)} className="space-y-4">
+            <form id="sub-custom-form" onSubmit={customForm.handleSubmit(handleCustomSubmit)} className="space-y-4">
 
               {/* Label */}
               <div className="space-y-1.5">
@@ -549,12 +563,27 @@ export default function SubscriptionForm({
                 disabled={isPending}
               />
 
-              <FormFooter
-                onCancel={() => onOpenChange(false)}
-                isPending={isPending}
-              />
             </form>
           )}
+        </div>
+
+        {/* Sticky footer — targets whichever form is active */}
+        <div className="shrink-0 border-t bg-background px-6 py-4 flex gap-3">
+          <Button
+            type="button" variant="outline" className="flex-1"
+            onClick={() => onOpenChange(false)} disabled={isPending}
+          >
+            Cancel
+          </Button>
+          <Button
+            type="submit"
+            form={mode === 'plan' ? 'sub-plan-form' : 'sub-custom-form'}
+            className="flex-1"
+            disabled={isPending || (mode === 'plan' && !selectedPlan)}
+          >
+            {isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+            {isPending ? 'Assigning…' : 'Assign & Invoice'}
+          </Button>
         </div>
       </SheetContent>
     </Sheet>
@@ -581,7 +610,7 @@ function CommonFields({
           disabled={isPending}
           {...(register as (name: string) => object)('startDate')}
         />
-        <p className="text-xs text-muted-foreground">Leave blank to start today.</p>
+        <p className="text-xs text-muted-foreground">Defaults to today. Change if the membership starts on a different date.</p>
       </div>
 
       <div className="space-y-1.5">

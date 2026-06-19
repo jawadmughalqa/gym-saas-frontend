@@ -1,7 +1,7 @@
 import { defineConfig } from 'orval';
 
 /**
- * Orval configuration for GymPro frontend API client generation.
+ * Orval configuration for Gymanger frontend API client generation.
  *
  * Usage:
  *   npm run api:gen          — regenerate from running backend (localhost:9000)

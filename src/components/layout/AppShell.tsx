@@ -52,7 +52,7 @@ function DesktopSidebar({ collapsed, onToggle }: { collapsed: boolean; onToggle:
         </div>
         {!collapsed && (
           <span className="font-semibold text-[15px] tracking-tight text-sidebar-foreground flex-1">
-            GymPro
+            Gymanger
           </span>
         )}
         {!collapsed && (
@@ -101,7 +101,7 @@ function MobileSidebar({ open, onClose }: { open: boolean; onClose: () => void }
             <span className="text-xs font-bold text-primary-foreground">G</span>
           </div>
           <span className="font-semibold text-[15px] tracking-tight text-sidebar-foreground">
-            GymPro
+            Gymanger
           </span>
         </div>
         <ScrollArea className="flex-1 h-[calc(100%-3.5rem)]">

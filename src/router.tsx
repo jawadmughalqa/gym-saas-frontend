@@ -38,6 +38,7 @@ const MembershipPlansPage   = lazy(() => import("@/features/membership-plans/Mem
 const ExpensesPage          = lazy(() => import("@/features/expenses/ExpensesPage"));
 const ExpenseAnalyticsPage  = lazy(() => import("@/features/expenses/ExpenseAnalyticsPage"));
 const StaffPage             = lazy(() => import("@/features/staff/StaffPage"));
+const StaffDetailPage       = lazy(() => import("@/features/staff/StaffDetailPage"));
 const WalkInLeadsPage       = lazy(() => import("@/features/walk-in-leads/WalkInLeadsPage"));
 const RefundsPage           = lazy(() => import("@/features/refunds/RefundsPage"));
 const MemberHomePage          = lazy(() => import("@/features/member-portal/MemberHomePage"));
@@ -196,8 +197,15 @@ const router = createBrowserRouter([
           // ── Staff ────────────────────────────────────────────────────
           {
             path: "staff",
-            element: <Lazy><StaffPage /></Lazy>,
             handle: { crumb: "Staff" },
+            children: [
+              { index: true, element: <Lazy><StaffPage /></Lazy> },
+              {
+                path: ":staffId",
+                element: <Lazy><StaffDetailPage /></Lazy>,
+                handle: { crumb: "Staff Detail" },
+              },
+            ],
           },
 
           // ── Trainers ─────────────────────────────────────────────────

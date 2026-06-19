@@ -1,9 +1,12 @@
+import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useForm } from 'react-hook-form';
 import {
   KeyRound, Mail, Shield, User, Building2,
   CreditCard, Sparkles, ArrowRight, Check,
   Users, UserCheck, CreditCard as CreditCardIcon, ScanLine, BarChart3,
   Receipt, GitBranch, Wrench, Bell, Tag, Dumbbell, Smartphone, UserPlus,
+  Pencil, Star, MapPin, Clock, Award, Briefcase, TrendingUp, ChevronDown, ChevronUp,
 } from 'lucide-react';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
@@ -11,10 +14,20 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import { Skeleton } from '@/components/ui/skeleton';
+import {
+  Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter,
+} from '@/components/ui/dialog';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 import { useAuthStore } from '@/stores/auth.store';
 import { useGetMyTenant } from '@/api/generated/tenants/tenants';
-import { formatCurrency } from '@/utils/format';
 import { cn } from '@/lib/utils';
+import { api } from '@/lib/axios';
+import { toast } from '@/hooks/use-toast';
+import {
+  useMyTrainerProfile,
+  useMyTrainerRatings,
+} from '@/features/trainer-portal/hooks/use-trainer-portal';
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -28,13 +41,35 @@ function roleBadgeVariant(role: string): 'default' | 'secondary' | 'outline' {
   return 'outline';
 }
 
+function StarRow({ value, size = 4 }: { value: number; size?: number }) {
+  return (
+    <span className="flex items-center gap-0.5">
+      {[1, 2, 3, 4, 5].map((i) => (
+        <Star
+          key={i}
+          className={cn(`h-${size} w-${size}`, i <= value ? 'fill-amber-400 text-amber-400' : 'text-muted-foreground/30')}
+        />
+      ))}
+    </span>
+  );
+}
+
+function daysSince(from: string, to?: string): number {
+  const a = new Date(from).getTime();
+  const b = to ? new Date(to).getTime() : Date.now();
+  return Math.max(0, Math.floor((b - a) / 86_400_000));
+}
+
+function fmtDate(iso: string) {
+  return new Date(iso).toLocaleDateString(undefined, { day: 'numeric', month: 'short', year: 'numeric' });
+}
+
 const PLAN_TIER_STYLES: Record<string, { badge: string; accent: string; border: string }> = {
   starter:    { badge: 'bg-slate-100 text-slate-700',   accent: 'text-slate-700',  border: 'border-slate-200'  },
   pro:        { badge: 'bg-purple-100 text-purple-700', accent: 'text-purple-700', border: 'border-purple-200' },
   enterprise: { badge: 'bg-amber-100 text-amber-700',   accent: 'text-amber-700',  border: 'border-amber-200'  },
 };
 
-// Maps featureFlag keys to icons & labels for display
 const FLAG_DISPLAY: Record<string, { label: string; icon: React.ElementType }> = {
   members:       { label: 'Members',          icon: Users           },
   trainers:      { label: 'Trainers',          icon: UserCheck       },
@@ -63,8 +98,6 @@ function SubscriptionCard() {
   const tenantAny  = tenant as (typeof tenant) & { billingCycle?: string; billingCycleDay?: number };
   const billing    = tenantAny?.billingCycle ?? 'monthly';
   const flags      = (tenant?.featureFlags ?? {}) as Record<string, boolean>;
-  const currency   = tenant?.settings?.currency ?? 'PKR';
-  // We don't have price here (it's on the Plan doc), so just show plan name + features
 
   const enabledFeatures = Object.entries(FLAG_DISPLAY).filter(([key]) => flags[key]);
 
@@ -106,7 +139,6 @@ function SubscriptionCard() {
       </CardHeader>
 
       <CardContent className="space-y-4">
-        {/* Plan name + billing cycle */}
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
             <span className={cn('text-xs font-semibold px-2.5 py-1 rounded-full capitalize', styles.badge)}>
@@ -131,7 +163,6 @@ function SubscriptionCard() {
 
         <Separator />
 
-        {/* Enabled features */}
         <div>
           <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-2">
             Active Features
@@ -147,7 +178,6 @@ function SubscriptionCard() {
           </div>
         </div>
 
-        {/* Quotas row */}
         {tenant.quotas && (
           <>
             <Separator />
@@ -172,7 +202,6 @@ function SubscriptionCard() {
           </>
         )}
 
-        {/* Upgrade CTA — not on enterprise */}
         {planName !== 'enterprise' && (
           <Button
             variant="outline"
@@ -189,11 +218,442 @@ function SubscriptionCard() {
   );
 }
 
+// ─── Trainer Professional Info Card ───────────────────────────────────────────
+
+function TrainerProfessionalCard() {
+  const { data: profile, isLoading } = useMyTrainerProfile();
+  const { data: tenant } = useGetMyTenant({ query: { staleTime: 1000 * 60 * 5 } });
+
+  const gymName  = (tenant?.data as any)?.name ?? null;
+  const currency = profile?.currency ?? 'PKR';
+
+  if (isLoading) {
+    return (
+      <Card>
+        <CardHeader className="pb-3">
+          <Skeleton className="h-5 w-40" />
+        </CardHeader>
+        <CardContent className="space-y-3">
+          {[1, 2, 3, 4].map((i) => <Skeleton key={i} className="h-4 w-full" />)}
+        </CardContent>
+      </Card>
+    );
+  }
+
+  if (!profile) return null;
+
+  const branches    = (profile.branchIds ?? []) as { _id: string; name: string }[];
+  const specs       = profile.specializations ?? [];
+  const certs       = profile.certifications ?? [];
+  const current     = profile.currentClientCount ?? 0;
+  const max         = profile.maxClients ?? 10;
+  const capPct      = Math.round((current / max) * 100);
+  const capColor    = capPct >= 90 ? 'text-destructive' : capPct >= 70 ? 'text-amber-600' : 'text-emerald-600';
+
+  return (
+    <Card>
+      <CardHeader className="pb-3">
+        <div className="flex items-center gap-2">
+          <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary/10">
+            <Briefcase className="h-4 w-4 text-primary" />
+          </div>
+          <CardTitle className="text-base">Trainer Details</CardTitle>
+        </div>
+      </CardHeader>
+
+      <CardContent className="space-y-4">
+
+        {/* Gym */}
+        {gymName && (
+          <div className="flex items-start gap-3">
+            <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-muted flex-shrink-0">
+              <Building2 className="h-4 w-4 text-muted-foreground" />
+            </div>
+            <div>
+              <p className="text-xs text-muted-foreground">Gym</p>
+              <p className="text-sm font-semibold">{gymName}</p>
+            </div>
+          </div>
+        )}
+
+        {/* Branches */}
+        {branches.length > 0 && (
+          <div className="flex items-start gap-3">
+            <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-muted flex-shrink-0">
+              <MapPin className="h-4 w-4 text-muted-foreground" />
+            </div>
+            <div>
+              <p className="text-xs text-muted-foreground mb-1">Assigned Branches</p>
+              <div className="flex flex-wrap gap-1">
+                {branches.map((b) => (
+                  <Badge key={b._id} variant="outline" className="text-xs capitalize">{b.name}</Badge>
+                ))}
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Experience */}
+        {(profile.experienceYears ?? 0) > 0 && (
+          <div className="flex items-start gap-3">
+            <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-muted flex-shrink-0">
+              <Clock className="h-4 w-4 text-muted-foreground" />
+            </div>
+            <div>
+              <p className="text-xs text-muted-foreground">Experience</p>
+              <p className="text-sm font-medium">
+                {profile.experienceYears} {profile.experienceYears === 1 ? 'year' : 'years'}
+              </p>
+            </div>
+          </div>
+        )}
+
+        {/* Monthly Rate */}
+        {(profile.hourlyRate ?? 0) > 0 && (
+          <div className="flex items-start gap-3">
+            <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-muted flex-shrink-0">
+              <CreditCard className="h-4 w-4 text-muted-foreground" />
+            </div>
+            <div>
+              <p className="text-xs text-muted-foreground">Monthly Rate</p>
+              <p className="text-sm font-medium">
+                {currency} {profile.hourlyRate?.toLocaleString()}/month
+              </p>
+            </div>
+          </div>
+        )}
+
+        {/* Client Capacity */}
+        <div className="flex items-start gap-3">
+          <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-muted flex-shrink-0">
+            <Users className="h-4 w-4 text-muted-foreground" />
+          </div>
+          <div className="flex-1 min-w-0">
+            <div className="flex items-center justify-between mb-1">
+              <p className="text-xs text-muted-foreground">Client Capacity</p>
+              <span className={cn('text-xs font-semibold', capColor)}>
+                {current} / {max} clients
+              </span>
+            </div>
+            <div className="h-1.5 w-full rounded-full bg-muted overflow-hidden">
+              <div
+                className={cn('h-full rounded-full transition-all', capPct >= 90 ? 'bg-destructive' : capPct >= 70 ? 'bg-amber-500' : 'bg-emerald-500')}
+                style={{ width: `${capPct}%` }}
+              />
+            </div>
+            <p className="text-xs text-muted-foreground mt-1">
+              {max - current} slot{max - current !== 1 ? 's' : ''} remaining
+            </p>
+          </div>
+        </div>
+
+        {/* Status */}
+        {profile.status && (
+          <div className="flex items-center gap-2 flex-wrap">
+            <Badge
+              variant="outline"
+              className={cn(
+                'text-xs capitalize',
+                profile.status === 'active'      && 'border-green-200 text-green-700',
+                profile.status === 'inactive'    && 'border-slate-200 text-slate-500',
+                profile.status === 'unavailable' && 'border-amber-200 text-amber-700',
+              )}
+            >
+              {profile.status}
+            </Badge>
+          </div>
+        )}
+
+        {/* Specializations */}
+        {specs.length > 0 && (
+          <>
+            <Separator />
+            <div>
+              <div className="flex items-center gap-2 mb-2">
+                <TrendingUp className="h-3.5 w-3.5 text-muted-foreground" />
+                <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Specializations</p>
+              </div>
+              <div className="flex flex-wrap gap-1.5">
+                {specs.map((s) => (
+                  <Badge key={s} variant="secondary" className="text-xs capitalize">{s}</Badge>
+                ))}
+              </div>
+            </div>
+          </>
+        )}
+
+        {/* Certifications */}
+        {certs.length > 0 && (
+          <>
+            {specs.length === 0 && <Separator />}
+            <div>
+              <div className="flex items-center gap-2 mb-2">
+                <Award className="h-3.5 w-3.5 text-muted-foreground" />
+                <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Certifications</p>
+              </div>
+              <div className="flex flex-wrap gap-1.5">
+                {certs.map((c) => (
+                  <Badge key={c} variant="outline" className="text-xs">
+                    <Check className="h-3 w-3 mr-1 text-emerald-500" />
+                    {c}
+                  </Badge>
+                ))}
+              </div>
+            </div>
+          </>
+        )}
+
+        {/* Bio */}
+        {profile.bio && (
+          <>
+            <Separator />
+            <div>
+              <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-1.5">Bio</p>
+              <p className="text-sm text-muted-foreground leading-relaxed">{profile.bio}</p>
+            </div>
+          </>
+        )}
+      </CardContent>
+    </Card>
+  );
+}
+
+// ─── Trainer Ratings Card ─────────────────────────────────────────────────────
+
+function TrainerRatingsCard() {
+  const { data: profile } = useMyTrainerProfile();
+  const trainerId = profile?._id;
+
+  const [expanded, setExpanded] = useState(false);
+  const { data: ratings = [], isLoading } = useMyTrainerRatings(trainerId);
+
+  const avg   = profile?.ratingAvg   ?? 0;
+  const count = profile?.ratingCount ?? 0;
+
+  const visible = expanded ? ratings : ratings.slice(0, 3);
+
+  return (
+    <Card>
+      <CardHeader className="pb-3">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-amber-50">
+              <Star className="h-4 w-4 text-amber-500" />
+            </div>
+            <CardTitle className="text-base">My Ratings</CardTitle>
+          </div>
+          {count > 0 && (
+            <div className="flex items-center gap-2">
+              <StarRow value={Math.round(avg)} size={4} />
+              <span className="text-sm font-semibold">{avg.toFixed(1)}</span>
+              <span className="text-xs text-muted-foreground">({count})</span>
+            </div>
+          )}
+        </div>
+      </CardHeader>
+
+      <CardContent>
+        {isLoading ? (
+          <div className="space-y-3">
+            {[1, 2].map((i) => <Skeleton key={i} className="h-16 w-full" />)}
+          </div>
+        ) : count === 0 ? (
+          <p className="text-sm text-muted-foreground text-center py-4">
+            No ratings yet — members can rate you after they've trained with you.
+          </p>
+        ) : (
+          <div className="space-y-3">
+            {/* Summary bar */}
+            <div className="rounded-lg bg-muted/40 p-3 flex items-center gap-4">
+              <div className="text-center">
+                <p className="text-2xl font-bold">{avg.toFixed(1)}</p>
+                <StarRow value={Math.round(avg)} size={3} />
+                <p className="text-xs text-muted-foreground mt-0.5">{count} rating{count !== 1 ? 's' : ''}</p>
+              </div>
+              <div className="flex-1 space-y-1">
+                {[5, 4, 3, 2, 1].map((star) => {
+                  const starCount = ratings.filter((r) => r.rating === star).length;
+                  const pct = count > 0 ? (starCount / count) * 100 : 0;
+                  return (
+                    <div key={star} className="flex items-center gap-2">
+                      <span className="text-xs w-4 text-right text-muted-foreground">{star}</span>
+                      <Star className="h-3 w-3 text-amber-400 fill-amber-400 flex-shrink-0" />
+                      <div className="h-1.5 flex-1 rounded-full bg-muted overflow-hidden">
+                        <div className="h-full rounded-full bg-amber-400 transition-all" style={{ width: `${pct}%` }} />
+                      </div>
+                      <span className="text-xs text-muted-foreground w-4">{starCount}</span>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+
+            <Separator />
+
+            {/* Individual ratings */}
+            <div className="space-y-3">
+              {visible.map((r) => {
+                const memberName = r.memberId
+                  ? `${r.memberId.firstName} ${r.memberId.lastName}`.trim()
+                  : 'Member';
+                const initials = memberName.split(' ').map((n) => n[0]).join('').toUpperCase().slice(0, 2);
+                const enrolled = r.assignmentId?.startDate
+                  ? daysSince(r.assignmentId.startDate, r.updatedAt)
+                  : null;
+
+                return (
+                  <div key={r._id} className="flex gap-3">
+                    <Avatar className="h-8 w-8 flex-shrink-0">
+                      <AvatarFallback className="text-xs font-semibold">{initials}</AvatarFallback>
+                    </Avatar>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center justify-between gap-2 mb-0.5">
+                        <span className="text-sm font-medium truncate">{memberName}</span>
+                        <div className="flex items-center gap-1 flex-shrink-0">
+                          <StarRow value={r.rating} size={3} />
+                          <span className="text-xs font-semibold">{r.rating}.0</span>
+                        </div>
+                      </div>
+                      {r.review && (
+                        <p className="text-xs text-muted-foreground leading-relaxed mb-1">{r.review}</p>
+                      )}
+                      <div className="flex items-center gap-3 text-xs text-muted-foreground">
+                        <span>{fmtDate(r.updatedAt)}</span>
+                        {enrolled !== null && (
+                          <span>· {enrolled} day{enrolled !== 1 ? 's' : ''} after enrollment</span>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+
+            {/* Show more / less */}
+            {ratings.length > 3 && (
+              <Button
+                variant="ghost"
+                size="sm"
+                className="w-full gap-1 text-xs mt-1"
+                onClick={() => setExpanded((v) => !v)}
+              >
+                {expanded ? (
+                  <><ChevronUp className="h-3.5 w-3.5" /> Show less</>
+                ) : (
+                  <><ChevronDown className="h-3.5 w-3.5" /> Show {ratings.length - 3} more</>
+                )}
+              </Button>
+            )}
+          </div>
+        )}
+      </CardContent>
+    </Card>
+  );
+}
+
+// ─── Edit Profile Dialog ──────────────────────────────────────────────────────
+
+interface EditProfileForm {
+  firstName: string;
+  lastName: string;
+}
+
+function EditProfileDialog({
+  open,
+  onOpenChange,
+  currentName,
+}: {
+  open: boolean;
+  onOpenChange: (v: boolean) => void;
+  currentName: string;
+}) {
+  const { user, accessToken, setAuth } = useAuthStore();
+  const [saving, setSaving] = useState(false);
+
+  const nameParts = currentName.trim().split(/\s+/);
+  const defaultFirst = nameParts.length > 1 ? nameParts.slice(0, -1).join(' ') : nameParts[0] ?? '';
+  const defaultLast  = nameParts.length > 1 ? nameParts[nameParts.length - 1] : '';
+
+  const { register, handleSubmit, reset, formState: { errors } } = useForm<EditProfileForm>({
+    defaultValues: { firstName: defaultFirst, lastName: defaultLast },
+  });
+
+  function onClose() {
+    reset();
+    onOpenChange(false);
+  }
+
+  async function onSubmit(data: EditProfileForm) {
+    setSaving(true);
+    try {
+      const res = await api.patch('/auth/me', data);
+      const updated = res.data?.data;
+      if (user && accessToken) {
+        const newName = `${updated?.firstName ?? data.firstName} ${updated?.lastName ?? data.lastName}`.trim();
+        setAuth({ ...user, name: newName }, accessToken);
+      }
+      toast({ title: 'Profile updated' });
+      onClose();
+    } catch (err: any) {
+      toast({
+        variant: 'destructive',
+        title: 'Update failed',
+        description: err?.response?.data?.message || 'Something went wrong.',
+      });
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  return (
+    <Dialog open={open} onOpenChange={onClose}>
+      <DialogContent className="sm:max-w-sm">
+        <DialogHeader>
+          <DialogTitle>Edit Profile</DialogTitle>
+        </DialogHeader>
+        <form onSubmit={handleSubmit(onSubmit)} className="space-y-4 py-2">
+          <div className="space-y-1.5">
+            <Label htmlFor="ep-firstName">First name</Label>
+            <Input
+              id="ep-firstName"
+              {...register('firstName', { required: 'First name is required' })}
+              placeholder="First name"
+            />
+            {errors.firstName && (
+              <p className="text-xs text-destructive">{errors.firstName.message}</p>
+            )}
+          </div>
+          <div className="space-y-1.5">
+            <Label htmlFor="ep-lastName">Last name</Label>
+            <Input
+              id="ep-lastName"
+              {...register('lastName', { required: 'Last name is required' })}
+              placeholder="Last name"
+            />
+            {errors.lastName && (
+              <p className="text-xs text-destructive">{errors.lastName.message}</p>
+            )}
+          </div>
+          <DialogFooter className="pt-2">
+            <Button type="button" variant="outline" onClick={onClose} disabled={saving}>
+              Cancel
+            </Button>
+            <Button type="submit" disabled={saving}>
+              {saving ? 'Saving…' : 'Save Changes'}
+            </Button>
+          </DialogFooter>
+        </form>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
 // ─── ProfilePage ──────────────────────────────────────────────────────────────
 
 export default function ProfilePage() {
   const user     = useAuthStore((s) => s.user);
   const navigate = useNavigate();
+  const [editOpen, setEditOpen] = useState(false);
 
   if (!user) return null;
 
@@ -202,6 +662,7 @@ export default function ProfilePage() {
     : '??';
 
   const isGymOwner = user.role === 'gym_owner';
+  const isTrainer  = user.role === 'trainer';
 
   return (
     <div className="w-full max-w-2xl space-y-6">
@@ -220,8 +681,19 @@ export default function ProfilePage() {
             <Avatar className="h-14 w-14 sm:h-16 sm:w-16 flex-shrink-0">
               <AvatarFallback className="text-lg sm:text-xl font-bold">{initials}</AvatarFallback>
             </Avatar>
-            <div className="space-y-1 min-w-0">
-              <CardTitle className="text-lg sm:text-xl truncate">{user.name}</CardTitle>
+            <div className="flex-1 space-y-1 min-w-0">
+              <div className="flex items-center gap-2 min-w-0">
+                <CardTitle className="text-lg sm:text-xl truncate">{user.name}</CardTitle>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="h-7 w-7 shrink-0 text-muted-foreground hover:text-foreground"
+                  onClick={() => setEditOpen(true)}
+                  title="Edit name"
+                >
+                  <Pencil className="h-3.5 w-3.5" />
+                </Button>
+              </div>
               <Badge variant={roleBadgeVariant(user.role)} className="capitalize">
                 {roleLabel(user.role)}
               </Badge>
@@ -254,8 +726,8 @@ export default function ProfilePage() {
             </div>
           </div>
 
-          {/* Tenant (if not super admin) */}
-          {user.tenantId && (
+          {/* Tenant — show workspace ID only for non-trainers (trainers see gym name in professional card) */}
+          {user.tenantId && !isTrainer && (
             <div className="flex items-center gap-3 min-w-0">
               <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-muted flex-shrink-0">
                 <Building2 className="h-4 w-4 text-muted-foreground" />
@@ -282,6 +754,14 @@ export default function ProfilePage() {
         </CardContent>
       </Card>
 
+      {/* Trainer-specific cards */}
+      {isTrainer && (
+        <>
+          <TrainerProfessionalCard />
+          <TrainerRatingsCard />
+        </>
+      )}
+
       {/* Subscription — gym owner only */}
       {isGymOwner && <SubscriptionCard />}
 
@@ -291,6 +771,14 @@ export default function ProfilePage() {
           <CardTitle className="text-base">Account settings</CardTitle>
         </CardHeader>
         <CardContent className="flex flex-wrap gap-2">
+          <Button
+            variant="outline"
+            className="gap-2"
+            onClick={() => setEditOpen(true)}
+          >
+            <Pencil className="h-4 w-4" />
+            Edit Profile
+          </Button>
           <Button
             variant="outline"
             className="gap-2"
@@ -311,6 +799,12 @@ export default function ProfilePage() {
           )}
         </CardContent>
       </Card>
+
+      <EditProfileDialog
+        open={editOpen}
+        onOpenChange={setEditOpen}
+        currentName={user.name}
+      />
     </div>
   );
 }

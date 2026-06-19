@@ -15,6 +15,7 @@ import { useQueryClient } from '@tanstack/react-query';
 import {
   usePostTrainersTrainerIdAssignmentsAssignmentIdEnd,
   getGetTrainersQueryKey,
+  getGetTrainersTrainerIdQueryKey,
 } from '@/api/generated/trainers/trainers';
 import type { TrainerAssignment } from './TrainerTab';
 
@@ -59,8 +60,10 @@ export function EndTrainerDialog({ open, onOpenChange, assignment, onSuccess }: 
           title: 'Trainer removed',
           description: `Assignment with ${trainerName(assignment)} has been ended.`,
         });
-        // Invalidate trainers list so slot counts + availability refresh immediately
+        // Invalidate trainers list + trainer profile so CLIENT CAPACITY updates immediately
         queryClient.invalidateQueries({ queryKey: getGetTrainersQueryKey() });
+        const tid = typeof assignment.trainerId === 'string' ? assignment.trainerId : assignment.trainerId._id;
+        queryClient.invalidateQueries({ queryKey: getGetTrainersTrainerIdQueryKey(tid) });
         reset();
         onOpenChange(false);
         onSuccess();

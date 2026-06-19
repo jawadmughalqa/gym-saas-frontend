@@ -1,4 +1,4 @@
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { api } from '@/lib/axios';
 import type { Member, Subscription, CheckIn } from '@/types/member.types';
 import type { Invoice } from '@/types/billing.types';
@@ -118,6 +118,68 @@ export function useMyTrainer() {
     queryFn: async () => {
       const res = await api.get<MyTrainerResponse>('/members/me/trainer');
       return res.data.data;
+    },
+  });
+}
+
+// ─── Session Notes ────────────────────────────────────────────────────────────
+
+export interface SessionNote {
+  _id: string;
+  sessionDate: string;
+  content: string;
+  durationMinutes?: number;
+  tags?: string[];
+  createdAt: string;
+}
+
+interface MySessionNotesResponse {
+  success: boolean;
+  data: { notes: SessionNote[]; total: number; page: number; limit: number };
+}
+
+export function useMySessionNotes() {
+  return useQuery({
+    queryKey: ['member-portal', 'session-notes'],
+    queryFn: async () => {
+      const res = await api.get<MySessionNotesResponse>('/members/me/session-notes');
+      return res.data.data;
+    },
+  });
+}
+
+// ─── Trainer Rating ───────────────────────────────────────────────────────────
+
+export interface MyTrainerRating {
+  trainerId: string | null;
+  rating: number | null;
+  review?: string;
+  canRateThisMonth: boolean;
+  nextRatingDate: string | null;
+}
+
+interface MyTrainerRatingResponse {
+  success: boolean;
+  data: MyTrainerRating;
+}
+
+export function useMyTrainerRating() {
+  return useQuery({
+    queryKey: ['member-portal', 'trainer-rating'],
+    queryFn: async () => {
+      const res = await api.get<MyTrainerRatingResponse>('/members/me/trainer/rating');
+      return res.data.data;
+    },
+  });
+}
+
+export function useRateMyTrainer() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (dto: { rating: number; review?: string }) =>
+      api.post('/members/me/trainer/rate', dto),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['member-portal', 'trainer-rating'] });
     },
   });
 }

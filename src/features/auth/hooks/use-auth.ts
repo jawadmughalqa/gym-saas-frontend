@@ -18,7 +18,7 @@ export function getDefaultRouteForRole(role: UserRole): string {
     case 'super_admin':    return '/super-admin';
     case 'gym_owner':      return '/dashboard';
     case 'branch_manager': return '/dashboard';
-    case 'trainer':        return '/dashboard';
+    case 'trainer':        return '/trainer/dashboard';
     case 'staff':          return '/dashboard';
     case 'member':         return '/member/home';
     default:               return '/dashboard';

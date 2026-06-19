@@ -1,16 +1,92 @@
-import { Mail, Phone, User } from 'lucide-react';
+import { useState } from 'react';
+import { Mail, Phone, User, FileText, Star } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
+import { Textarea } from '@/components/ui/textarea';
 import PageShell from '@/components/layout/PageShell';
 import PageHeader from '@/components/layout/PageHeader';
-import { useMyTrainer } from './hooks/use-member-portal';
+import { toast } from '@/hooks/use-toast';
+import {
+  useMyTrainer,
+  useMySessionNotes,
+  useMyTrainerRating,
+  useRateMyTrainer,
+} from './hooks/use-member-portal';
 import { formatDate, formatCurrency } from '@/utils/format';
+
+// ─── Star picker ──────────────────────────────────────────────────────────────
+
+function StarPicker({
+  value,
+  onChange,
+  readOnly = false,
+}: {
+  value: number;
+  onChange?: (v: number) => void;
+  readOnly?: boolean;
+}) {
+  const [hovered, setHovered] = useState(0);
+  return (
+    <div className="flex gap-1">
+      {[1, 2, 3, 4, 5].map((n) => (
+        <button
+          key={n}
+          type="button"
+          disabled={readOnly}
+          onClick={() => !readOnly && onChange?.(n)}
+          onMouseEnter={() => !readOnly && setHovered(n)}
+          onMouseLeave={() => !readOnly && setHovered(0)}
+          className={`transition-colors ${readOnly ? 'cursor-default' : 'cursor-pointer'}`}
+        >
+          <Star
+            className={`h-6 w-6 ${
+              n <= (hovered || value)
+                ? 'fill-amber-400 text-amber-400'
+                : 'text-muted-foreground/30'
+            }`}
+          />
+        </button>
+      ))}
+    </div>
+  );
+}
 
 // ─── Page ─────────────────────────────────────────────────────────────────────
 
 export default function MemberTrainerPage() {
   const { data: trainerData, isLoading } = useMyTrainer();
+  const { data: notesData, isLoading: notesLoading } = useMySessionNotes();
+  const { data: ratingData } = useMyTrainerRating();
+  const rateTrainer = useRateMyTrainer();
+
+  const [starValue, setStarValue] = useState(0);
+  const [review, setReview] = useState('');
+
+  function handleSubmitRating() {
+    if (starValue === 0) {
+      toast({ variant: 'destructive', title: 'Please select a star rating' });
+      return;
+    }
+    rateTrainer.mutate(
+      { rating: starValue, review: review.trim() || undefined },
+      {
+        onSuccess: () => {
+          toast({ title: 'Rating submitted!' });
+          setStarValue(0);
+          setReview('');
+        },
+        onError: (err: any) => {
+          toast({
+            variant: 'destructive',
+            title: 'Could not submit rating',
+            description: err?.response?.data?.message || 'Something went wrong.',
+          });
+        },
+      },
+    );
+  }
 
   if (isLoading) {
     return (
@@ -25,10 +101,7 @@ export default function MemberTrainerPage() {
 
   return (
     <PageShell>
-      <PageHeader
-        title="My Trainer"
-        subtitle="Your personal trainer assignment"
-      />
+      <PageHeader title="My Trainer" subtitle="Your personal trainer assignment" />
 
       {!hasTrainer ? (
         <Card>
@@ -121,6 +194,116 @@ export default function MemberTrainerPage() {
                   <span className="font-semibold">
                     {formatCurrency(trainerData.assignment!.monthlyCharge)}
                   </span>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+
+          {/* Rate your trainer */}
+          {ratingData && (
+            <Card>
+              <CardHeader className="pb-2">
+                <CardTitle className="text-base flex items-center gap-2">
+                  <Star className="h-4 w-4" />
+                  Rate Your Trainer
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-3">
+                {ratingData.canRateThisMonth ? (
+                  <>
+                    {ratingData.rating != null && (
+                      <p className="text-xs text-muted-foreground">
+                        Your current rating: {ratingData.rating}/5. You can update it this month.
+                      </p>
+                    )}
+                    <StarPicker value={starValue} onChange={setStarValue} />
+                    <Textarea
+                      placeholder="Leave an optional review…"
+                      value={review}
+                      onChange={(e) => setReview(e.target.value)}
+                      rows={3}
+                      className="resize-none text-sm"
+                    />
+                    <Button
+                      size="sm"
+                      onClick={handleSubmitRating}
+                      disabled={rateTrainer.isPending || starValue === 0}
+                    >
+                      {rateTrainer.isPending ? 'Submitting…' : ratingData.rating != null ? 'Update Rating' : 'Submit Rating'}
+                    </Button>
+                  </>
+                ) : (
+                  <div className="space-y-2">
+                    <p className="text-sm text-muted-foreground">
+                      You rated your trainer this month.
+                    </p>
+                    <StarPicker value={ratingData.rating ?? 0} readOnly />
+                    {ratingData.review && (
+                      <p className="text-sm italic text-muted-foreground">"{ratingData.review}"</p>
+                    )}
+                    {ratingData.nextRatingDate && (
+                      <p className="text-xs text-muted-foreground">
+                        Next rating available:{' '}
+                        <span className="font-medium text-foreground">
+                          {formatDate(ratingData.nextRatingDate)}
+                        </span>
+                      </p>
+                    )}
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          )}
+
+          {/* Session Notes from trainer */}
+          <Card>
+            <CardHeader className="pb-2">
+              <CardTitle className="text-base flex items-center gap-2">
+                <FileText className="h-4 w-4" />
+                Session Notes
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              {notesLoading ? (
+                <div className="space-y-3">
+                  {[1, 2].map((i) => <Skeleton key={i} className="h-16 w-full rounded-lg" />)}
+                </div>
+              ) : !notesData?.notes?.length ? (
+                <p className="text-sm text-muted-foreground italic">
+                  No session notes shared with you yet.
+                </p>
+              ) : (
+                <div className="space-y-3">
+                  {notesData.notes.map((note) => (
+                    <div
+                      key={note._id}
+                      className="rounded-lg border p-3 space-y-1.5"
+                    >
+                      <div className="flex items-center justify-between gap-2">
+                        <p className="text-xs font-medium text-muted-foreground">
+                          {formatDate(note.sessionDate)}
+                        </p>
+                        {note.durationMinutes != null && (
+                          <Badge variant="outline" className="text-xs">
+                            {note.durationMinutes} min
+                          </Badge>
+                        )}
+                      </div>
+                      <p className="text-sm leading-relaxed">{note.content}</p>
+                      {note.tags && note.tags.length > 0 && (
+                        <div className="flex flex-wrap gap-1 pt-0.5">
+                          {note.tags.map((tag) => (
+                            <span
+                              key={tag}
+                              className="inline-flex items-center rounded-full bg-secondary px-2 py-0.5 text-xs font-medium text-secondary-foreground"
+                            >
+                              {tag}
+                            </span>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  ))}
                 </div>
               )}
             </CardContent>

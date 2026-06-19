@@ -391,8 +391,8 @@ export default function TrainerForm({
         maxClients:
           trainer.maxClients !== undefined ? String(trainer.maxClients) : "",
         monthlyRate:
-          (trainer as any).monthlyRate !== undefined
-            ? String((trainer as any).monthlyRate)
+          trainer.hourlyRate !== undefined
+            ? String(trainer.hourlyRate)
             : "",
         currency: trainer.currency ?? CURRENCY,
         status: trainer.status ?? "active",

@@ -17,6 +17,7 @@ import {
   usePostTrainersTrainerIdAssignments,
   getGetTrainersQueryKey,
   getGetTrainersTrainerIdAssignmentsQueryKey,
+  getGetTrainersTrainerIdQueryKey,
 } from "@/api/generated/trainers/trainers";
 import { getGetInvoicesQueryKey } from "@/api/generated/invoices/invoices";
 import {
@@ -132,6 +133,10 @@ export default function AssignTrainerDialog({
         if (selectedTrainerId) {
           queryClient.invalidateQueries({
             queryKey: getGetTrainersTrainerIdAssignmentsQueryKey(selectedTrainerId),
+          });
+          // Refresh trainer profile so CLIENT CAPACITY count updates immediately
+          queryClient.invalidateQueries({
+            queryKey: getGetTrainersTrainerIdQueryKey(selectedTrainerId),
           });
         }
 

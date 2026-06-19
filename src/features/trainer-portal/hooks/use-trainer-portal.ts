@@ -21,11 +21,27 @@ export interface MyTrainerProfile {
   userId: TrainerUser;
   branchIds?: TrainerBranch[];
   specializations?: string[];
+  certifications?: string[];
   bio?: string;
-  monthlyRate?: number;
+  experienceYears?: number;
+  hourlyRate?: number;
   currency?: string;
   status?: string;
-  availability?: string;
+  availability?: Array<{ day: number; startTime: string; endTime: string }>;
+  maxClients?: number;
+  currentClientCount?: number;
+  ratingAvg?: number;
+  ratingCount?: number;
+}
+
+export interface TrainerRatingEntry {
+  _id: string;
+  memberId: { _id: string; firstName: string; lastName: string } | null;
+  rating: 1 | 2 | 3 | 4 | 5;
+  review?: string;
+  createdAt: string;
+  updatedAt: string;
+  assignmentId?: { startDate: string } | null;
 }
 
 interface MyProfileResponse {
@@ -61,6 +77,20 @@ interface AssignmentsResponse {
 }
 
 // ─── Hooks ────────────────────────────────────────────────────────────────────
+
+/** Fetch ratings for a specific trainer (used by trainer to see their own ratings) */
+export function useMyTrainerRatings(trainerId: string | undefined) {
+  return useQuery({
+    queryKey: ['trainer-portal', 'ratings', trainerId],
+    queryFn: async () => {
+      const res = await api.get<{ success: boolean; data: TrainerRatingEntry[] }>(
+        `/trainers/${trainerId}/ratings`,
+      );
+      return res.data.data ?? [];
+    },
+    enabled: !!trainerId,
+  });
+}
 
 /** Fetch the logged-in trainer's own profile */
 export function useMyTrainerProfile() {

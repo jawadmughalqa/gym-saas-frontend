@@ -26,6 +26,8 @@ import {
   usePostTrainersTrainerIdAssignments,
   useGetTrainersTrainerId,
   getGetTrainersTrainerIdAssignmentsQueryKey,
+  getGetTrainersTrainerIdQueryKey,
+  getGetTrainersQueryKey,
 } from "@/api/generated/trainers/trainers";
 import { toast } from "@/hooks/use-toast";
 import { useGetMembers } from "@/api/generated/members/members";
@@ -77,9 +79,10 @@ export default function AssignMemberDialog({ trainerId, open, onOpenChange }: Pr
   const assign = usePostTrainersTrainerIdAssignments({
     mutation: {
       onSuccess: () => {
-        qc.invalidateQueries({
-          queryKey: getGetTrainersTrainerIdAssignmentsQueryKey(trainerId),
-        });
+        qc.invalidateQueries({ queryKey: getGetTrainersTrainerIdAssignmentsQueryKey(trainerId) });
+        // Refresh trainer profile (updates currentClientCount) and the trainers list
+        qc.invalidateQueries({ queryKey: getGetTrainersTrainerIdQueryKey(trainerId) });
+        qc.invalidateQueries({ queryKey: getGetTrainersQueryKey() });
         toast({ title: "Member assigned successfully" });
         reset();
         setSelectedSlots([]);

@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { useMutation } from '@tanstack/react-query';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
 import {
   Dialog,
   DialogContent,
@@ -54,6 +54,7 @@ export default function TrainerNoteDialog({
   onSuccess,
 }: TrainerNoteDialogProps) {
   const { toast } = useToast();
+  const qc = useQueryClient();
 
   const [content, setContent]       = useState('');
   const [visibility, setVisibility] = useState<CreateNoteDto['visibility']>('staff_visible');
@@ -70,6 +71,8 @@ export default function TrainerNoteDialog({
     },
     onSuccess: () => {
       toast({ title: 'Note saved', description: `Training note added for ${memberName}.` });
+      // Invalidate the trainer notes list so /trainer/notes picks up the new note immediately
+      qc.invalidateQueries({ queryKey: ['trainer-portal', 'notes'] });
       // Reset form
       setContent('');
       setVisibility('staff_visible');

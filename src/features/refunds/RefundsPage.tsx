@@ -249,7 +249,7 @@ function WalletPayoutsTab() {
       return res.data;
     },
     placeholderData: (prev: unknown) => prev,
-    staleTime: 30_000,
+    staleTime: 0,
   });
 
   const payouts: PayoutRow[] = (data as any)?.data ?? [];

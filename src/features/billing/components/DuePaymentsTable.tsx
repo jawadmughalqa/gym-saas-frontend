@@ -4,11 +4,17 @@ import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import {
-  Search, CreditCard, Eye,
+  DropdownMenu, DropdownMenuContent, DropdownMenuItem,
+  DropdownMenuSeparator, DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
+import {
+  Search, CreditCard, Eye, MoreHorizontal,
   CheckCircle2, ChevronUp, ChevronDown, ChevronsUpDown, Phone,
+  MessageCircle, Printer, Download,
 } from 'lucide-react';
 import { formatCurrency, formatDate } from '@/utils/format';
 import { cn } from '@/lib/utils';
+import { buildGymInvoicePdf } from '@/utils/invoice-pdf';
 
 // ─── Types (exported so BillingDashboard can reuse) ───────────────────────────
 
@@ -96,6 +102,7 @@ interface Props {
   currency: string;
   overdueCount?: number;
   canCollect: boolean;
+  gymName?: string;
   onSort: (field: SortField) => void;
   onStatusTab: (v: StatusTab) => void;
   onSearch: (v: string) => void;
@@ -108,9 +115,140 @@ interface Props {
 
 export default function DuePaymentsTable({
   rows, loading, pagination, statusTab, search, sort, page, currency,
-  overdueCount, canCollect, onSort, onStatusTab, onSearch, onPage,
+  overdueCount, canCollect, gymName, onSort, onStatusTab, onSearch, onPage,
   onCollect, onViewInvoice,
 }: Props) {
+
+  // ── Row-level actions ──────────────────────────────────────────────────────
+
+  function handleRowWhatsApp(row: DueRow) {
+    const member = memberOf(row);
+    if (!member?.phone) return;
+    const name = `${member.firstName} ${member.lastName}`.trim();
+    const gym = gymName ?? 'Gym';
+    const lines = [
+      `*${gym} — Invoice Reminder*`,
+      `─────────────────────`,
+      `👤 *Member:* ${name}`,
+      `📋 *Invoice:* ${row.invoiceNumber}`,
+      ``,
+      `💳 *Invoice Total:* ${formatCurrency(row.total, row.currency || currency)}`,
+    ];
+    if (row.amountPaid > 0) {
+      lines.push(`✅ *Paid:* ${formatCurrency(row.amountPaid, row.currency || currency)}`);
+    }
+    lines.push(`⚠️ *Balance Due: ${formatCurrency(row.amountDue, row.currency || currency)}*`);
+    if (row.dueDate) {
+      lines.push(`📆 *Due by:* ${new Date(row.dueDate).toLocaleDateString('en-PK', { day: '2-digit', month: 'short', year: 'numeric' })}`);
+    }
+    lines.push(``, `Please clear your dues at your earliest. Thank you! 🙏`);
+
+    // Also download PDF so member can receive it
+    const doc = buildGymInvoicePdf({
+      invoiceNumber: row.invoiceNumber,
+      status: row.status,
+      recipientName: name,
+      recipientEmail: member.email,
+      currency: row.currency || currency,
+      total: row.total,
+      amountPaid: row.amountPaid,
+      amountDue: row.amountDue,
+      dueDate: row.dueDate ?? undefined,
+      createdAt: row.createdAt,
+      gymName: gym,
+    });
+    doc.save(`${row.invoiceNumber}.pdf`);
+
+    const rawPhone = member.phone.replace(/[\s\-()]/g, '');
+    const cleanPhone = rawPhone.startsWith('+') ? rawPhone.slice(1) : rawPhone;
+    setTimeout(() => {
+      window.open(`https://wa.me/${cleanPhone}?text=${encodeURIComponent(lines.join('\n'))}`, '_blank', 'noopener,noreferrer');
+    }, 400);
+  }
+
+  function handleRowPrint(row: DueRow) {
+    const member = memberOf(row);
+    const name = member ? `${member.firstName} ${member.lastName}`.trim() : '—';
+    const gym = gymName ?? 'Gym';
+    const win = window.open('', '_blank');
+    if (!win) return;
+    win.document.write(`
+      <html>
+        <head>
+          <title>Invoice ${row.invoiceNumber}</title>
+          <style>
+            body { font-family: Arial, sans-serif; padding: 32px; font-size: 13px; color: #0f172a; }
+            .header { background:#0f172a; color:#fff; padding:20px 24px; border-radius:8px 8px 0 0; }
+            .gym { font-size:20px; font-weight:bold; letter-spacing:1px; }
+            .sub { font-size:10px; color:#38ce97; margin-top:2px; }
+            .body { border:1px solid #e2e8f0; border-top:3px solid #0ea472; padding:20px 24px; border-radius:0 0 8px 8px; }
+            .grid { display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-bottom:16px; }
+            .label { font-size:10px; color:#64748b; text-transform:uppercase; letter-spacing:.5px; }
+            .value { font-size:13px; font-weight:600; color:#0f172a; margin-top:2px; }
+            .badge { display:inline-block; padding:3px 10px; border-radius:12px; font-size:11px; font-weight:bold; background:#fef3c7; color:#92400e; }
+            .totals { margin-top:16px; border-top:1px solid #f1f5f9; padding-top:12px; }
+            .total-row { display:flex; justify-content:space-between; padding:4px 0; font-size:13px; }
+            .big { font-size:16px; font-weight:bold; color:#0ea472; border-top:2px solid #0ea472; padding-top:8px; margin-top:4px; }
+          </style>
+        </head>
+        <body>
+          <div class="header">
+            <div class="gym">${gym.toUpperCase()}</div>
+            <div class="sub">FITNESS & WELLNESS</div>
+          </div>
+          <div class="body">
+            <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:16px;">
+              <div>
+                <div style="font-size:22px;font-weight:bold;">INVOICE</div>
+                <div style="color:#64748b;font-size:11px;">${row.invoiceNumber}</div>
+              </div>
+              <span class="badge">${row.status.toUpperCase().replace(/_/g, ' ')}</span>
+            </div>
+            <div class="grid">
+              <div>
+                <div class="label">Bill To</div>
+                <div class="value">${name}</div>
+                ${member?.email ? `<div style="font-size:11px;color:#64748b;">${member.email}</div>` : ''}
+                ${member?.phone ? `<div style="font-size:11px;color:#64748b;">${member.phone}</div>` : ''}
+              </div>
+              <div>
+                <div class="label">Invoice Date</div>
+                <div class="value">${row.createdAt ? new Date(row.createdAt).toLocaleDateString() : new Date().toLocaleDateString()}</div>
+                ${row.dueDate ? `<div class="label" style="margin-top:8px;">Due Date</div><div class="value" style="color:#dc2626;">${new Date(row.dueDate).toLocaleDateString()}</div>` : ''}
+              </div>
+            </div>
+            <div class="totals">
+              <div class="total-row"><span>Invoice Total</span><span>${formatCurrency(row.total, row.currency || currency)}</span></div>
+              ${row.amountPaid > 0 ? `<div class="total-row"><span style="color:#16a34a;">Amount Paid</span><span style="color:#16a34a;">${formatCurrency(row.amountPaid, row.currency || currency)}</span></div>` : ''}
+              <div class="total-row big"><span>Balance Due</span><span>${formatCurrency(row.amountDue, row.currency || currency)}</span></div>
+            </div>
+          </div>
+          <p style="text-align:center;color:#94a3b8;font-size:11px;margin-top:20px;">Thank you for choosing ${gym}!</p>
+        </body>
+      </html>
+    `);
+    win.document.close();
+    win.print();
+  }
+
+  function handleRowDownload(row: DueRow) {
+    const member = memberOf(row);
+    const name = member ? `${member.firstName} ${member.lastName}`.trim() : '—';
+    const doc = buildGymInvoicePdf({
+      invoiceNumber: row.invoiceNumber,
+      status: row.status,
+      recipientName: name,
+      recipientEmail: member?.email,
+      currency: row.currency || currency,
+      total: row.total,
+      amountPaid: row.amountPaid,
+      amountDue: row.amountDue,
+      dueDate: row.dueDate ?? undefined,
+      createdAt: row.createdAt,
+      gymName: gymName ?? 'Gym',
+    });
+    doc.save(`${row.invoiceNumber}.pdf`);
+  }
   return (
     <Card>
       <CardHeader className="pb-3 space-y-3">
@@ -287,15 +425,42 @@ export default function DuePaymentsTable({
                         Collect
                       </Button>
                     )}
-                    <Button
-                      size="sm"
-                      variant="ghost"
-                      className="h-7 w-7 p-0 text-muted-foreground"
-                      onClick={() => onViewInvoice(row._id)}
-                      title="View invoice"
-                    >
-                      <Eye className="h-3.5 w-3.5" />
-                    </Button>
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          className="h-7 w-7 p-0 text-muted-foreground"
+                          title="More actions"
+                        >
+                          <MoreHorizontal className="h-3.5 w-3.5" />
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="end" className="w-44">
+                        <DropdownMenuItem onClick={() => onViewInvoice(row._id)}>
+                          <Eye className="h-3.5 w-3.5 mr-2" />
+                          View Invoice
+                        </DropdownMenuItem>
+                        {member?.phone && (
+                          <DropdownMenuItem
+                            onClick={() => handleRowWhatsApp(row)}
+                            className="text-green-700 focus:text-green-700 focus:bg-green-50"
+                          >
+                            <MessageCircle className="h-3.5 w-3.5 mr-2" />
+                            Share on WhatsApp
+                          </DropdownMenuItem>
+                        )}
+                        <DropdownMenuSeparator />
+                        <DropdownMenuItem onClick={() => handleRowPrint(row)}>
+                          <Printer className="h-3.5 w-3.5 mr-2" />
+                          Print Invoice
+                        </DropdownMenuItem>
+                        <DropdownMenuItem onClick={() => handleRowDownload(row)}>
+                          <Download className="h-3.5 w-3.5 mr-2" />
+                          Download PDF
+                        </DropdownMenuItem>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
                   </div>
                 </div>
               );

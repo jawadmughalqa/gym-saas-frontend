@@ -244,6 +244,7 @@ export function InvoicePaymentTimeline({ invoiceId, currency = CURRENCY }: Invoi
           open={!!refundTarget}
           onOpenChange={(o) => { if (!o) setRefundTarget(null); }}
           paymentId={refundTarget.paymentId}
+          invoiceId={invoiceId}
           paymentAmount={refundTarget.amount}
           alreadyRefunded={refundTarget.totalRefunded}
           currency={refundTarget.currency}

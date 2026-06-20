@@ -26,6 +26,16 @@ import { UserCombobox } from "@/components/ui/UserCombobox";
 import { useCreateWalkInLead, useUpdateWalkInLead } from "../hooks/use-walkin-leads";
 import type { WalkInLead, WalkInLeadSource } from "@/api/walkInLeads.api";
 
+
+// ─── Date helpers ─────────────────────────────────────────────────────────────
+
+function toDateStr(d: Date) {
+  return d.toISOString().slice(0, 10);
+}
+
+const TODAY = toDateStr(new Date());
+const FOLLOW_UP_DEFAULT = toDateStr(new Date(Date.now() + 7 * 24 * 60 * 60 * 1000));
+
 // ─── Constants ────────────────────────────────────────────────────────────────
 
 export const SOURCE_LABELS: Record<WalkInLeadSource, string> = {
@@ -115,14 +125,15 @@ export default function WalkInLeadForm({ open, onOpenChange, lead }: WalkInLeadF
       interestedIn: "",
       status: "new",
       assignedTo: "",
-      followUpDate: "",
-      visitDate: new Date().toISOString().slice(0, 10),
+      followUpDate: FOLLOW_UP_DEFAULT,
+      visitDate: TODAY,
       note: "",
       lostReason: "",
     },
   });
 
   const statusValue = watch("status");
+  const selectedBranchId = watch("branchId");
 
   useEffect(() => {
     if (lead) {
@@ -147,7 +158,7 @@ export default function WalkInLeadForm({ open, onOpenChange, lead }: WalkInLeadF
       });
     } else {
       reset({
-        branchId: "",
+        branchId: branches[0]?._id ?? "",
         fullName: "",
         phone: "",
         email: "",
@@ -156,13 +167,18 @@ export default function WalkInLeadForm({ open, onOpenChange, lead }: WalkInLeadF
         interestedIn: "",
         status: "new",
         assignedTo: "",
-        followUpDate: "",
-        visitDate: new Date().toISOString().slice(0, 10),
+        followUpDate: FOLLOW_UP_DEFAULT,
+        visitDate: TODAY,
         note: "",
         lostReason: "",
       });
     }
-  }, [lead, open, reset]);
+  }, [lead, open, reset, branches]);
+
+  // Reset assignedTo when branch changes so stale selection doesn't linger
+  useEffect(() => {
+    setValue("assignedTo", "");
+  }, [selectedBranchId, setValue]);
 
   const onSubmit = handleSubmit(async (values) => {
     if (isEditing) {
@@ -358,6 +374,7 @@ export default function WalkInLeadForm({ open, onOpenChange, lead }: WalkInLeadF
                 value={watch("assignedTo")}
                 onChange={(id) => setValue("assignedTo", id)}
                 placeholder="Unassigned"
+                branchId={selectedBranchId || undefined}
               />
             </div>
           </div>

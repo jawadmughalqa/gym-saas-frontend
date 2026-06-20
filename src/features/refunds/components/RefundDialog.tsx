@@ -28,6 +28,12 @@ import { formatCurrency } from '@/lib/utils';
 import { CURRENCY } from '@/config/tenant.config';
 import { useQueryClient } from '@tanstack/react-query';
 import { usePostRefunds, getGetRefundsQueryKey } from '@/api/generated/refunds/refunds';
+import { getGetPaymentsQueryKey } from '@/api/generated/payments/payments';
+import {
+  getGetInvoicesInvoiceIdQueryKey,
+  getGetInvoicesQueryKey,
+} from '@/api/generated/invoices/invoices';
+import { getGetBillingRecentTransactionsQueryKey } from '@/api/generated/billing/billing';
 
 // ─── Schema ───────────────────────────────────────────────────────────────────
 
@@ -52,6 +58,7 @@ export interface RefundDialogProps {
   alreadyRefunded: number;
   currency?: string;
   subscriptionId?: string;   // pass if this payment is linked to a subscription
+  invoiceId?: string;        // used to invalidate invoice-specific queries
   onSuccess?: () => void;
 }
 
@@ -65,6 +72,7 @@ export function RefundDialog({
   alreadyRefunded,
   currency = CURRENCY,
   subscriptionId,
+  invoiceId,
   onSuccess,
 }: RefundDialogProps) {
   const qc = useQueryClient();
@@ -95,6 +103,12 @@ export function RefundDialog({
       onSuccess: () => {
         toast({ title: 'Refund request submitted', description: 'Awaiting approval.' });
         void qc.invalidateQueries({ queryKey: getGetRefundsQueryKey() });
+        void qc.invalidateQueries({ queryKey: getGetPaymentsQueryKey() });
+        void qc.invalidateQueries({ queryKey: getGetInvoicesQueryKey() });
+        void qc.invalidateQueries({ queryKey: getGetBillingRecentTransactionsQueryKey() });
+        if (invoiceId) {
+          void qc.invalidateQueries({ queryKey: getGetInvoicesInvoiceIdQueryKey(invoiceId) });
+        }
         onSuccess?.();
         reset();
         onOpenChange(false);

@@ -59,6 +59,7 @@ export default function DiscountForm({ open, onOpenChange }: DiscountFormProps) 
       discountType: "percentage",
       scope: "invoice",
       isActive: true,
+      validFrom: new Date().toISOString().split("T")[0], // today — discount valid immediately
     },
   });
 

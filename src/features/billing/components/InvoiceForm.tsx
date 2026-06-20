@@ -41,7 +41,7 @@ import { cn } from "@/lib/utils";
 import { formatCurrency } from "@/utils/format";
 import { useGetMembers } from "@/api/generated/members/members";
 import { useGetBranches } from "@/api/generated/branches/branches";
-import { usePostDiscountsValidate } from "@/api/generated/discounts/discounts";
+import { usePostDiscountsValidate, useGetDiscounts } from "@/api/generated/discounts/discounts";
 import {
   usePostInvoices,
   getGetInvoicesQueryKey,
@@ -331,6 +331,13 @@ export default function InvoiceForm({
   const [discountValidation, setDiscountValidation] =
     useState<DiscountValidationResult | null>(null);
   const [validatingDiscount, setValidatingDiscount] = useState(false);
+  const [couponOpen, setCouponOpen] = useState(false);
+
+  // Available discount codes
+  const { data: discountsData } = useGetDiscounts({ query: { staleTime: 1000 * 60 * 5 } });
+  const availableDiscounts = ((discountsData as any)?.data ?? []).filter(
+    (d: any) => d.isActive !== false,
+  );
 
   // Branches — load all active ones upfront
   const { data: branchesData, isLoading: branchesLoading } = useGetBranches(
@@ -383,19 +390,16 @@ export default function InvoiceForm({
   const discountCode = watch("discountCode");
   const manualDiscountAmt = Number(watch("invoiceLevelDiscountAmount")) || 0;
 
-  // Calculate subtotal and tax
+  // Calculate subtotal and tax (quantity is always 1)
   const subtotal = lineItems.reduce(
-    (sum, item) =>
-      sum + (Number(item.quantity) || 0) * (Number(item.unitPrice) || 0),
+    (sum, item) => sum + (Number(item.unitPrice) || 0),
     0,
   );
 
   const taxTotal = lineItems.reduce(
     (sum, item) =>
       sum +
-      (Number(item.quantity) || 0) *
-        (Number(item.unitPrice) || 0) *
-        ((Number(item.taxRate) || 0) / 100),
+      (Number(item.unitPrice) || 0) * ((Number(item.taxRate) || 0) / 100),
     0,
   );
 
@@ -554,7 +558,7 @@ export default function InvoiceForm({
               Invoice Details
             </h3>
 
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 gap-3">
               {/* Step 1 — Branch */}
               <div className="space-y-1.5">
                 <Label>Branch *</Label>
@@ -755,20 +759,12 @@ export default function InvoiceForm({
                     </div>
                   </div>
 
-                  <div className="grid grid-cols-3 gap-2">
+                  {/* quantity is fixed at 1 — hidden from UI */}
+                  <input type="hidden" {...register(`lineItems.${index}.quantity`)} value={1} />
+
+                  <div className="grid grid-cols-2 gap-2">
                     <div className="space-y-1">
-                      <Label className="text-xs">Qty *</Label>
-                      <Input
-                        type="number"
-                        min="1"
-                        step="1"
-                        className="h-8 text-xs"
-                        disabled={isPending}
-                        {...register(`lineItems.${index}.quantity`)}
-                      />
-                    </div>
-                    <div className="space-y-1">
-                      <Label className="text-xs">Unit Price *</Label>
+                      <Label className="text-xs">Amount (PKR) *</Label>
                       <Input
                         type="number"
                         min="0"
@@ -797,8 +793,7 @@ export default function InvoiceForm({
                     Line total:{" "}
                     <span className="font-medium text-foreground">
                       {formatCurrency(
-                        (Number(lineItems[index]?.quantity) || 0) *
-                          (Number(lineItems[index]?.unitPrice) || 0) *
+                        (Number(lineItems[index]?.unitPrice) || 0) *
                           (1 + (Number(lineItems[index]?.taxRate) || 0) / 100),
                         currency,
                       )}
@@ -817,20 +812,80 @@ export default function InvoiceForm({
               Discount & Totals
             </h3>
 
-            {/* Discount Code Input with Validation Status */}
+            {/* Discount Code — searchable dropdown + manual text input */}
             <div className="space-y-1.5">
               <Label htmlFor="discountCode">Discount Code</Label>
+
+              {/* Combobox picker for available codes */}
+              {availableDiscounts.length > 0 && !discountValidation?.isValid && (
+                <Popover open={couponOpen} onOpenChange={setCouponOpen}>
+                  <PopoverTrigger asChild>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      className="w-full justify-between h-9 font-normal text-muted-foreground"
+                      disabled={isPending || manualDiscountAmt > 0}
+                    >
+                      {discountCode
+                        ? <span className="text-foreground font-mono font-semibold">{discountCode}</span>
+                        : <span>Select a promo code…</span>}
+                      <ChevronsUpDown className="h-3.5 w-3.5 opacity-50" />
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-full p-0" align="start">
+                    <Command>
+                      <CommandInput placeholder="Search codes…" className="h-8" />
+                      <CommandList>
+                        <CommandEmpty>No codes found.</CommandEmpty>
+                        <CommandGroup>
+                          {availableDiscounts.map((d: any) => (
+                            <CommandItem
+                              key={d._id}
+                              value={d.code}
+                              onSelect={(v) => {
+                                setValue("discountCode", v.toUpperCase());
+                                setCouponOpen(false);
+                              }}
+                            >
+                              <Check
+                                className={cn(
+                                  "mr-2 h-3.5 w-3.5",
+                                  discountCode === d.code ? "opacity-100" : "opacity-0",
+                                )}
+                              />
+                              <span className="font-mono font-semibold mr-2">{d.code}</span>
+                              <span className="text-xs text-primary mr-2">
+                                {d.discountType === "percentage"
+                                  ? `${d.value}% off`
+                                  : `-${formatCurrency(d.value, currency)}`}
+                              </span>
+                              {d.description && (
+                                <span className="text-xs text-muted-foreground truncate">
+                                  {d.description}
+                                </span>
+                              )}
+                            </CommandItem>
+                          ))}
+                        </CommandGroup>
+                      </CommandList>
+                    </Command>
+                  </PopoverContent>
+                </Popover>
+              )}
+
+              {/* Fallback / override text input */}
               <div className="relative">
                 <Input
                   id="discountCode"
-                  placeholder="Enter discount code (e.g., SUMMER25)"
+                  placeholder={availableDiscounts.length > 0 ? "Or type a code manually…" : "Enter discount code (e.g., SUMMER25)"}
                   disabled={
                     isPending || validatingDiscount || manualDiscountAmt > 0
                   }
                   className={cn(
-                    discountValidation?.isValid && "border-green-500 pr-20",
+                    discountValidation?.isValid && "border-green-500 pr-8",
                     discountValidation?.isValid === false &&
-                      "border-destructive pr-20",
+                      "border-destructive pr-8",
                   )}
                   {...register("discountCode")}
                 />
@@ -863,9 +918,16 @@ export default function InvoiceForm({
               {/* Show discount details if valid */}
               {discountValidation?.isValid && (
                 <div className="p-2 mt-2 space-y-1 text-xs rounded-md bg-green-50 dark:bg-green-950/20">
-                  <p className="font-medium text-green-700 dark:text-green-400">
-                    ✨ Discount Applied!
-                  </p>
+                  <div className="flex items-center justify-between">
+                    <p className="font-medium text-green-700 dark:text-green-400">✨ Discount Applied!</p>
+                    <button
+                      type="button"
+                      onClick={() => setValue("discountCode", "")}
+                      className="text-xs text-red-600 hover:underline font-medium"
+                    >
+                      Remove
+                    </button>
+                  </div>
                   <div className="flex justify-between text-green-600 dark:text-green-500">
                     <span>Original amount:</span>
                     <span>{formatCurrency(subtotal, currency)}</span>
@@ -895,14 +957,25 @@ export default function InvoiceForm({
 
             {/* Manual Discount - Disabled when code is applied */}
             <div className="space-y-1.5">
-              <Label htmlFor="invoiceLevelDiscountAmount">
-                Manual Discount ({currency})
-                {discountValidation?.isValid && (
-                  <span className="ml-2 text-xs text-muted-foreground">
-                    (Disabled - discount code already applied)
-                  </span>
+              <div className="flex items-center justify-between">
+                <Label htmlFor="invoiceLevelDiscountAmount">
+                  Manual Discount ({currency})
+                  {discountValidation?.isValid && (
+                    <span className="ml-2 text-xs text-muted-foreground">
+                      (Disabled — coupon active)
+                    </span>
+                  )}
+                </Label>
+                {manualDiscountAmt > 0 && !discountValidation?.isValid && (
+                  <button
+                    type="button"
+                    onClick={() => handleManualDiscountChange(0)}
+                    className="text-xs text-red-600 hover:underline font-medium"
+                  >
+                    Remove
+                  </button>
                 )}
-              </Label>
+              </div>
               <Input
                 id="invoiceLevelDiscountAmount"
                 type="number"

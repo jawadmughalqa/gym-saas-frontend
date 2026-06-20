@@ -52,6 +52,7 @@ const ROLE_LABEL: Record<string, string> = {
 // ─── Types ────────────────────────────────────────────────────────────────────
 
 interface StaffUser {
+  branchIds?: string[];
   _id: string;
   firstName: string;
   lastName: string;
@@ -67,6 +68,8 @@ interface UserComboboxProps {
   onChange: (userId: string) => void;
   disabled?: boolean;
   placeholder?: string;
+  /** When set, only shows users assigned to this branch */
+  branchId?: string;
 }
 
 // ─── Component ────────────────────────────────────────────────────────────────
@@ -76,6 +79,7 @@ export function UserCombobox({
   onChange,
   disabled = false,
   placeholder = "Search users…",
+  branchId,
 }: UserComboboxProps) {
   const [open, setOpen] = useState(false);
 
@@ -86,7 +90,10 @@ export function UserCombobox({
   );
 
   // Orval wraps the response in data.data (SuccessResponse envelope)
-  const users: StaffUser[] = (data as unknown as { data?: StaffUser[] })?.data ?? [];
+  const allUsers: StaffUser[] = (data as unknown as { data?: StaffUser[] })?.data ?? [];
+  const users = branchId
+    ? allUsers.filter((u) => u.branchIds?.includes(branchId))
+    : allUsers;
 
   // Derive the display label for the trigger button
   const selected = users.find((u) => u._id === value);

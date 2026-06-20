@@ -20,10 +20,14 @@ import { useNavigate } from 'react-router-dom';
 import {
   TrendingUp, Clock, Wallet, Building2, RefreshCw, FilePlus,
   ExternalLink, CheckCircle2, XCircle, MinusCircle, RefreshCw as RotateCcw,
+  Banknote, CreditCard, Smartphone, FileText, Globe,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import {
+  Dialog, DialogContent, DialogHeader, DialogTitle,
+} from '@/components/ui/dialog';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Label } from '@/components/ui/label';
 import {
@@ -50,6 +54,8 @@ import DuePaymentsTable, {
   type DueRow, type SortField, type SortDir, type StatusTab, type PopulatedBranch,
   memberOf,
 } from './components/DuePaymentsTable';
+import { useGetPayments } from '@/api/generated/payments/payments';
+import { useGetMyTenant } from '@/api/generated/tenants/tenants';
 import type { GetBillingRecentTransactions200DataItem } from '@/api/generated/schemas';
 import { CURRENCY } from '@/config/tenant.config';
 
@@ -105,6 +111,10 @@ export default function BillingDashboard() {
   const user = useAuthStore((s) => s.user);
   const isBranchManager = user?.role === 'branch_manager';
 
+  // ── Gym name (for PDF / WhatsApp) ─────────────────────────────────────────
+  const { data: tenantData } = useGetMyTenant({ query: { staleTime: Infinity } });
+  const gymName: string | undefined = (tenantData?.data as any)?.name;
+
   // ── Global filters ─────────────────────────────────────────────────────────
   const [branchId, setBranchId] = useState('');
   const [formOpen, setFormOpen] = useState(false);
@@ -123,6 +133,9 @@ export default function BillingDashboard() {
 
   // ── Invoice payment modal ──────────────────────────────────────────────────
   const [invoiceModalId, setInvoiceModalId] = useState<string | null>(null);
+
+  // ── Method breakdown drill-down ────────────────────────────────────────────
+  const [methodFilter, setMethodFilter] = useState<string | null>(null);
 
   const LIMIT = 15;
 
@@ -197,9 +210,16 @@ export default function BillingDashboard() {
   const { data: txData, isLoading: loadingTx, refetch: refetchTx } =
     useGetBillingRecentTransactions(
       { ...(branchId ? { branchId } : {}), limit: 20 },
-      { query: { staleTime: 0, refetchInterval: 1000 * 30 } },
+      { query: { staleTime: 0 } },
     );
   const transactions: GetBillingRecentTransactions200DataItem[] = txData?.data ?? [];
+
+  // Payments by method (drill-down)
+  const { data: methodPaymentsData, isLoading: loadingMethodPayments } = useGetPayments(
+    { method: methodFilter as any, limit: 50, ...(branchId ? { branchId } : {}) },
+    { query: { enabled: !!methodFilter, staleTime: 0 } },
+  );
+  const methodPayments: any[] = (methodPaymentsData as any)?.data ?? [];
 
   // ── Handlers ───────────────────────────────────────────────────────────────
   function handleSort(field: SortField) {
@@ -318,6 +338,58 @@ export default function BillingDashboard() {
         }
       </div>
 
+      {/* ── Payment method breakdown ──────────────────────────────────── */}
+      {!loadingStats && stats && (stats as any).byMethod && Object.keys((stats as any).byMethod).length > 0 && (() => {
+        type MethodMeta = { label: string; icon: React.ReactNode; iconCls: string };
+        const METHOD_META: Record<string, MethodMeta> = {
+          cash:          { label: 'Cash',          icon: <Banknote className="h-4 w-4" />,   iconCls: 'bg-green-100 text-green-600' },
+          card:          { label: 'Card',          icon: <CreditCard className="h-4 w-4" />, iconCls: 'bg-blue-100 text-blue-600' },
+          bank_transfer: { label: 'Bank Transfer', icon: <Building2 className="h-4 w-4" />,  iconCls: 'bg-purple-100 text-purple-600' },
+          cheque:        { label: 'Cheque',        icon: <FileText className="h-4 w-4" />,   iconCls: 'bg-orange-100 text-orange-600' },
+          online:        { label: 'Online',        icon: <Globe className="h-4 w-4" />,      iconCls: 'bg-cyan-100 text-cyan-600' },
+          jazzcash:      { label: 'JazzCash',      icon: <Smartphone className="h-4 w-4" />, iconCls: 'bg-red-100 text-red-600' },
+          easypaisa:     { label: 'EasyPaisa',     icon: <Smartphone className="h-4 w-4" />, iconCls: 'bg-emerald-100 text-emerald-600' },
+          other:         { label: 'Other',         icon: <Wallet className="h-4 w-4" />,     iconCls: 'bg-muted text-muted-foreground' },
+        };
+        const byMethod = (stats as any).byMethod as Record<string, { total: number; count: number }>;
+        const methods = Object.entries(byMethod).sort((a, b) => b[1].total - a[1].total);
+        return (
+          <Card className="p-0">
+            <CardHeader className="px-4 pt-3 pb-2">
+              <CardTitle className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                Collections by Payment Method
+              </CardTitle>
+            </CardHeader>
+            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 xl:grid-cols-6 gap-px bg-border border-t">
+              {methods.map(([method, data]) => {
+                const meta: MethodMeta = METHOD_META[method] ?? METHOD_META['other'];
+                return (
+                  <button
+                    key={method}
+                    type="button"
+                    onClick={() => setMethodFilter(method)}
+                    className="bg-card px-4 py-3 text-left hover:bg-muted/40 transition-colors group"
+                  >
+                    <div className="flex items-center gap-2 mb-2">
+                      <span className={cn('p-1.5 rounded-md', meta.iconCls)}>
+                        {meta.icon}
+                      </span>
+                      <span className="text-xs font-medium text-muted-foreground">{meta.label}</span>
+                    </div>
+                    <p className="text-base font-bold tabular-nums text-foreground group-hover:text-primary transition-colors">
+                      {formatCurrency(data.total, currency)}
+                    </p>
+                    <p className="text-[11px] text-muted-foreground mt-0.5">
+                      {data.count} payment{data.count !== 1 ? 's' : ''}
+                    </p>
+                  </button>
+                );
+              })}
+            </div>
+          </Card>
+        );
+      })()}
+
       {/* ── Main split layout ───────────────────────────────────────────── */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 items-start">
 
@@ -334,6 +406,7 @@ export default function BillingDashboard() {
             currency={currency}
             overdueCount={(stats as any)?.overdueCount}
             canCollect={can('payment.create')}
+            gymName={gymName}
             onSort={handleSort}
             onStatusTab={(v) => { setStatusTab(v); setPage(1); }}
             onSearch={(v) => { setSearch(v); setPage(1); }}
@@ -349,7 +422,7 @@ export default function BillingDashboard() {
             <CardHeader className="pb-2 flex flex-row items-center justify-between">
               <div>
                 <CardTitle className="text-sm">Live Transactions</CardTitle>
-                <p className="text-xs text-muted-foreground mt-0.5">Auto-refreshes every 30s</p>
+                <p className="text-xs text-muted-foreground mt-0.5">Click refresh to update</p>
               </div>
               <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => refetchTx()} title="Refresh">
                 <RefreshCw className="h-3.5 w-3.5" />
@@ -492,6 +565,53 @@ export default function BillingDashboard() {
         onOpenChange={(o) => { if (!o) setInvoiceModalId(null); }}
         onPaymentRecorded={() => { refetchInvoices(); refetchStats(); refetchTx(); }}
       />
+
+      {/* ── Method drill-down dialog ──────────────────────────────────── */}
+      <Dialog open={!!methodFilter} onOpenChange={(o) => { if (!o) setMethodFilter(null); }}>
+        <DialogContent className="sm:max-w-xl max-h-[80vh] flex flex-col">
+          <DialogHeader>
+            <DialogTitle>
+              {METHOD_LABELS[methodFilter ?? ''] ?? methodFilter} — Recent Payments
+            </DialogTitle>
+          </DialogHeader>
+          <div className="flex-1 overflow-y-auto space-y-2 pr-1">
+            {loadingMethodPayments ? (
+              Array.from({ length: 5 }).map((_, i) => (
+                <Skeleton key={i} className="h-14 w-full rounded-md" />
+              ))
+            ) : methodPayments.length === 0 ? (
+              <p className="text-sm text-muted-foreground text-center py-8">No payments found.</p>
+            ) : (
+              methodPayments.map((p: any) => {
+                const first = p.memberId?.firstName ?? '';
+                const last = p.memberId?.lastName ?? '';
+                const memberName = (first + ' ' + last).trim() || p.memberName || '—';
+                const memberPhone = p.memberId?.phone ?? p.memberId?.phoneNumber ?? '—';
+                const invoiceNum = p.invoiceId?.invoiceNumber ?? p.invoiceNumber ?? '—';
+                return (
+                  <div
+                    key={p._id}
+                    className="flex items-center justify-between gap-3 rounded-lg border px-3 py-2.5 bg-muted/30"
+                  >
+                    <div className="min-w-0">
+                      <p className="text-sm font-medium truncate">{memberName}</p>
+                      <p className="text-xs text-muted-foreground truncate">{memberPhone} · {invoiceNum}</p>
+                    </div>
+                    <div className="text-right shrink-0">
+                      <p className="text-sm font-semibold tabular-nums">
+                        {formatCurrency(p.amount ?? p.netAmount ?? 0, currency)}
+                      </p>
+                      <p className="text-[10px] text-muted-foreground">
+                        {p.paidAt ? new Date(p.paidAt).toLocaleDateString() : '—'}
+                      </p>
+                    </div>
+                  </div>
+                );
+              })
+            )}
+          </div>
+        </DialogContent>
+      </Dialog>
     </PageShell>
   );
 }

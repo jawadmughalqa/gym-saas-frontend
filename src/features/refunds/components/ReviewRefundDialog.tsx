@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import {
   Dialog,
   DialogContent,
@@ -23,6 +23,7 @@ import {
 import type { Refund } from '@/api/generated/refunds/refunds';
 import { getGetInvoicesQueryKey } from '@/api/generated/invoices/invoices';
 import { getGetPaymentsQueryKey } from '@/api/generated/payments/payments';
+import { getGetBillingRecentTransactionsQueryKey, getGetBillingDashboardQueryKey } from '@/api/generated/billing/billing';
 
 // ─── Props ────────────────────────────────────────────────────────────────────
 
@@ -44,6 +45,10 @@ export function ReviewRefundDialog({
   const qc = useQueryClient();
   const [note, setNote] = useState('');
   const [action, setAction] = useState<'approve' | 'reject' | null>(null);
+  // Keep a stable copy so the dialog can animate closed even when refund becomes null
+  const stableRefund = useRef(refund);
+  useEffect(() => { if (refund) stableRefund.current = refund; }, [refund]);
+  const displayRefund = refund ?? stableRefund.current;
 
   function invalidate() {
     void qc.invalidateQueries({ queryKey: getGetRefundsQueryKey() });
@@ -56,6 +61,8 @@ export function ReviewRefundDialog({
     // open InvoiceDetailPage or BillingTab shows the correct figures immediately.
     void qc.invalidateQueries({ queryKey: getGetInvoicesQueryKey() });
     void qc.invalidateQueries({ queryKey: getGetPaymentsQueryKey() });
+    void qc.invalidateQueries({ queryKey: getGetBillingRecentTransactionsQueryKey() });
+    void qc.invalidateQueries({ queryKey: getGetBillingDashboardQueryKey() });
   }
 
   const approve = usePostRefundsRefundIdApprove({
@@ -110,14 +117,14 @@ export function ReviewRefundDialog({
     reject.mutate({ refundId: refund._id, data: { reviewNote: note } });
   }
 
-  if (!refund) return null;
+  if (!displayRefund) return null;
 
-  const currency = (refund.paymentId as any)?.currency ?? CURRENCY;
-  const memberName = refund.memberId
-    ? `${refund.memberId.firstName ?? ''} ${refund.memberId.lastName ?? ''}`.trim()
+  const currency = (displayRefund.paymentId as any)?.currency ?? CURRENCY;
+  const memberName = displayRefund.memberId
+    ? `${displayRefund.memberId.firstName ?? ''} ${displayRefund.memberId.lastName ?? ''}`.trim()
     : 'Unknown member';
-  const requestedBy = refund.requestedBy
-    ? `${refund.requestedBy.firstName ?? ''} ${refund.requestedBy.lastName ?? ''}`.trim()
+  const requestedBy = displayRefund.requestedBy
+    ? `${displayRefund.requestedBy.firstName ?? ''} ${displayRefund.requestedBy.lastName ?? ''}`.trim()
     : 'Unknown';
 
   return (
@@ -138,12 +145,12 @@ export function ReviewRefundDialog({
           </div>
           <div className="flex justify-between">
             <span className="text-muted-foreground">Refund amount</span>
-            <span className="font-semibold">{formatCurrency(refund.amount ?? 0, currency)}</span>
+            <span className="font-semibold">{formatCurrency(displayRefund.amount ?? 0, currency)}</span>
           </div>
           <div className="flex justify-between">
             <span className="text-muted-foreground">Type</span>
             <span className="capitalize">
-              {refund.type === 'store_credit' ? 'Store Credit (wallet)' : 'Cash'}
+              {displayRefund.type === 'store_credit' ? 'Store Credit (wallet)' : 'Cash'}
             </span>
           </div>
           <div className="flex justify-between">
@@ -152,9 +159,9 @@ export function ReviewRefundDialog({
           </div>
           <div className="flex flex-col gap-0.5 border-t pt-1.5">
             <span className="text-muted-foreground">Reason</span>
-            <span className="text-foreground">{refund.reason}</span>
+            <span className="text-foreground">{displayRefund.reason}</span>
           </div>
-          {refund.cancelSubscription && (
+          {displayRefund.cancelSubscription && (
             <p className="text-orange-600 text-xs font-medium pt-0.5">
               ⚠ Approving will also cancel the linked subscription.
             </p>

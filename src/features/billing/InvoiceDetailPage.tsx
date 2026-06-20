@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { ArrowLeft, Send, XCircle, Tag, CreditCard, AlignLeft, AlertCircle, Loader2 } from 'lucide-react';
+import { ArrowLeft, Send, XCircle, Tag, CreditCard, AlignLeft, AlertCircle, Loader2, History } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -27,6 +27,7 @@ import LineItemsTable from './components/InvoiceDetail/LineItemsTable';
 import PaymentsTab from './components/InvoiceDetail/PaymentsTab';
 import InstalmentTab from './components/InvoiceDetail/InstalmentTab';
 import ApplyDiscountDialog from './components/InvoiceDetail/ApplyDiscountDialog';
+import InvoiceActivityFeed from './components/InvoiceDetail/InvoiceActivityFeed';
 
 // ─── Page ─────────────────────────────────────────────────────────────────────
 
@@ -124,10 +125,10 @@ export default function InvoiceDetailPage() {
                   Issue Invoice
                 </Button>
               )}
-              {can('discount.apply') && ['draft', 'issued'].includes(invoice.status) && (
+              {can('discount.apply') && ['draft', 'issued', 'partially_paid'].includes(invoice.status) && (
                 <Button size="sm" variant="outline" onClick={() => setDiscountOpen(true)}>
                   <Tag className="mr-2 h-4 w-4" />
-                  Apply Discount
+                  {invoice.discountCode ? 'Manage Discount' : 'Apply Discount'}
                 </Button>
               )}
               {can('invoice.void') && ['issued', 'partially_paid', 'overdue'].includes(invoice.status) && (
@@ -185,6 +186,10 @@ export default function InvoiceDetailPage() {
             <AlignLeft className="h-4 w-4" />
             <span>Instalment Plan</span>
           </TabsTrigger>
+          <TabsTrigger value="activity" className="flex items-center gap-1.5">
+            <History className="h-4 w-4" />
+            <span>Activity</span>
+          </TabsTrigger>
         </TabsList>
 
         <TabsContent value="payments" className="mt-4">
@@ -193,9 +198,30 @@ export default function InvoiceDetailPage() {
         <TabsContent value="instalments" className="mt-4">
           <InstalmentTab invoice={invoice as Invoice} />
         </TabsContent>
+        <TabsContent value="activity" className="mt-4">
+          <Card>
+            <CardHeader className="pb-3">
+              <CardTitle className="text-sm font-semibold uppercase tracking-wide text-muted-foreground flex items-center gap-2">
+                <History className="h-4 w-4" />
+                Invoice Activity
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <InvoiceActivityFeed invoiceId={invoice._id} />
+            </CardContent>
+          </Card>
+        </TabsContent>
       </Tabs>
 
-      <ApplyDiscountDialog invoiceId={invoice._id} open={discountOpen} onOpenChange={setDiscountOpen} />
+      <ApplyDiscountDialog
+        invoiceId={invoice._id}
+        invoiceTotal={invoice.total}
+        memberId={typeof invoice.memberId === 'string' ? invoice.memberId : (invoice.memberId as any)?._id ?? ''}
+        currency={invoice.currency}
+        appliedCode={invoice.discountCode}
+        open={discountOpen}
+        onOpenChange={setDiscountOpen}
+      />
       <ConfirmDialog {...confirmProps} loading={voidInv.isPending} />
     </PageShell>
   );

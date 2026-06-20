@@ -1,3 +1,4 @@
+import { useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -71,6 +72,11 @@ export default function RecordPaymentDialog({ invoiceId, currency, amountDue, op
     resolver: zodResolver(paySchema),
     defaultValues: { amount: amountDue, method: 'cash' },
   });
+
+  // Sync amount whenever the dialog opens or amountDue changes (e.g. after discount applied)
+  useEffect(() => {
+    if (open) reset({ amount: amountDue, method: 'cash' });
+  }, [open, amountDue]);
 
   function onSubmit(values: PayFormValues) {
     recordPayment.mutate({

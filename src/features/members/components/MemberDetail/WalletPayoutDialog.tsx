@@ -7,6 +7,7 @@
  */
 
 import { useState } from 'react';
+import { useQueryClient } from '@tanstack/react-query';
 import { Banknote, Landmark } from 'lucide-react';
 import {
   Dialog, DialogContent, DialogHeader,
@@ -78,6 +79,7 @@ interface Props {
 // ─── Component ────────────────────────────────────────────────────────────────
 
 export function WalletPayoutDialog({ open, onOpenChange, memberId, walletBalance, onSuccess }: Props) {
+  const qc = useQueryClient();
   const [amount,  setAmount]  = useState('');
   const [medium,  setMedium]  = useState<PayoutMedium>('cash');
   const [notes,   setNotes]   = useState('');
@@ -112,6 +114,8 @@ export function WalletPayoutDialog({ open, onOpenChange, memberId, walletBalance
         title:       'Payout recorded',
         description: `${formatCurrency(parsedAmount, CURRENCY)} deducted from wallet via ${medium === 'cash' ? 'cash' : 'bank transfer'}.`,
       });
+      // Invalidate the global wallet-payouts list shown on RefundsPage
+      void qc.invalidateQueries({ queryKey: ['wallet-payouts-all'] });
       handleClose(false);
       onSuccess();
     } catch (err: unknown) {

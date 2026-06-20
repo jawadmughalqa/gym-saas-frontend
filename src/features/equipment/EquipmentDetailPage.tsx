@@ -5,7 +5,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import {
   ArrowLeft, Wrench, AlertTriangle, Calendar, DollarSign,
-  MapPin, Tag, ClipboardList, PlusCircle, CheckCircle2, XCircle,
+  MapPin, Tag, ClipboardList, PlusCircle, CheckCircle2, XCircle, Building2,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -37,6 +37,7 @@ import {
   getGetEquipmentEquipmentIdMaintenanceQueryKey,
   getGetEquipmentQueryKey,
 } from '@/api/generated/equipment/equipment';
+import { useGetBranchesBranchId } from '@/api/generated/branches/branches';
 import {
   useGetWorkOrders,
   usePostWorkOrders,
@@ -469,6 +470,15 @@ export default function EquipmentDetailPage() {
   const { data: workOrdersData } = useGetWorkOrders({ equipmentId: equipmentId ?? '' });
 
   const eq = equipment?.data;
+  // Treat equipment's stored currency as the tenant currency; fall back to PKR
+  const currency = (eq?.currency && eq.currency !== 'USD') ? eq.currency : 'PKR';
+
+  // Look up branch name from branchId
+  const { data: branchData } = useGetBranchesBranchId(
+    (eq as any)?.branchId ?? '',
+    { query: { enabled: !!(eq as any)?.branchId, staleTime: 1000 * 60 * 5 } },
+  );
+  const branchName = (branchData?.data as any)?.name ?? null;
   const logs: MaintenanceLog[] = maintenanceLogs?.data ?? [];
   const workOrders: WorkOrder[] = workOrdersData?.data ?? [];
 
@@ -578,6 +588,12 @@ export default function EquipmentDetailPage() {
             <div className="rounded-lg border p-4 space-y-3">
               <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide">Location & Schedule</h3>
               <div className="space-y-2 text-sm">
+                {branchName && (
+                  <div className="flex items-center gap-2">
+                    <Building2 className="h-3.5 w-3.5 text-muted-foreground" />
+                    <span className="font-medium">{branchName}</span>
+                  </div>
+                )}
                 <div className="flex items-center gap-2">
                   <MapPin className="h-3.5 w-3.5 text-muted-foreground" />
                   <span>{eq.location ?? 'No location set'}</span>
@@ -613,7 +629,7 @@ export default function EquipmentDetailPage() {
                   <span className="text-muted-foreground">Purchase Price</span>
                   <span className="font-medium">
                     {eq.purchasePrice != null
-                      ? `${eq.currency ?? ''} ${eq.purchasePrice.toLocaleString()}`
+                      ? `${currency} ${eq.purchasePrice.toLocaleString()}`
                       : '—'}
                   </span>
                 </div>
@@ -672,7 +688,7 @@ export default function EquipmentDetailPage() {
                     {log.cost != null && (
                       <div className="flex items-center gap-1 text-sm text-muted-foreground">
                         <DollarSign className="h-3.5 w-3.5" />
-                        {log.currency} {log.cost.toLocaleString()}
+                        {currency} {log.cost.toLocaleString()}
                       </div>
                     )}
                   </div>
@@ -729,8 +745,8 @@ export default function EquipmentDetailPage() {
                   <div className="flex flex-wrap gap-3 text-xs text-muted-foreground">
                     <span>Created {wo.createdAt ? new Date(wo.createdAt).toLocaleDateString() : '—'}</span>
                     {wo.dueAt && <span>Due {new Date(wo.dueAt).toLocaleDateString()}</span>}
-                    {wo.estimatedCost != null && <span>Est. {wo.currency} {wo.estimatedCost.toLocaleString()}</span>}
-                    {wo.actualCost != null && <span>Actual {wo.currency} {wo.actualCost.toLocaleString()}</span>}
+                    {wo.estimatedCost != null && <span>Est. {currency} {wo.estimatedCost.toLocaleString()}</span>}
+                    {wo.actualCost != null && <span>Actual {currency} {wo.actualCost.toLocaleString()}</span>}
                   </div>
 
                   {wo.resolutionNotes && (

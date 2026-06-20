@@ -26,7 +26,7 @@ import {
   AlertTriangle, CheckCircle2, CreditCard, Banknote, Smartphone,
   FileText, Printer, Download, X, Loader2, ChevronRight,
   User, Building2, Phone, Mail, Calendar, Hash, Tag,
-  Receipt, Clock, RotateCcw, ExternalLink,
+  Receipt, Clock, RotateCcw, ExternalLink, MessageCircle, History,
 } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
@@ -64,6 +64,9 @@ import {
   useGetDiscounts,
 } from '@/api/generated/discounts/discounts';
 import { getGetBillingRecentTransactionsQueryKey } from '@/api/generated/billing/billing';
+import { useGetMyTenant } from '@/api/generated/tenants/tenants';
+import { buildGymInvoicePdf } from '@/utils/invoice-pdf';
+import InvoiceActivityFeed from './InvoiceDetail/InvoiceActivityFeed';
 import { PHONE } from '@/config/tenant.config';
 import type { Invoice, InvoiceLineItem } from '@/types/billing.types';
 
@@ -381,11 +384,13 @@ function ReceiptPanel({
   invoice,
   paymentAmount,
   method,
+  gymName,
   onClose,
 }: {
   invoice: Invoice;
   paymentAmount: number;
   method: string;
+  gymName?: string;
   onClose: () => void;
 }) {
   const receiptRef = useRef<HTMLDivElement>(null);
@@ -433,6 +438,41 @@ function ReceiptPanel({
 
   const remainingAfter = Math.max(0, invoice.amountDue - paymentAmount);
   const isFullyPaid = remainingAfter <= 0;
+  const memberName = `${invoice.memberId?.firstName ?? ''} ${invoice.memberId?.lastName ?? ''}`.trim();
+  const memberPhone = invoice.memberId?.phone ?? '';
+
+  function handleWhatsApp() {
+    if (!memberPhone) return;
+    const gym = gymName ?? 'Gym';
+    const date = new Date().toLocaleDateString('en-PK', { day: '2-digit', month: 'short', year: 'numeric' });
+    const lines: string[] = [
+      `*${gym} — Payment Receipt*`,
+      `─────────────────────`,
+      `📋 *Invoice:* ${invoice.invoiceNumber ?? '—'}`,
+      `👤 *Member:* ${memberName || '—'}`,
+      `📅 *Date:* ${date}`,
+      ``,
+      `*This Payment*`,
+      `💰 Amount Paid: ${formatCurrency(paymentAmount, invoice.currency)}`,
+      `💳 Method: ${method.replace(/_/g, ' ')}`,
+      ``,
+      `*Invoice Summary*`,
+      `🧾 Invoice Total: ${formatCurrency(invoice.total, invoice.currency)}`,
+      `✅ Total Paid: ${formatCurrency(invoice.amountPaid, invoice.currency)}`,
+    ];
+    if (remainingAfter > 0) {
+      lines.push(`⚠️ *Balance Due: ${formatCurrency(remainingAfter, invoice.currency)}*`);
+    } else {
+      lines.push(`✅ *Fully Paid — Thank you!*`);
+    }
+    lines.push(``, `Thank you for being a valued member of ${gym}!`);
+
+    // Sanitize phone: strip spaces/dashes, ensure international format
+    const rawPhone = memberPhone.replace(/[\s\-()]/g, '');
+    const phone = rawPhone.startsWith('+') ? rawPhone.replace('+', '') : rawPhone;
+    const url = `https://wa.me/${phone}?text=${encodeURIComponent(lines.join('\n'))}`;
+    window.open(url, '_blank', 'noopener,noreferrer');
+  }
 
   return (
     <div className="space-y-4">
@@ -503,16 +543,23 @@ function ReceiptPanel({
       </div>
 
       {/* Actions */}
-      <div className="flex gap-2">
-        <Button size="sm" variant="outline" className="flex-1" onClick={handlePrint}>
+      <div className="flex flex-wrap gap-2">
+        <Button size="sm" variant="outline" className="flex-1 min-w-[100px]" onClick={handlePrint}>
           <Printer className="h-3.5 w-3.5 mr-1.5" />
-          Print Receipt
+          Print
         </Button>
-        <Button size="sm" variant="outline" className="flex-1" onClick={handlePrint}>
-          <Download className="h-3.5 w-3.5 mr-1.5" />
-          Save PDF
-        </Button>
-        <Button size="sm" className="flex-1" onClick={onClose}>
+        {memberPhone && (
+          <Button
+            size="sm"
+            variant="outline"
+            className="flex-1 min-w-[100px] text-green-700 border-green-300 hover:bg-green-50"
+            onClick={handleWhatsApp}
+          >
+            <MessageCircle className="h-3.5 w-3.5 mr-1.5" />
+            WhatsApp
+          </Button>
+        )}
+        <Button size="sm" className="flex-1 min-w-[100px]" onClick={onClose}>
           Done
         </Button>
       </div>
@@ -608,10 +655,15 @@ function DiscountSection({
   const allDiscounts: any[] = (discountsData as any)?.data ?? [];
   const discounts = allDiscounts.filter((d: any) => d.isActive !== false);
 
+  function invalidateActivity() {
+    queryClient.invalidateQueries({ queryKey: ['invoice-activity', invoiceId] });
+  }
+
   const applyDiscount = usePostInvoicesInvoiceIdDiscount({
     mutation: {
       onSuccess: () => {
         queryClient.invalidateQueries({ queryKey: getGetInvoicesInvoiceIdQueryKey(invoiceId) });
+        invalidateActivity();
         toast({ title: 'Discount applied' });
         onApplied();
       },
@@ -635,6 +687,7 @@ function DiscountSection({
       }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: getGetInvoicesInvoiceIdQueryKey(invoiceId) });
+      invalidateActivity();
       toast({ title: 'Manual discount applied' });
       onApplied();
     },
@@ -647,7 +700,28 @@ function DiscountSection({
     },
   });
 
-  const isPendingAny = applyDiscount.isPending || applyManualDiscount.isPending;
+  const removeDiscount = useMutation({
+    mutationFn: () =>
+      orvalMutator<unknown>({
+        url: `/invoices/${invoiceId}/discount`,
+        method: 'DELETE',
+      }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: getGetInvoicesInvoiceIdQueryKey(invoiceId) });
+      invalidateActivity();
+      toast({ title: 'Discount removed' });
+      onApplied();
+    },
+    onError: (err: any) => {
+      toast({
+        variant: 'destructive',
+        title: 'Failed to remove discount',
+        description: err?.response?.data?.message ?? err?.message,
+      });
+    },
+  });
+
+  const isPendingAny = applyDiscount.isPending || applyManualDiscount.isPending || removeDiscount.isPending;
 
   function handleApply() {
     if (mode === 'coupon') {
@@ -671,10 +745,24 @@ function DiscountSection({
 
   if (appliedCode) {
     return (
-      <div className="flex items-center gap-2 text-sm rounded-md bg-green-50 border border-green-200 px-3 py-2">
-        <Tag className="h-3.5 w-3.5 text-green-600" />
-        <span className="text-green-700 font-medium">Discount applied:</span>
-        <span className="font-mono text-green-800">{appliedCode}</span>
+      <div className="flex items-center justify-between gap-2 rounded-md bg-green-50 border border-green-200 px-3 py-2">
+        <div className="flex items-center gap-2 text-sm min-w-0">
+          <Tag className="h-3.5 w-3.5 text-green-600 shrink-0" />
+          <span className="text-green-700 font-medium">Discount applied:</span>
+          <span className="font-mono text-green-800 truncate">{appliedCode}</span>
+        </div>
+        {!disabled && (
+          <Button
+            type="button"
+            size="sm"
+            variant="ghost"
+            className="h-6 px-2 text-xs text-red-600 hover:bg-red-50 hover:text-red-700 shrink-0"
+            onClick={() => removeDiscount.mutate()}
+            disabled={isPendingAny}
+          >
+            {removeDiscount.isPending ? <Loader2 className="h-3 w-3 animate-spin" /> : 'Remove'}
+          </Button>
+        )}
       </div>
     );
   }
@@ -826,6 +914,8 @@ export function InvoicePaymentModal({
 }: InvoicePaymentModalProps) {
   const queryClient = useQueryClient();
   const { can } = usePermission();
+  const { data: tenantData } = useGetMyTenant({ query: { staleTime: 1000 * 60 * 10 } });
+  const gymName: string | undefined = (tenantData?.data as any)?.name;
   const [view, setView] = useState<ModalView>('detail');
   const [activeTab, setActiveTab] = useState<PayMethodTab>('cash');
   const [pendingPayment, setPendingPayment] = useState<{ amount: number; method: string } | null>(null);
@@ -842,6 +932,7 @@ export function InvoicePaymentModal({
       onSuccess: () => {
         queryClient.invalidateQueries({ queryKey: getGetInvoicesInvoiceIdQueryKey(invoiceId ?? '') });
         queryClient.invalidateQueries({ queryKey: getGetPaymentsQueryKey() });
+        queryClient.invalidateQueries({ queryKey: ['invoice-activity', invoiceId ?? ''] });
         // Invalidate the recent-transactions panel so it shows the updated invoice state immediately
         queryClient.invalidateQueries({ queryKey: getGetBillingRecentTransactionsQueryKey() });
         onPaymentRecorded?.();
@@ -941,6 +1032,175 @@ export function InvoicePaymentModal({
     onOpenChange(false);
   }
 
+  // ── Invoice-level share / print / download ─────────────────────────────────
+
+  function buildInvoiceWhatsApp(inv: Invoice, gym: string | undefined) {
+    const phone = inv.memberId?.phone ?? '';
+    if (!phone) return null;
+    const memberName = `${inv.memberId?.firstName ?? ''} ${inv.memberId?.lastName ?? ''}`.trim();
+    const date = new Date().toLocaleDateString('en-PK', { day: '2-digit', month: 'short', year: 'numeric' });
+    const lines = [
+      `*${gym ?? 'Gym'} — Invoice*`,
+      `─────────────────────`,
+      `📋 *Invoice:* ${inv.invoiceNumber ?? '—'}`,
+      `👤 *Member:* ${memberName || '—'}`,
+      `📅 *Date:* ${date}`,
+      ``,
+    ];
+    // Line items
+    if (inv.lineItems && inv.lineItems.length > 0) {
+      lines.push(`*Charges:*`);
+      inv.lineItems.forEach((li: any) => {
+        const amt = (li.unitPrice ?? li.total ?? 0);
+        lines.push(`  • ${li.description ?? li.type}: ${formatCurrency(amt, inv.currency)}`);
+      });
+      lines.push(``);
+    }
+    lines.push(`💳 *Invoice Total:* ${formatCurrency(inv.total, inv.currency)}`);
+    if ((inv.amountPaid ?? 0) > 0) {
+      lines.push(`✅ *Paid:* ${formatCurrency(inv.amountPaid, inv.currency)}`);
+    }
+    if ((inv.amountDue ?? 0) > 0) {
+      lines.push(`⚠️ *Balance Due: ${formatCurrency(inv.amountDue, inv.currency)}*`);
+      if (inv.dueDate) {
+        lines.push(`📆 *Due by:* ${new Date(inv.dueDate).toLocaleDateString('en-PK', { day: '2-digit', month: 'short', year: 'numeric' })}`);
+      }
+    } else {
+      lines.push(`✅ *Fully Paid — Thank you!*`);
+    }
+    lines.push(``, `Thank you for choosing ${gym ?? 'us'}! 🏋️`);
+
+    const rawPhone = phone.replace(/[\s\-()]/g, '');
+    const cleanPhone = rawPhone.startsWith('+') ? rawPhone.slice(1) : rawPhone;
+    return `https://wa.me/${cleanPhone}?text=${encodeURIComponent(lines.join('\n'))}`;
+  }
+
+  function handleInvoiceWhatsApp() {
+    if (!invoice) return;
+    // WhatsApp's wa.me URL can only pre-fill text — files/PDFs cannot be sent
+    // programmatically via URL. So we: 1) auto-download the PDF, 2) open WhatsApp
+    // with the invoice summary text. The user can then attach the downloaded PDF
+    // manually in WhatsApp if needed.
+    const memberName = `${invoice.memberId?.firstName ?? ''} ${invoice.memberId?.lastName ?? ''}`.trim();
+    const lineLabel = invoice.lineItems?.map((li: any) => li.description || li.type).join(', ') || 'Membership / Service';
+    const doc = buildGymInvoicePdf({
+      invoiceNumber: invoice.invoiceNumber ?? '',
+      status: invoice.status ?? '',
+      recipientName: memberName,
+      recipientEmail: invoice.memberId?.email,
+      currency: invoice.currency ?? 'PKR',
+      total: invoice.total ?? 0,
+      amountPaid: invoice.amountPaid,
+      amountDue: invoice.amountDue,
+      dueDate: invoice.dueDate ?? undefined,
+      createdAt: invoice.createdAt,
+      lineLabel,
+      gymName: gymName ?? 'Gym',
+    });
+    doc.save(`${invoice.invoiceNumber ?? 'invoice'}.pdf`);
+
+    // Small delay so the PDF download starts before WhatsApp tab opens
+    setTimeout(() => {
+      const url = buildInvoiceWhatsApp(invoice, gymName);
+      if (url) window.open(url, '_blank', 'noopener,noreferrer');
+    }, 400);
+  }
+
+  function handleInvoicePrint() {
+    if (!invoice) return;
+    const memberName = `${invoice.memberId?.firstName ?? ''} ${invoice.memberId?.lastName ?? ''}`.trim();
+    const lineLabel = invoice.lineItems?.map((li: any) => li.description || li.type).join(', ') || 'Membership / Service';
+    const win = window.open('', '_blank');
+    if (!win) return;
+    win.document.write(`
+      <html>
+        <head>
+          <title>Invoice ${invoice.invoiceNumber}</title>
+          <style>
+            body { font-family: Arial, sans-serif; padding: 32px; font-size: 13px; color: #0f172a; }
+            .header { background:#0f172a; color:#fff; padding:20px 24px; border-radius:8px 8px 0 0; margin-bottom:0; }
+            .gym { font-size:20px; font-weight:bold; letter-spacing:1px; }
+            .sub { font-size:10px; color:#38ce97; margin-top:2px; }
+            .body { border:1px solid #e2e8f0; border-top:3px solid #0ea472; padding:20px 24px; border-radius:0 0 8px 8px; }
+            .grid { display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-bottom:16px; }
+            .label { font-size:10px; color:#64748b; text-transform:uppercase; letter-spacing:.5px; }
+            .value { font-size:13px; font-weight:600; color:#0f172a; margin-top:2px; }
+            table { width:100%; border-collapse:collapse; margin:12px 0; }
+            th { background:#0ea472; color:#fff; text-align:left; padding:8px 10px; font-size:11px; }
+            td { padding:8px 10px; border-bottom:1px solid #f1f5f9; font-size:12px; }
+            .totals { margin-top:12px; text-align:right; }
+            .total-row { display:flex; justify-content:flex-end; gap:40px; padding:4px 0; font-size:13px; }
+            .big { font-size:16px; font-weight:bold; color:#0ea472; border-top:2px solid #0ea472; padding-top:8px; margin-top:4px; }
+            .badge { display:inline-block; padding:3px 10px; border-radius:12px; font-size:11px; font-weight:bold; background:#d1fae5; color:#065f46; }
+          </style>
+        </head>
+        <body>
+          <div class="header">
+            <div class="gym">${gymName?.toUpperCase() ?? 'GYM'}</div>
+            <div class="sub">FITNESS & WELLNESS</div>
+          </div>
+          <div class="body">
+            <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:16px;">
+              <div>
+                <div style="font-size:22px;font-weight:bold;color:#0f172a;">INVOICE</div>
+                <div style="color:#64748b;font-size:11px;">${invoice.invoiceNumber}</div>
+              </div>
+              <span class="badge">${(invoice.status ?? '').toUpperCase().replace(/_/g,' ')}</span>
+            </div>
+            <div class="grid">
+              <div><div class="label">Bill To</div><div class="value">${memberName || '—'}</div>
+                ${invoice.memberId?.email ? `<div style="font-size:11px;color:#64748b;">${invoice.memberId.email}</div>` : ''}
+                ${invoice.memberId?.phone ? `<div style="font-size:11px;color:#64748b;">${invoice.memberId.phone}</div>` : ''}
+              </div>
+              <div>
+                <div class="label">Date</div><div class="value">${new Date().toLocaleDateString()}</div>
+                ${invoice.dueDate ? `<div class="label" style="margin-top:8px;">Due Date</div><div class="value">${new Date(invoice.dueDate).toLocaleDateString()}</div>` : ''}
+              </div>
+            </div>
+            <table>
+              <thead><tr><th>Description</th><th style="text-align:right;">Amount</th></tr></thead>
+              <tbody>
+                ${(invoice.lineItems ?? []).map((li: any) => `
+                  <tr><td>${li.description || li.type || 'Service'}</td><td style="text-align:right;">${formatCurrency(li.unitPrice ?? li.total ?? 0, invoice.currency)}</td></tr>
+                `).join('')}
+                ${(invoice.invoiceLevelDiscountAmount ?? 0) > 0 ? `<tr><td style="color:#16a34a;">Discount (${invoice.discountCode ?? 'applied'})</td><td style="text-align:right;color:#16a34a;">-${formatCurrency(invoice.invoiceLevelDiscountAmount ?? 0, invoice.currency)}</td></tr>` : ''}
+              </tbody>
+            </table>
+            <div class="totals">
+              <div class="total-row"><span>Subtotal</span><span>${formatCurrency(invoice.subtotal ?? invoice.total, invoice.currency)}</span></div>
+              ${(invoice.amountPaid ?? 0) > 0 ? `<div class="total-row"><span style="color:#16a34a;">Paid</span><span style="color:#16a34a;">${formatCurrency(invoice.amountPaid, invoice.currency)}</span></div>` : ''}
+              <div class="total-row big"><span>Balance Due</span><span>${formatCurrency(invoice.amountDue, invoice.currency)}</span></div>
+            </div>
+          </div>
+          <p style="text-align:center;color:#94a3b8;font-size:11px;margin-top:20px;">Thank you for choosing ${gymName ?? 'us'}!</p>
+        </body>
+      </html>
+    `);
+    win.document.close();
+    win.print();
+  }
+
+  function handleInvoiceDownload() {
+    if (!invoice) return;
+    const memberName = `${invoice.memberId?.firstName ?? ''} ${invoice.memberId?.lastName ?? ''}`.trim();
+    const lineLabel = invoice.lineItems?.map((li: any) => li.description || li.type).join(', ') || 'Membership / Service';
+    const doc = buildGymInvoicePdf({
+      invoiceNumber: invoice.invoiceNumber ?? '',
+      status: invoice.status ?? '',
+      recipientName: memberName,
+      recipientEmail: invoice.memberId?.email,
+      currency: invoice.currency ?? 'PKR',
+      total: invoice.total ?? 0,
+      amountPaid: invoice.amountPaid,
+      amountDue: invoice.amountDue,
+      dueDate: invoice.dueDate ?? undefined,
+      createdAt: invoice.createdAt,
+      lineLabel,
+      gymName: gymName ?? 'Gym',
+    });
+    doc.save(`${invoice.invoiceNumber ?? 'invoice'}.pdf`);
+  }
+
   // ── Loading skeleton ───────────────────────────────────────────────────────
 
   if (isLoading || !invoice) {
@@ -976,6 +1236,7 @@ export function InvoicePaymentModal({
             invoice={invoice}
             paymentAmount={pendingPayment.amount}
             method={pendingPayment.method}
+            gymName={gymName}
             onClose={handleClose}
           />
         </DialogContent>
@@ -1046,13 +1307,13 @@ export function InvoicePaymentModal({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent
         className={cn(
-          'sm:max-w-3xl max-h-[90vh] flex flex-col p-0 gap-0',
+          'sm:max-w-3xl max-h-[90vh] flex flex-col p-0 gap-0 [&>button:last-of-type]:hidden',
           isOverdue && 'ring-2 ring-red-400 ring-offset-2',
         )}
       >
         {/* ── Header ──────────────────────────────────────────────────────── */}
         <DialogHeader className={cn(
-          'px-6 pt-5 pb-4 shrink-0 rounded-t-lg',
+          'pl-6 pr-6 pt-5 pb-4 shrink-0 rounded-t-lg',
           isOverdue ? 'bg-red-50 border-b border-red-200' : 'border-b',
         )}>
           <div className="flex items-start justify-between gap-4">
@@ -1141,12 +1402,12 @@ export function InvoicePaymentModal({
               />
             </div>
 
-            {/* Discount section (only when invoice is not paid) */}
-            {canCollect && !invoice.discountCode && (
+            {/* Discount section — shows apply form OR applied badge with Remove button */}
+            {canCollect && (
               <div>
                 <h3 className="text-sm font-semibold mb-2 flex items-center gap-1.5">
                   <Tag className="h-3.5 w-3.5" />
-                  Apply Discount
+                  {invoice.discountCode ? 'Discount' : 'Apply Discount'}
                 </h3>
                 <DiscountSection
                   invoiceId={invoice._id}
@@ -1158,18 +1419,6 @@ export function InvoicePaymentModal({
                     queryClient.invalidateQueries({ queryKey: getGetInvoicesInvoiceIdQueryKey(invoice._id) });
                   }}
                 />
-              </div>
-            )}
-            {invoice.discountCode && (
-              <div className="flex items-center gap-2 text-sm rounded-md bg-green-50 border border-green-200 px-3 py-2">
-                <Tag className="h-3.5 w-3.5 text-green-600" />
-                <span className="text-green-700 font-medium">Discount applied:</span>
-                <span className="font-mono text-green-800">{invoice.discountCode}</span>
-                {invoice.invoiceLevelDiscountAmount && (
-                  <span className="text-green-600 text-xs ml-1">
-                    (-{formatCurrency(invoice.invoiceLevelDiscountAmount, invoice.currency)})
-                  </span>
-                )}
               </div>
             )}
 
@@ -1290,21 +1539,57 @@ export function InvoicePaymentModal({
               </div>
             )}
 
+            {/* Activity feed */}
+            <div>
+              <h3 className="text-sm font-semibold mb-3 flex items-center gap-1.5 text-muted-foreground uppercase tracking-wide">
+                <History className="h-3.5 w-3.5" />
+                Activity
+              </h3>
+              <InvoiceActivityFeed invoiceId={invoice._id} compact />
+            </div>
+
           </div>
         </ScrollArea>
 
         {/* ── Footer ──────────────────────────────────────────────────────── */}
-        <div className="px-6 py-3 border-t bg-muted/20 shrink-0 flex items-center justify-between rounded-b-lg">
-          <p className="text-xs text-muted-foreground">
-            Total: <span className="font-semibold text-foreground">{formatCurrency(invoice.total, invoice.currency)}</span>
-            {invoice.amountPaid > 0 && (
-              <> · Paid: <span className="font-semibold text-green-700">{formatCurrency(invoice.amountPaid, invoice.currency)}</span></>
-            )}
-          </p>
-          <Button variant="ghost" size="sm" onClick={handleClose}>
-            <X className="h-3.5 w-3.5 mr-1.5" />
-            Close
-          </Button>
+        <div className="px-6 py-3 border-t bg-muted/20 shrink-0 rounded-b-lg">
+          <div className="flex items-center justify-between gap-2 flex-wrap">
+            {/* Totals summary */}
+            <p className="text-xs text-muted-foreground">
+              Total: <span className="font-semibold text-foreground">{formatCurrency(invoice.total, invoice.currency)}</span>
+              {invoice.amountPaid > 0 && (
+                <> · Paid: <span className="font-semibold text-green-700">{formatCurrency(invoice.amountPaid, invoice.currency)}</span></>
+              )}
+            </p>
+
+            {/* Action buttons */}
+            <div className="flex items-center gap-2">
+              {invoice.memberId?.phone && (
+                <Button
+                  type="button"
+                  size="sm"
+                  variant="outline"
+                  className="text-green-700 border-green-300 hover:bg-green-50 h-8 px-3"
+                  onClick={handleInvoiceWhatsApp}
+                >
+                  <MessageCircle className="h-3.5 w-3.5 mr-1.5" />
+                  Share
+                </Button>
+              )}
+              <Button type="button" size="sm" variant="outline" className="h-8 px-3" onClick={handleInvoicePrint}>
+                <Printer className="h-3.5 w-3.5 mr-1.5" />
+                Print
+              </Button>
+              <Button type="button" size="sm" variant="outline" className="h-8 px-3" onClick={handleInvoiceDownload}>
+                <Download className="h-3.5 w-3.5 mr-1.5" />
+                PDF
+              </Button>
+              <Button variant="ghost" size="sm" className="h-8 px-3" onClick={handleClose}>
+                <X className="h-3.5 w-3.5 mr-1.5" />
+                Close
+              </Button>
+            </div>
+          </div>
         </div>
       </DialogContent>
     </Dialog>

@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Receipt, Plus, TrendingDown } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -17,6 +17,7 @@ import ConfirmDialog from '@/components/shared/ConfirmDialog';
 import { useTableState } from '@/hooks/use-table-state';
 import { useConfirm } from '@/hooks/use-confirm';
 import { usePermission } from '@/hooks/use-permission';
+import { useAuthStore } from '@/stores/auth.store';
 import { useGetBranches } from '@/api/generated/branches/branches';
 import { useExpenses, useDeleteExpense } from './hooks/use-expenses';
 import ExpenseForm, { CATEGORY_LABELS } from './components/ExpenseForm';
@@ -48,6 +49,7 @@ function formatCurrency(amount: number, currency: string) {
 export default function ExpensesPage() {
   const { can } = usePermission();
   const table = useTableState({ defaultLimit: 20 });
+  const isBranchManager = useAuthStore((s) => s.user?.role === 'branch_manager');
 
   const [branchFilter, setBranchFilter] = useState<string>('all');
   const [categoryFilter, setCategoryFilter] = useState<string>('all');
@@ -63,6 +65,12 @@ export default function ExpensesPage() {
 
   const { data: branchesData } = useGetBranches({ limit: 100 });
   const branches = branchesData?.data ?? [];
+
+  useEffect(() => {
+    if (isBranchManager && branches.length > 0 && branchFilter === 'all') {
+      setBranchFilter(branches[0]._id ?? 'all');
+    }
+  }, [isBranchManager, branches]);
 
   const query = {
     ...table.queryParams,
@@ -215,7 +223,7 @@ export default function ExpensesPage() {
               <SelectValue placeholder="All branches" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="all">All branches</SelectItem>
+              {!isBranchManager && <SelectItem value="all">All branches</SelectItem>}
               {branches.map((b) => (
                 <SelectItem key={b._id} value={b._id}>{b.name}</SelectItem>
               ))}

@@ -17,9 +17,7 @@ import {
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from '@/components/ui/select';
-import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
-import { cn } from '@/lib/utils';
 import { useGetBranches } from '@/api/generated/branches/branches';
 import { useCreateStaff, useUpdateStaff } from '../hooks/use-staff';
 import type { StaffUser } from '@/api/generated/schemas';
@@ -32,25 +30,42 @@ export const ROLE_LABELS: Record<string, string> = {
 };
 
 export const JOB_TITLE_OPTIONS = [
-  { value: 'receptionist',    label: 'Receptionist'         },
-  { value: 'gym_floor_staff', label: 'Gym Floor Staff'      },
-  { value: 'gate_keeper',     label: 'Gate Keeper'          },
-  { value: 'security',        label: 'Security Guard'       },
-  { value: 'cleaner',         label: 'Cleaner / Housekeeping' },
-  { value: 'gym_boy',         label: 'Gym Boy'              },
-  { value: 'other',           label: 'Other'                },
+  { value: 'receptionist',    label: 'Receptionist'            },
+  { value: 'gym_floor_staff', label: 'Gym Floor Staff'         },
+  { value: 'gate_keeper',     label: 'Gate Keeper'             },
+  { value: 'security',        label: 'Security Guard'          },
+  { value: 'cleaner',         label: 'Cleaner / Housekeeping'  },
+  { value: 'gym_boy',         label: 'Gym Boy'                 },
+  { value: 'other',           label: 'Other'                   },
+] as const;
+
+export const GENDER_OPTIONS = [
+  { value: 'male',   label: 'Male'              },
+  { value: 'female', label: 'Female'            },
+  { value: 'other',  label: 'Prefer not to say' },
+] as const;
+
+export const COUNTRIES = [
+  'Pakistan',
+  // 'Afghanistan', 'Australia', 'Bahrain', 'Bangladesh',
+  // 'Canada', 'China', 'Egypt', 'France', 'Germany', 'India',
+  // 'Indonesia', 'Iran', 'Iraq', 'Jordan', 'Kenya', 'Kuwait',
+  // 'Malaysia', 'Nepal', 'Netherlands', 'Nigeria', 'Oman', 'Qatar',
+  // 'Saudi Arabia', 'Singapore', 'South Africa', 'Sri Lanka',
+  // 'Turkey', 'United Arab Emirates', 'United Kingdom', 'United States',
+  // 'Other',
 ] as const;
 
 // What a Branch Manager can do — shown before gym owner assigns the role
 const BM_CAPABILITIES = [
-  { icon: Eye,       label: 'View & manage members',       detail: 'Add, edit, suspend, and view member details'    },
-  { icon: Users,     label: 'Manage staff',                detail: 'Create and update staff accounts in their branch' },
-  { icon: FileText,  label: 'Session notes & attendance',  detail: 'View all trainer notes and mark attendance'     },
-  { icon: DollarSign,label: 'Billing & invoices',          detail: 'View invoices and record payments'              },
-  { icon: BarChart3, label: 'Reports & analytics',         detail: 'Access branch-level reports and data'           },
-  { icon: Bell,      label: 'Notifications',               detail: 'Receive alerts for key gym events'              },
-  { icon: BookOpen,  label: 'Walk-in leads',               detail: 'Manage and follow up on walk-in prospects'      },
-  { icon: Settings,  label: 'Branch settings',             detail: 'Update branch info, schedule, and equipment'    },
+  { icon: Eye,        label: 'View & manage members',      detail: 'Add, edit, suspend, and view member details'     },
+  { icon: Users,      label: 'Manage staff',               detail: 'Create and update staff accounts in their branch'},
+  { icon: FileText,   label: 'Session notes & attendance', detail: 'View all trainer notes and mark attendance'      },
+  { icon: DollarSign, label: 'Billing & invoices',         detail: 'View invoices and record payments'               },
+  { icon: BarChart3,  label: 'Reports & analytics',        detail: 'Access branch-level reports and data'            },
+  { icon: Bell,       label: 'Notifications',              detail: 'Receive alerts for key gym events'               },
+  { icon: BookOpen,   label: 'Walk-in leads',              detail: 'Manage and follow up on walk-in prospects'       },
+  { icon: Settings,   label: 'Branch settings',            detail: 'Update branch info, schedule, and equipment'     },
 ];
 
 const BM_CANNOT = [
@@ -69,6 +84,11 @@ const BaseSchema = z.object({
   phone:     z.string().max(30).optional().or(z.literal('')),
   role:      z.enum(['branch_manager', 'staff']),
   jobTitle:  z.string().optional(),
+  gender:    z.enum(['male', 'female', 'other']).optional(),
+  age:       z.coerce.number().int().min(16, 'Min age is 16').max(100, 'Max age is 100').optional().or(z.literal('')),
+  country:   z.string().optional(),
+  city:      z.string().max(100).optional().or(z.literal('')),
+  address:   z.string().max(500).optional().or(z.literal('')),
   notes:     z.string().max(1000).optional(),
   branchIds: z.array(z.string()).min(1, 'Select at least one branch'),
 });
@@ -87,6 +107,11 @@ interface StaffUserExt extends StaffUser {
   phone?: string;
   jobTitle?: string;
   notes?: string;
+  gender?: string;
+  age?: number;
+  country?: string;
+  city?: string;
+  address?: string;
 }
 
 // ─── Props ────────────────────────────────────────────────────────────────────
@@ -207,6 +232,11 @@ export default function StaffForm({ open, onClose, staff }: StaffFormProps) {
       phone:     '',
       role:      'staff',
       jobTitle:  '',
+      gender:    undefined,
+      age:       '',
+      country:   'Pakistan',
+      city:      '',
+      address:   '',
       notes:     '',
       branchIds: [],
     },
@@ -223,6 +253,11 @@ export default function StaffForm({ open, onClose, staff }: StaffFormProps) {
       phone:     staff?.phone     ?? '',
       role:      (staff?.role as 'branch_manager' | 'staff') ?? 'staff',
       jobTitle:  staff?.jobTitle  ?? '',
+      gender:    (staff?.gender as 'male' | 'female' | 'other' | undefined),
+      age:       staff?.age ?? '',
+      country:   staff?.country   ?? 'Pakistan',
+      city:      staff?.city      ?? '',
+      address:   staff?.address   ?? '',
       notes:     staff?.notes     ?? '',
       branchIds: staff?.branchIds ?? [],
     },
@@ -238,11 +273,30 @@ export default function StaffForm({ open, onClose, staff }: StaffFormProps) {
         phone:     staff.phone     ?? '',
         role:      (staff.role as 'branch_manager' | 'staff') ?? 'staff',
         jobTitle:  staff.jobTitle  ?? '',
+        gender:    (staff.gender as 'male' | 'female' | 'other' | undefined),
+        age:       staff.age ?? '',
+        country:   staff.country   ?? 'Pakistan',
+        city:      staff.city      ?? '',
+        address:   staff.address   ?? '',
         notes:     staff.notes     ?? '',
         branchIds: staff.branchIds ?? [],
       });
     } else {
-      createForm.reset();
+      createForm.reset({
+        firstName: '',
+        lastName:  '',
+        email:     '',
+        phone:     '',
+        role:      'staff',
+        jobTitle:  '',
+        gender:    undefined,
+        age:       '',
+        country:   'Pakistan',
+        city:      '',
+        address:   '',
+        notes:     '',
+        branchIds: [],
+      });
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [staff]);
@@ -268,6 +322,11 @@ export default function StaffForm({ open, onClose, staff }: StaffFormProps) {
       ...values,
       phone:    values.phone    || undefined,
       jobTitle: values.jobTitle || undefined,
+      gender:   values.gender   || undefined,
+      age:      values.age      || undefined,
+      country:  values.country  || undefined,
+      city:     values.city     || undefined,
+      address:  values.address  || undefined,
       notes:    values.notes    || undefined,
     };
     createMutation.mutate({ data: payload as any });
@@ -278,12 +337,17 @@ export default function StaffForm({ open, onClose, staff }: StaffFormProps) {
       ...values,
       phone:    values.phone    || undefined,
       jobTitle: values.jobTitle || undefined,
+      gender:   values.gender   || undefined,
+      age:      values.age      || undefined,
+      country:  values.country  || undefined,
+      city:     values.city     || undefined,
+      address:  values.address  || undefined,
       notes:    values.notes    || undefined,
     };
     updateMutation.mutate({ staffId: staff!._id!, data: payload as any });
   });
 
-  // ── Shared field renderer helpers ──────────────────────────────────────────
+  // ── Shared components ──────────────────────────────────────────────────────
 
   function BranchSelector({
     value,
@@ -317,6 +381,102 @@ export default function StaffForm({ open, onClose, staff }: StaffFormProps) {
         </div>
         {error && <p className="text-xs text-destructive">{error}</p>}
       </div>
+    );
+  }
+
+  // ── Field group: personal details (reused in both forms) ───────────────────
+
+  function PersonalFields({
+    form,
+    prefix,
+  }: {
+    form: typeof createForm | typeof editForm;
+    prefix: string;
+  }) {
+    return (
+      <>
+        {/* Gender + Age */}
+        <div className="grid grid-cols-2 gap-3">
+          <div className="space-y-1.5">
+            <Label>Gender</Label>
+            <Controller
+              control={form.control as any}
+              name="gender"
+              render={({ field }) => (
+                <Select
+                  value={field.value ?? ''}
+                  onValueChange={(v) => field.onChange(v === '__none__' ? undefined : v)}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select gender…" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="__none__">— Not specified —</SelectItem>
+                    {GENDER_OPTIONS.map((o) => (
+                      <SelectItem key={o.value} value={o.value}>{o.label}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              )}
+            />
+          </div>
+          <div className="space-y-1.5">
+            <Label htmlFor={`${prefix}-age`}>Age</Label>
+            <Input
+              id={`${prefix}-age`}
+              type="number"
+              min={16}
+              max={100}
+              placeholder="e.g. 28"
+              {...(form as any).register('age')}
+            />
+            {(form.formState.errors as any).age && (
+              <p className="text-xs text-destructive">{(form.formState.errors as any).age?.message}</p>
+            )}
+          </div>
+        </div>
+
+        {/* Country */}
+        <div className="space-y-1.5">
+          <Label>Country</Label>
+          <Controller
+            control={form.control as any}
+            name="country"
+            render={({ field }) => (
+              <Select value={field.value ?? 'Pakistan'} onValueChange={field.onChange}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Select country…" />
+                </SelectTrigger>
+                <SelectContent>
+                  {COUNTRIES.map((c) => (
+                    <SelectItem key={c} value={c}>{c}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            )}
+          />
+        </div>
+
+        {/* City */}
+        <div className="space-y-1.5">
+          <Label htmlFor={`${prefix}-city`}>City</Label>
+          <Input
+            id={`${prefix}-city`}
+            placeholder="e.g. Lahore"
+            {...(form as any).register('city')}
+          />
+        </div>
+
+        {/* Address */}
+        <div className="space-y-1.5">
+          <Label htmlFor={`${prefix}-address`}>Address</Label>
+          <Input
+            id={`${prefix}-address`}
+            placeholder="Street address, area…"
+            {...(form as any).register('address')}
+          />
+        </div>
+      </>
     );
   }
 
@@ -452,6 +612,13 @@ export default function StaffForm({ open, onClose, staff }: StaffFormProps) {
                 </div>
               )}
 
+              <Separator />
+              <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Personal Details</p>
+
+              <PersonalFields form={createForm} prefix="c" />
+
+              <Separator />
+
               {/* Branch assignments */}
               <Controller
                 control={createForm.control}
@@ -554,6 +721,13 @@ export default function StaffForm({ open, onClose, staff }: StaffFormProps) {
                   />
                 </div>
               )}
+
+              <Separator />
+              <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Personal Details</p>
+
+              <PersonalFields form={editForm} prefix="e" />
+
+              <Separator />
 
               {/* Branch assignments */}
               <Controller

@@ -8,6 +8,7 @@ interface AuthUser {
   role: UserRole;
   email: string;
   name: string;
+  branchIds?: string[];
   permissions: Permission[];
 }
 

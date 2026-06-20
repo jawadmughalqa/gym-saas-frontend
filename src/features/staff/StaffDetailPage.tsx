@@ -7,7 +7,7 @@ import {
   ShieldCheck, UserX, Info, Eye, EyeOff,
   ShieldCheck as ShieldCheckIcon, ChevronDown, ChevronUp,
   Eye as EyeIcon, Users, FileText, BarChart3, DollarSign,
-  Bell, BookOpen, Settings,
+  Bell, BookOpen, Settings, Home, Globe,
 } from 'lucide-react';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
@@ -37,6 +37,11 @@ interface StaffUserExt {
   role?: string;
   jobTitle?: string;
   notes?: string;
+  gender?: string;
+  age?: number;
+  country?: string;
+  city?: string;
+  address?: string;
   status?: string;
   branchIds?: string[];
   lastLoginAt?: string | null;
@@ -94,6 +99,11 @@ function jobTitleLabel(value?: string) {
   return JOB_TITLE_OPTIONS.find((o) => o.value === value)?.label ?? value;
 }
 
+function genderLabel(value?: string) {
+  const map: Record<string, string> = { male: 'Male', female: 'Female', other: 'Prefer not to say' };
+  return value ? (map[value] ?? value) : null;
+}
+
 function initials(s: StaffUserExt) {
   const f = s.firstName?.[0] ?? '';
   const l = s.lastName?.[0] ?? '';
@@ -106,7 +116,7 @@ function BranchManagerCapabilities() {
   const [open, setOpen] = useState(false);
   return (
     <Card className="border-blue-200 dark:border-blue-800">
-      <CardHeader className="pb-0">
+      <CardHeader >
         <button
           type="button"
           className="flex items-center gap-2 text-left w-full"
@@ -583,6 +593,75 @@ export default function StaffDetailPage() {
                 <p className="text-sm font-medium">{fmtDate(staff.createdAt)}</p>
               </div>
             </div>
+
+            {/* Gender + Age */}
+            {(staff.gender || staff.age) && (
+              <>
+                {staff.gender && (
+                  <div className="flex items-center gap-3">
+                    <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-muted flex-shrink-0">
+                      <User className="h-4 w-4 text-muted-foreground" />
+                    </div>
+                    <div className="min-w-0">
+                      <p className="text-xs text-muted-foreground">Gender</p>
+                      <p className="text-sm font-medium">{genderLabel(staff.gender)}</p>
+                    </div>
+                  </div>
+                )}
+                {staff.age && (
+                  <div className="flex items-center gap-3">
+                    <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-muted flex-shrink-0">
+                      <Calendar className="h-4 w-4 text-muted-foreground" />
+                    </div>
+                    <div className="min-w-0">
+                      <p className="text-xs text-muted-foreground">Age</p>
+                      <p className="text-sm font-medium">{staff.age} years</p>
+                    </div>
+                  </div>
+                )}
+              </>
+            )}
+
+            {/* Country + City */}
+            {(staff.country || staff.city) && (
+              <>
+                {staff.country && (
+                  <div className="flex items-center gap-3">
+                    <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-muted flex-shrink-0">
+                      <Globe className="h-4 w-4 text-muted-foreground" />
+                    </div>
+                    <div className="min-w-0">
+                      <p className="text-xs text-muted-foreground">Country</p>
+                      <p className="text-sm font-medium">{staff.country}</p>
+                    </div>
+                  </div>
+                )}
+                {staff.city && (
+                  <div className="flex items-center gap-3">
+                    <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-muted flex-shrink-0">
+                      <MapPin className="h-4 w-4 text-muted-foreground" />
+                    </div>
+                    <div className="min-w-0">
+                      <p className="text-xs text-muted-foreground">City</p>
+                      <p className="text-sm font-medium">{staff.city}</p>
+                    </div>
+                  </div>
+                )}
+              </>
+            )}
+
+            {/* Address */}
+            {staff.address && (
+              <div className="flex items-start gap-3 sm:col-span-2">
+                <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-muted flex-shrink-0">
+                  <Home className="h-4 w-4 text-muted-foreground" />
+                </div>
+                <div className="min-w-0">
+                  <p className="text-xs text-muted-foreground">Address</p>
+                  <p className="text-sm font-medium">{staff.address}</p>
+                </div>
+              </div>
+            )}
 
             {assignedBranches.length > 0 && (
               <div className="flex items-start gap-3 sm:col-span-2">

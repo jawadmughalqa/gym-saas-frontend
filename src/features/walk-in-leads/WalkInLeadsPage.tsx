@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { format } from 'date-fns';
 import { UserPlus, Plus, Users, TrendingUp, CheckCircle2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -16,6 +16,7 @@ import ConfirmDialog from '@/components/shared/ConfirmDialog';
 import { useTableState } from '@/hooks/use-table-state';
 import { useConfirm } from '@/hooks/use-confirm';
 import { usePermission } from '@/hooks/use-permission';
+import { useAuthStore } from '@/stores/auth.store';
 import { useGetBranches } from '@/api/generated/branches/branches';
 import { useWalkInLeads, useWalkInLeadStats, useDeleteWalkInLead } from './hooks/use-walkin-leads';
 import WalkInLeadForm, { SOURCE_LABELS, STATUS_LABELS } from './components/WalkInLeadForm';
@@ -50,6 +51,7 @@ function branchLabel(branchId: WalkInLead['branchId']): string {
 export default function WalkInLeadsPage() {
   const { can } = usePermission();
   const table = useTableState({ defaultLimit: 20 });
+  const isBranchManager = useAuthStore((s) => s.user?.role === 'branch_manager');
 
   const [branchFilter, setBranchFilter] = useState<string>('all');
   const [statusFilter, setStatusFilter] = useState<string>('all');
@@ -69,6 +71,12 @@ export default function WalkInLeadsPage() {
 
   const { data: branchesData } = useGetBranches({ limit: 100 });
   const branches = branchesData?.data ?? [];
+
+  useEffect(() => {
+    if (isBranchManager && branches.length > 0 && branchFilter === 'all') {
+      setBranchFilter(branches[0]._id ?? 'all');
+    }
+  }, [isBranchManager, branches]);
 
   const query = {
     ...table.queryParams,
@@ -293,7 +301,7 @@ export default function WalkInLeadsPage() {
             <SelectValue placeholder="All branches" />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="all">All branches</SelectItem>
+            {!isBranchManager && <SelectItem value="all">All branches</SelectItem>}
             {branches.map((b) => (
               <SelectItem key={b._id} value={b._id}>{b.name}</SelectItem>
             ))}

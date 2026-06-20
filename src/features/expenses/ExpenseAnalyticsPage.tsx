@@ -1,4 +1,5 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { useAuthStore } from '@/stores/auth.store';
 import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
   PieChart, Pie, Cell, Legend,
@@ -38,12 +39,19 @@ function formatCurrency(amount: number) {
 // ─── ExpenseAnalyticsPage ─────────────────────────────────────────────────────
 
 export default function ExpenseAnalyticsPage() {
+  const isBranchManager = useAuthStore((s) => s.user?.role === 'branch_manager');
   const [selectedYear, setSelectedYear] = useState<number>(CURRENT_YEAR);
   const [selectedMonth, setSelectedMonth] = useState<string>('all');
   const [branchFilter, setBranchFilter] = useState<string>('all');
 
   const { data: branchesData } = useGetBranches({ limit: 100 });
   const branches = branchesData?.data ?? [];
+
+  useEffect(() => {
+    if (isBranchManager && branches.length > 0 && branchFilter === 'all') {
+      setBranchFilter(branches[0]._id ?? 'all');
+    }
+  }, [isBranchManager, branches]);
 
   const summaryParams = {
     year: selectedYear,
@@ -141,7 +149,7 @@ export default function ExpenseAnalyticsPage() {
               <SelectValue placeholder="All branches" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="all">All branches</SelectItem>
+              {!isBranchManager && <SelectItem value="all">All branches</SelectItem>}
               {branches.map((b) => (
                 <SelectItem key={b._id} value={b._id}>{b.name}</SelectItem>
               ))}

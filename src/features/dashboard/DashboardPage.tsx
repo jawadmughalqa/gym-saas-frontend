@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { format, startOfMonth, endOfMonth, startOfYear, endOfYear, subDays } from 'date-fns';
 import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
@@ -73,6 +73,9 @@ function getDateRange(year: number, month: number): { dateFrom: string; dateTo: 
 // ─── PaymentSummaryCard ───────────────────────────────────────────────────────
 
 function PaymentSummaryCard() {
+  const user = useAuthStore((s) => s.user);
+  const isBranchManager = user?.role === 'branch_manager';
+
   const [year, setYear]       = useState<number>(CURRENT_YEAR);
   const [month, setMonth]     = useState<string>(String(CURRENT_MONTH));
   const [branchId, setBranchId] = useState<string>('all');
@@ -82,6 +85,13 @@ function PaymentSummaryCard() {
 
   const { data: branchesData } = useGetBranches({ limit: 100 });
   const branches = branchesData?.data ?? [];
+
+  // Auto-select first branch for BMs (no "All Branches" option)
+  useEffect(() => {
+    if (isBranchManager && branches.length > 0 && branchId === 'all') {
+      setBranchId(branches[0]._id ?? 'all');
+    }
+  }, [isBranchManager, branches]);
 
   // Compute date range
   const { dateFrom, dateTo } = useMemo(() => {
@@ -220,7 +230,7 @@ function PaymentSummaryCard() {
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="all">All Branches</SelectItem>
+              {!isBranchManager && <SelectItem value="all">All Branches</SelectItem>}
               {branches.map((b) => (
                 <SelectItem key={b._id} value={b._id}>{b.name}</SelectItem>
               ))}

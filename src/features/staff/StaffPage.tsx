@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import {
@@ -29,6 +29,7 @@ import StaffForm, { ROLE_LABELS, JOB_TITLE_OPTIONS } from "./components/StaffFor
 import type { StaffUser } from "@/api/generated/schemas";
 import { useDebounce } from "@/hooks/use-debounce";
 import { usePermission } from "@/hooks/use-permission";
+import { useAuthStore } from "@/stores/auth.store";
 import {
   UserPlus,
   MoreHorizontal,
@@ -97,11 +98,18 @@ export default function StaffPage() {
   const navigate = useNavigate();
   const { can } = usePermission();
   const canManageStaff = can("role.assign");
+  const isBranchManager = useAuthStore((s) => s.user?.role === 'branch_manager');
 
   const debouncedSearch = useDebounce(search, 350);
 
   const { data: branchesData } = useGetBranches({ limit: 100 });
   const branches = branchesData?.data ?? [];
+
+  useEffect(() => {
+    if (isBranchManager && branches.length > 0 && branchFilter === 'all') {
+      setBranchFilter(branches[0]._id ?? 'all');
+    }
+  }, [isBranchManager, branches]);
 
   const queryParams = {
     page,
@@ -347,7 +355,7 @@ export default function StaffPage() {
               <SelectValue placeholder="All branches" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="all">All branches</SelectItem>
+              {!isBranchManager && <SelectItem value="all">All branches</SelectItem>}
               {branches.map((b) => (
                 <SelectItem key={b._id} value={b._id}>{b.name}</SelectItem>
               ))}

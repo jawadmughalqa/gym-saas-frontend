@@ -1,12 +1,14 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useForm } from 'react-hook-form';
+import { useForm, Controller } from 'react-hook-form';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import {
   KeyRound, Mail, Shield, User, Building2,
   CreditCard, Sparkles, ArrowRight, Check,
   Users, UserCheck, CreditCard as CreditCardIcon, ScanLine, BarChart3,
   Receipt, GitBranch, Wrench, Bell, Tag, Dumbbell, Smartphone, UserPlus,
   Pencil, Star, MapPin, Clock, Award, Briefcase, TrendingUp, ChevronDown, ChevronUp,
+  Phone, Globe, Home, Calendar,
 } from 'lucide-react';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
@@ -19,8 +21,12 @@ import {
 } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import {
+  Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
+} from '@/components/ui/select';
 import { useAuthStore } from '@/stores/auth.store';
 import { useGetMyTenant } from '@/api/generated/tenants/tenants';
+import { useGetBranches } from '@/api/generated/branches/branches';
 import { cn } from '@/lib/utils';
 import { api } from '@/lib/axios';
 import { toast } from '@/hooks/use-toast';
@@ -64,6 +70,12 @@ function fmtDate(iso: string) {
   return new Date(iso).toLocaleDateString(undefined, { day: 'numeric', month: 'short', year: 'numeric' });
 }
 
+function genderLabel(v?: string) {
+  if (!v) return null;
+  const map: Record<string, string> = { male: 'Male', female: 'Female', other: 'Prefer not to say' };
+  return map[v] ?? v;
+}
+
 const PLAN_TIER_STYLES: Record<string, { badge: string; accent: string; border: string }> = {
   starter:    { badge: 'bg-slate-100 text-slate-700',   accent: 'text-slate-700',  border: 'border-slate-200'  },
   pro:        { badge: 'bg-purple-100 text-purple-700', accent: 'text-purple-700', border: 'border-purple-200' },
@@ -86,6 +98,38 @@ const FLAG_DISPLAY: Record<string, { label: string; icon: React.ElementType }> =
   walkInLeads:   { label: 'Walk-in Leads',     icon: UserPlus        },
 };
 
+// ─── Full user profile shape from GET /auth/me ────────────────────────────────
+
+interface MyProfile {
+  _id: string;
+  firstName: string;
+  lastName: string;
+  email: string;
+  role: string;
+  tenantId?: string;
+  branchIds?: string[];
+  phone?: string;
+  gender?: string;
+  age?: number;
+  country?: string;
+  city?: string;
+  address?: string;
+  status?: string;
+  lastLoginAt?: string;
+  createdAt?: string;
+}
+
+function useMyProfile() {
+  return useQuery<MyProfile>({
+    queryKey: ['auth', 'me'],
+    queryFn: async () => {
+      const res = await api.get('/auth/me');
+      return res.data.data as MyProfile;
+    },
+    staleTime: 1000 * 60 * 5,
+  });
+}
+
 // ─── Subscription Plan Card (gym_owner only) ──────────────────────────────────
 
 function SubscriptionCard() {
@@ -98,22 +142,18 @@ function SubscriptionCard() {
   const tenantAny  = tenant as (typeof tenant) & { billingCycle?: string; billingCycleDay?: number };
   const billing    = tenantAny?.billingCycle ?? 'monthly';
   const flags      = (tenant?.featureFlags ?? {}) as Record<string, boolean>;
-
   const enabledFeatures = Object.entries(FLAG_DISPLAY).filter(([key]) => flags[key]);
 
   if (isLoading) {
     return (
       <Card>
-        <CardHeader className="pb-3">
-          <Skeleton className="h-5 w-32" />
-        </CardHeader>
+        <CardHeader className="pb-3"><Skeleton className="h-5 w-32" /></CardHeader>
         <CardContent className="space-y-2">
           {[1, 2, 3].map((i) => <Skeleton key={i} className="h-4 w-full" />)}
         </CardContent>
       </Card>
     );
   }
-
   if (!tenant) return null;
 
   return (
@@ -126,47 +166,31 @@ function SubscriptionCard() {
             </div>
             <CardTitle className="text-base">Subscription</CardTitle>
           </div>
-          <Button
-            variant="ghost"
-            size="sm"
-            className="h-7 text-xs gap-1 text-muted-foreground"
-            onClick={() => navigate('/settings/pricing')}
-          >
-            View Plans
-            <ArrowRight className="h-3 w-3" />
+          <Button variant="ghost" size="sm" className="h-7 text-xs gap-1 text-muted-foreground" onClick={() => navigate('/settings/pricing')}>
+            View Plans <ArrowRight className="h-3 w-3" />
           </Button>
         </div>
       </CardHeader>
-
       <CardContent className="space-y-4">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <span className={cn('text-xs font-semibold px-2.5 py-1 rounded-full capitalize', styles.badge)}>
-              {planName}
-            </span>
+            <span className={cn('text-xs font-semibold px-2.5 py-1 rounded-full capitalize', styles.badge)}>{planName}</span>
             <span className="text-sm text-muted-foreground capitalize">{billing}</span>
           </div>
           {tenant.status && (
-            <Badge
-              variant="outline"
-              className={cn(
-                'text-xs capitalize',
-                tenant.status === 'active' && 'border-green-200 text-green-700 dark:border-green-800 dark:text-green-400',
-                tenant.status === 'trial'  && 'border-blue-200 text-blue-700 dark:border-blue-800 dark:text-blue-400',
-                tenant.status === 'suspended' && 'border-red-200 text-red-700',
-              )}
-            >
+            <Badge variant="outline" className={cn(
+              'text-xs capitalize',
+              tenant.status === 'active'    && 'border-green-200 text-green-700 dark:border-green-800 dark:text-green-400',
+              tenant.status === 'trial'     && 'border-blue-200 text-blue-700 dark:border-blue-800 dark:text-blue-400',
+              tenant.status === 'suspended' && 'border-red-200 text-red-700',
+            )}>
               {tenant.status}
             </Badge>
           )}
         </div>
-
         <Separator />
-
         <div>
-          <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-2">
-            Active Features
-          </p>
+          <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-2">Active Features</p>
           <div className="grid grid-cols-1 xs:grid-cols-2 gap-1.5">
             {enabledFeatures.map(([key, { label, icon: Icon }]) => (
               <div key={key} className="flex items-center gap-1.5 text-xs min-w-0">
@@ -177,14 +201,11 @@ function SubscriptionCard() {
             ))}
           </div>
         </div>
-
         {tenant.quotas && (
           <>
             <Separator />
             <div>
-              <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-2">
-                Limits
-              </p>
+              <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-2">Limits</p>
               <div className="grid grid-cols-2 gap-x-4 gap-y-1">
                 {[
                   { label: 'Members',   val: tenant.quotas.maxMembers  },
@@ -201,18 +222,166 @@ function SubscriptionCard() {
             </div>
           </>
         )}
-
         {planName !== 'enterprise' && (
-          <Button
-            variant="outline"
-            size="sm"
-            className="w-full gap-2 text-xs h-8"
-            onClick={() => navigate('/settings/pricing')}
-          >
+          <Button variant="outline" size="sm" className="w-full gap-2 text-xs h-8" onClick={() => navigate('/settings/pricing')}>
             <Sparkles className="h-3.5 w-3.5" />
             See All Plans & Upgrade
           </Button>
         )}
+      </CardContent>
+    </Card>
+  );
+}
+
+// ─── Branch Manager Card ──────────────────────────────────────────────────────
+
+function BranchManagerCard({ profile }: { profile: MyProfile }) {
+  const { data: tenant } = useGetMyTenant({ query: { staleTime: 1000 * 60 * 5 } });
+  const { data: branchesData } = useGetBranches({ limit: 100 });
+
+  const gymName    = (tenant?.data as any)?.name ?? null;
+  const allBranches = branchesData?.data ?? [];
+
+  // Resolve branch names from IDs
+  const branchNames = (profile.branchIds ?? [])
+    .map((id) => allBranches.find((b) => b._id === id)?.name ?? id)
+    .filter(Boolean);
+
+  return (
+    <Card className="border-blue-200 dark:border-blue-800">
+      <CardHeader className="pb-3">
+        <div className="flex items-center gap-2">
+          <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-blue-100 dark:bg-blue-900/40">
+            <Shield className="h-4 w-4 text-blue-600" />
+          </div>
+          <CardTitle className="text-base text-blue-800 dark:text-blue-300">Branch Manager Details</CardTitle>
+        </div>
+      </CardHeader>
+
+      <CardContent className="space-y-4">
+
+        {/* Gym */}
+        {gymName && (
+          <div className="flex items-start gap-3">
+            <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-muted flex-shrink-0">
+              <Building2 className="h-4 w-4 text-muted-foreground" />
+            </div>
+            <div>
+              <p className="text-xs text-muted-foreground">Gym</p>
+              <p className="text-sm font-semibold">{gymName}</p>
+            </div>
+          </div>
+        )}
+
+        {/* Managed Branches */}
+        {branchNames.length > 0 && (
+          <div className="flex items-start gap-3">
+            <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-muted flex-shrink-0">
+              <MapPin className="h-4 w-4 text-muted-foreground" />
+            </div>
+            <div>
+              <p className="text-xs text-muted-foreground mb-1">
+                {branchNames.length === 1 ? 'Managed Branch' : 'Managed Branches'}
+              </p>
+              <div className="flex flex-wrap gap-1.5">
+                {branchNames.map((name) => (
+                  <Badge key={name} variant="outline" className="text-xs capitalize border-blue-200 text-blue-700 bg-blue-50 dark:border-blue-800 dark:text-blue-300">
+                    {name}
+                  </Badge>
+                ))}
+              </div>
+            </div>
+          </div>
+        )}
+
+        <Separator />
+
+        {/* Personal Info Grid */}
+        <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Personal Information</p>
+
+        <div className="grid sm:grid-cols-2 gap-3">
+
+          <div className="flex items-center gap-3">
+            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-muted flex-shrink-0">
+              <Mail className="h-4 w-4 text-muted-foreground" />
+            </div>
+            <div className="min-w-0">
+              <p className="text-xs text-muted-foreground">Email</p>
+              <p className="text-sm font-medium truncate">{profile.email}</p>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-3">
+            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-muted flex-shrink-0">
+              <Phone className="h-4 w-4 text-muted-foreground" />
+            </div>
+            <div className="min-w-0">
+              <p className="text-xs text-muted-foreground">Phone</p>
+              <p className="text-sm font-medium">{profile.phone ?? '—'}</p>
+            </div>
+          </div>
+
+          {profile.gender && (
+            <div className="flex items-center gap-3">
+              <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-muted flex-shrink-0">
+                <User className="h-4 w-4 text-muted-foreground" />
+              </div>
+              <div className="min-w-0">
+                <p className="text-xs text-muted-foreground">Gender</p>
+                <p className="text-sm font-medium">{genderLabel(profile.gender)}</p>
+              </div>
+            </div>
+          )}
+
+          {profile.age && (
+            <div className="flex items-center gap-3">
+              <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-muted flex-shrink-0">
+                <Calendar className="h-4 w-4 text-muted-foreground" />
+              </div>
+              <div className="min-w-0">
+                <p className="text-xs text-muted-foreground">Age</p>
+                <p className="text-sm font-medium">{profile.age} years</p>
+              </div>
+            </div>
+          )}
+
+          {profile.country && (
+            <div className="flex items-center gap-3">
+              <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-muted flex-shrink-0">
+                <Globe className="h-4 w-4 text-muted-foreground" />
+              </div>
+              <div className="min-w-0">
+                <p className="text-xs text-muted-foreground">Country</p>
+                <p className="text-sm font-medium">{profile.country}</p>
+              </div>
+            </div>
+          )}
+
+          {profile.city && (
+            <div className="flex items-center gap-3">
+              <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-muted flex-shrink-0">
+                <MapPin className="h-4 w-4 text-muted-foreground" />
+              </div>
+              <div className="min-w-0">
+                <p className="text-xs text-muted-foreground">City</p>
+                <p className="text-sm font-medium">{profile.city}</p>
+              </div>
+            </div>
+          )}
+
+          {profile.address && (
+            <div className="flex items-start gap-3 sm:col-span-2">
+              <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-muted flex-shrink-0">
+                <Home className="h-4 w-4 text-muted-foreground" />
+              </div>
+              <div className="min-w-0">
+                <p className="text-xs text-muted-foreground">Address</p>
+                <p className="text-sm font-medium">{profile.address}</p>
+              </div>
+            </div>
+          )}
+
+        </div>
       </CardContent>
     </Card>
   );
@@ -230,16 +399,13 @@ function TrainerProfessionalCard() {
   if (isLoading) {
     return (
       <Card>
-        <CardHeader className="pb-3">
-          <Skeleton className="h-5 w-40" />
-        </CardHeader>
+        <CardHeader className="pb-3"><Skeleton className="h-5 w-40" /></CardHeader>
         <CardContent className="space-y-3">
           {[1, 2, 3, 4].map((i) => <Skeleton key={i} className="h-4 w-full" />)}
         </CardContent>
       </Card>
     );
   }
-
   if (!profile) return null;
 
   const branches    = (profile.branchIds ?? []) as { _id: string; name: string }[];
@@ -260,10 +426,7 @@ function TrainerProfessionalCard() {
           <CardTitle className="text-base">Trainer Details</CardTitle>
         </div>
       </CardHeader>
-
       <CardContent className="space-y-4">
-
-        {/* Gym */}
         {gymName && (
           <div className="flex items-start gap-3">
             <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-muted flex-shrink-0">
@@ -275,8 +438,6 @@ function TrainerProfessionalCard() {
             </div>
           </div>
         )}
-
-        {/* Branches */}
         {branches.length > 0 && (
           <div className="flex items-start gap-3">
             <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-muted flex-shrink-0">
@@ -292,8 +453,6 @@ function TrainerProfessionalCard() {
             </div>
           </div>
         )}
-
-        {/* Experience */}
         {(profile.experienceYears ?? 0) > 0 && (
           <div className="flex items-start gap-3">
             <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-muted flex-shrink-0">
@@ -301,14 +460,10 @@ function TrainerProfessionalCard() {
             </div>
             <div>
               <p className="text-xs text-muted-foreground">Experience</p>
-              <p className="text-sm font-medium">
-                {profile.experienceYears} {profile.experienceYears === 1 ? 'year' : 'years'}
-              </p>
+              <p className="text-sm font-medium">{profile.experienceYears} {profile.experienceYears === 1 ? 'year' : 'years'}</p>
             </div>
           </div>
         )}
-
-        {/* Monthly Rate */}
         {(profile.hourlyRate ?? 0) > 0 && (
           <div className="flex items-start gap-3">
             <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-muted flex-shrink-0">
@@ -316,14 +471,10 @@ function TrainerProfessionalCard() {
             </div>
             <div>
               <p className="text-xs text-muted-foreground">Monthly Rate</p>
-              <p className="text-sm font-medium">
-                {currency} {profile.hourlyRate?.toLocaleString()}/month
-              </p>
+              <p className="text-sm font-medium">{currency} {profile.hourlyRate?.toLocaleString()}/month</p>
             </div>
           </div>
         )}
-
-        {/* Client Capacity */}
         <div className="flex items-start gap-3">
           <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-muted flex-shrink-0">
             <Users className="h-4 w-4 text-muted-foreground" />
@@ -331,9 +482,7 @@ function TrainerProfessionalCard() {
           <div className="flex-1 min-w-0">
             <div className="flex items-center justify-between mb-1">
               <p className="text-xs text-muted-foreground">Client Capacity</p>
-              <span className={cn('text-xs font-semibold', capColor)}>
-                {current} / {max} clients
-              </span>
+              <span className={cn('text-xs font-semibold', capColor)}>{current} / {max} clients</span>
             </div>
             <div className="h-1.5 w-full rounded-full bg-muted overflow-hidden">
               <div
@@ -341,30 +490,21 @@ function TrainerProfessionalCard() {
                 style={{ width: `${capPct}%` }}
               />
             </div>
-            <p className="text-xs text-muted-foreground mt-1">
-              {max - current} slot{max - current !== 1 ? 's' : ''} remaining
-            </p>
+            <p className="text-xs text-muted-foreground mt-1">{max - current} slot{max - current !== 1 ? 's' : ''} remaining</p>
           </div>
         </div>
-
-        {/* Status */}
         {profile.status && (
           <div className="flex items-center gap-2 flex-wrap">
-            <Badge
-              variant="outline"
-              className={cn(
-                'text-xs capitalize',
-                profile.status === 'active'      && 'border-green-200 text-green-700',
-                profile.status === 'inactive'    && 'border-slate-200 text-slate-500',
-                profile.status === 'unavailable' && 'border-amber-200 text-amber-700',
-              )}
-            >
+            <Badge variant="outline" className={cn(
+              'text-xs capitalize',
+              profile.status === 'active'      && 'border-green-200 text-green-700',
+              profile.status === 'inactive'    && 'border-slate-200 text-slate-500',
+              profile.status === 'unavailable' && 'border-amber-200 text-amber-700',
+            )}>
               {profile.status}
             </Badge>
           </div>
         )}
-
-        {/* Specializations */}
         {specs.length > 0 && (
           <>
             <Separator />
@@ -374,15 +514,11 @@ function TrainerProfessionalCard() {
                 <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Specializations</p>
               </div>
               <div className="flex flex-wrap gap-1.5">
-                {specs.map((s) => (
-                  <Badge key={s} variant="secondary" className="text-xs capitalize">{s}</Badge>
-                ))}
+                {specs.map((s) => <Badge key={s} variant="secondary" className="text-xs capitalize">{s}</Badge>)}
               </div>
             </div>
           </>
         )}
-
-        {/* Certifications */}
         {certs.length > 0 && (
           <>
             {specs.length === 0 && <Separator />}
@@ -394,16 +530,13 @@ function TrainerProfessionalCard() {
               <div className="flex flex-wrap gap-1.5">
                 {certs.map((c) => (
                   <Badge key={c} variant="outline" className="text-xs">
-                    <Check className="h-3 w-3 mr-1 text-emerald-500" />
-                    {c}
+                    <Check className="h-3 w-3 mr-1 text-emerald-500" />{c}
                   </Badge>
                 ))}
               </div>
             </div>
           </>
         )}
-
-        {/* Bio */}
         {profile.bio && (
           <>
             <Separator />
@@ -423,13 +556,10 @@ function TrainerProfessionalCard() {
 function TrainerRatingsCard() {
   const { data: profile } = useMyTrainerProfile();
   const trainerId = profile?._id;
-
   const [expanded, setExpanded] = useState(false);
   const { data: ratings = [], isLoading } = useMyTrainerRatings(trainerId);
-
   const avg   = profile?.ratingAvg   ?? 0;
   const count = profile?.ratingCount ?? 0;
-
   const visible = expanded ? ratings : ratings.slice(0, 3);
 
   return (
@@ -451,19 +581,15 @@ function TrainerRatingsCard() {
           )}
         </div>
       </CardHeader>
-
       <CardContent>
         {isLoading ? (
-          <div className="space-y-3">
-            {[1, 2].map((i) => <Skeleton key={i} className="h-16 w-full" />)}
-          </div>
+          <div className="space-y-3">{[1, 2].map((i) => <Skeleton key={i} className="h-16 w-full" />)}</div>
         ) : count === 0 ? (
           <p className="text-sm text-muted-foreground text-center py-4">
             No ratings yet — members can rate you after they've trained with you.
           </p>
         ) : (
           <div className="space-y-3">
-            {/* Summary bar */}
             <div className="rounded-lg bg-muted/40 p-3 flex items-center gap-4">
               <div className="text-center">
                 <p className="text-2xl font-bold">{avg.toFixed(1)}</p>
@@ -487,20 +613,12 @@ function TrainerRatingsCard() {
                 })}
               </div>
             </div>
-
             <Separator />
-
-            {/* Individual ratings */}
             <div className="space-y-3">
               {visible.map((r) => {
-                const memberName = r.memberId
-                  ? `${r.memberId.firstName} ${r.memberId.lastName}`.trim()
-                  : 'Member';
+                const memberName = r.memberId ? `${r.memberId.firstName} ${r.memberId.lastName}`.trim() : 'Member';
                 const initials = memberName.split(' ').map((n) => n[0]).join('').toUpperCase().slice(0, 2);
-                const enrolled = r.assignmentId?.startDate
-                  ? daysSince(r.assignmentId.startDate, r.updatedAt)
-                  : null;
-
+                const enrolled = r.assignmentId?.startDate ? daysSince(r.assignmentId.startDate, r.updatedAt) : null;
                 return (
                   <div key={r._id} className="flex gap-3">
                     <Avatar className="h-8 w-8 flex-shrink-0">
@@ -514,34 +632,19 @@ function TrainerRatingsCard() {
                           <span className="text-xs font-semibold">{r.rating}.0</span>
                         </div>
                       </div>
-                      {r.review && (
-                        <p className="text-xs text-muted-foreground leading-relaxed mb-1">{r.review}</p>
-                      )}
+                      {r.review && <p className="text-xs text-muted-foreground leading-relaxed mb-1">{r.review}</p>}
                       <div className="flex items-center gap-3 text-xs text-muted-foreground">
                         <span>{fmtDate(r.updatedAt)}</span>
-                        {enrolled !== null && (
-                          <span>· {enrolled} day{enrolled !== 1 ? 's' : ''} after enrollment</span>
-                        )}
+                        {enrolled !== null && <span>· {enrolled} day{enrolled !== 1 ? 's' : ''} after enrollment</span>}
                       </div>
                     </div>
                   </div>
                 );
               })}
             </div>
-
-            {/* Show more / less */}
             {ratings.length > 3 && (
-              <Button
-                variant="ghost"
-                size="sm"
-                className="w-full gap-1 text-xs mt-1"
-                onClick={() => setExpanded((v) => !v)}
-              >
-                {expanded ? (
-                  <><ChevronUp className="h-3.5 w-3.5" /> Show less</>
-                ) : (
-                  <><ChevronDown className="h-3.5 w-3.5" /> Show {ratings.length - 3} more</>
-                )}
+              <Button variant="ghost" size="sm" className="w-full gap-1 text-xs mt-1" onClick={() => setExpanded((v) => !v)}>
+                {expanded ? <><ChevronUp className="h-3.5 w-3.5" /> Show less</> : <><ChevronDown className="h-3.5 w-3.5" /> Show {ratings.length - 3} more</>}
               </Button>
             )}
           </div>
@@ -553,45 +656,96 @@ function TrainerRatingsCard() {
 
 // ─── Edit Profile Dialog ──────────────────────────────────────────────────────
 
-interface EditProfileForm {
+const GENDER_OPTIONS = [
+  { value: 'male',   label: 'Male'              },
+  { value: 'female', label: 'Female'            },
+  { value: 'other',  label: 'Prefer not to say' },
+];
+
+interface EditProfileValues {
   firstName: string;
   lastName: string;
+  phone: string;
+  gender: string;
+  age: string;
+  country: string;
+  city: string;
+  address: string;
 }
 
 function EditProfileDialog({
   open,
   onOpenChange,
-  currentName,
+  profile,
 }: {
   open: boolean;
   onOpenChange: (v: boolean) => void;
-  currentName: string;
+  profile?: MyProfile | null;
 }) {
   const { user, accessToken, setAuth } = useAuthStore();
+  const qc = useQueryClient();
   const [saving, setSaving] = useState(false);
 
-  const nameParts = currentName.trim().split(/\s+/);
-  const defaultFirst = nameParts.length > 1 ? nameParts.slice(0, -1).join(' ') : nameParts[0] ?? '';
-  const defaultLast  = nameParts.length > 1 ? nameParts[nameParts.length - 1] : '';
-
-  const { register, handleSubmit, reset, formState: { errors } } = useForm<EditProfileForm>({
-    defaultValues: { firstName: defaultFirst, lastName: defaultLast },
+  const { register, handleSubmit, reset, control, formState: { errors } } = useForm<EditProfileValues>({
+    defaultValues: {
+      firstName: profile?.firstName ?? '',
+      lastName:  profile?.lastName  ?? '',
+      phone:     profile?.phone     ?? '',
+      gender:    profile?.gender    ?? '',
+      age:       profile?.age ? String(profile.age) : '',
+      country:   profile?.country   ?? '',
+      city:      profile?.city      ?? '',
+      address:   profile?.address   ?? '',
+    },
   });
+
+  // Populate form whenever dialog opens or profile data arrives
+  useEffect(() => {
+    if (open && profile) {
+      reset({
+        firstName: profile.firstName ?? '',
+        lastName:  profile.lastName  ?? '',
+        phone:     profile.phone     ?? '',
+        gender:    profile.gender    ?? '',
+        age:       profile.age ? String(profile.age) : '',
+        country:   profile.country   ?? '',
+        city:      profile.city      ?? '',
+        address:   profile.address   ?? '',
+      });
+    }
+  }, [open, profile]);
 
   function onClose() {
     reset();
     onOpenChange(false);
   }
 
-  async function onSubmit(data: EditProfileForm) {
+  async function onSubmit(data: EditProfileValues) {
     setSaving(true);
     try {
-      const res = await api.patch('/auth/me', data);
+      const payload: Record<string, any> = {
+        firstName: data.firstName,
+        lastName:  data.lastName,
+        phone:     data.phone   || undefined,
+        gender:    data.gender  || undefined,
+        age:       data.age     ? Number(data.age) : undefined,
+        country:   data.country || undefined,
+        city:      data.city    || undefined,
+        address:   data.address || undefined,
+      };
+
+      const res = await api.patch('/auth/me', payload);
       const updated = res.data?.data;
+
+      // Update auth store name
       if (user && accessToken) {
         const newName = `${updated?.firstName ?? data.firstName} ${updated?.lastName ?? data.lastName}`.trim();
         setAuth({ ...user, name: newName }, accessToken);
       }
+
+      // Refresh profile cache
+      await qc.invalidateQueries({ queryKey: ['auth', 'me'] });
+
       toast({ title: 'Profile updated' });
       onClose();
     } catch (err: any) {
@@ -607,37 +761,80 @@ function EditProfileDialog({
 
   return (
     <Dialog open={open} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-sm">
+      <DialogContent className="sm:max-w-md max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>Edit Profile</DialogTitle>
         </DialogHeader>
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-4 py-2">
-          <div className="space-y-1.5">
-            <Label htmlFor="ep-firstName">First name</Label>
-            <Input
-              id="ep-firstName"
-              {...register('firstName', { required: 'First name is required' })}
-              placeholder="First name"
-            />
-            {errors.firstName && (
-              <p className="text-xs text-destructive">{errors.firstName.message}</p>
-            )}
+
+          {/* Name */}
+          <div className="grid grid-cols-2 gap-3">
+            <div className="space-y-1.5">
+              <Label htmlFor="ep-firstName">First name *</Label>
+              <Input id="ep-firstName" {...register('firstName', { required: 'Required' })} />
+              {errors.firstName && <p className="text-xs text-destructive">{errors.firstName.message}</p>}
+            </div>
+            <div className="space-y-1.5">
+              <Label htmlFor="ep-lastName">Last name *</Label>
+              <Input id="ep-lastName" {...register('lastName', { required: 'Required' })} />
+              {errors.lastName && <p className="text-xs text-destructive">{errors.lastName.message}</p>}
+            </div>
           </div>
+
+          {/* Phone */}
           <div className="space-y-1.5">
-            <Label htmlFor="ep-lastName">Last name</Label>
-            <Input
-              id="ep-lastName"
-              {...register('lastName', { required: 'Last name is required' })}
-              placeholder="Last name"
-            />
-            {errors.lastName && (
-              <p className="text-xs text-destructive">{errors.lastName.message}</p>
-            )}
+            <Label htmlFor="ep-phone">Phone</Label>
+            <Input id="ep-phone" type="tel" placeholder="+92 300 0000000" {...register('phone')} />
           </div>
+
+          {/* Gender + Age */}
+          <div className="grid grid-cols-2 gap-3">
+            <div className="space-y-1.5">
+              <Label>Gender</Label>
+              <Controller
+                control={control}
+                name="gender"
+                render={({ field }) => (
+                  <Select value={field.value} onValueChange={field.onChange}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select…" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="__none__">— Not specified —</SelectItem>
+                      {GENDER_OPTIONS.map((o) => (
+                        <SelectItem key={o.value} value={o.value}>{o.label}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                )}
+              />
+            </div>
+            <div className="space-y-1.5">
+              <Label htmlFor="ep-age">Age</Label>
+              <Input id="ep-age" type="number" min={16} max={100} placeholder="e.g. 28" {...register('age')} />
+            </div>
+          </div>
+
+          {/* Country */}
+          <div className="space-y-1.5">
+            <Label htmlFor="ep-country">Country</Label>
+            <Input id="ep-country" placeholder="e.g. Pakistan" {...register('country')} />
+          </div>
+
+          {/* City */}
+          <div className="space-y-1.5">
+            <Label htmlFor="ep-city">City</Label>
+            <Input id="ep-city" placeholder="e.g. Lahore" {...register('city')} />
+          </div>
+
+          {/* Address */}
+          <div className="space-y-1.5">
+            <Label htmlFor="ep-address">Address</Label>
+            <Input id="ep-address" placeholder="Street address, area…" {...register('address')} />
+          </div>
+
           <DialogFooter className="pt-2">
-            <Button type="button" variant="outline" onClick={onClose} disabled={saving}>
-              Cancel
-            </Button>
+            <Button type="button" variant="outline" onClick={onClose} disabled={saving}>Cancel</Button>
             <Button type="submit" disabled={saving}>
               {saving ? 'Saving…' : 'Save Changes'}
             </Button>
@@ -655,26 +852,28 @@ export default function ProfilePage() {
   const navigate = useNavigate();
   const [editOpen, setEditOpen] = useState(false);
 
+  // Full profile from backend (includes phone, address, branchIds, etc.)
+  const { data: myProfile } = useMyProfile();
+
   if (!user) return null;
 
   const initials = user.name
     ? user.name.split(' ').map((n) => n[0]).join('').toUpperCase().slice(0, 2)
     : '??';
 
-  const isGymOwner = user.role === 'gym_owner';
-  const isTrainer  = user.role === 'trainer';
+  const isGymOwner      = user.role === 'gym_owner';
+  const isTrainer       = user.role === 'trainer';
+  const isBranchManager = user.role === 'branch_manager';
 
   return (
     <div className="w-full max-w-2xl space-y-6">
       {/* Page header */}
       <div>
         <h1 className="text-xl sm:text-2xl font-bold tracking-tight">My Profile</h1>
-        <p className="text-sm text-muted-foreground">
-          View your account details and manage settings.
-        </p>
+        <p className="text-sm text-muted-foreground">View your account details and manage settings.</p>
       </div>
 
-      {/* Profile card */}
+      {/* Profile header card */}
       <Card>
         <CardHeader className="pb-4">
           <div className="flex items-center gap-3 sm:gap-4 min-w-0">
@@ -689,7 +888,7 @@ export default function ProfilePage() {
                   size="icon"
                   className="h-7 w-7 shrink-0 text-muted-foreground hover:text-foreground"
                   onClick={() => setEditOpen(true)}
-                  title="Edit name"
+                  title="Edit profile"
                 >
                   <Pencil className="h-3.5 w-3.5" />
                 </Button>
@@ -726,8 +925,8 @@ export default function ProfilePage() {
             </div>
           </div>
 
-          {/* Tenant — show workspace ID only for non-trainers (trainers see gym name in professional card) */}
-          {user.tenantId && !isTrainer && (
+          {/* Workspace ID — only for gym_owner (not BM or trainer) */}
+          {user.tenantId && isGymOwner && (
             <div className="flex items-center gap-3 min-w-0">
               <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-muted flex-shrink-0">
                 <Building2 className="h-4 w-4 text-muted-foreground" />
@@ -754,6 +953,11 @@ export default function ProfilePage() {
         </CardContent>
       </Card>
 
+      {/* Branch Manager details card */}
+      {isBranchManager && myProfile && (
+        <BranchManagerCard profile={myProfile} />
+      )}
+
       {/* Trainer-specific cards */}
       {isTrainer && (
         <>
@@ -771,28 +975,16 @@ export default function ProfilePage() {
           <CardTitle className="text-base">Account settings</CardTitle>
         </CardHeader>
         <CardContent className="flex flex-wrap gap-2">
-          <Button
-            variant="outline"
-            className="gap-2"
-            onClick={() => setEditOpen(true)}
-          >
+          <Button variant="outline" className="gap-2" onClick={() => setEditOpen(true)}>
             <Pencil className="h-4 w-4" />
             Edit Profile
           </Button>
-          <Button
-            variant="outline"
-            className="gap-2"
-            onClick={() => navigate('/settings/change-password')}
-          >
+          <Button variant="outline" className="gap-2" onClick={() => navigate('/settings/change-password')}>
             <KeyRound className="h-4 w-4" />
             Change password
           </Button>
           {isGymOwner && (
-            <Button
-              variant="outline"
-              className="gap-2"
-              onClick={() => navigate('/settings/pricing')}
-            >
+            <Button variant="outline" className="gap-2" onClick={() => navigate('/settings/pricing')}>
               <Sparkles className="h-4 w-4" />
               View plans
             </Button>
@@ -803,7 +995,7 @@ export default function ProfilePage() {
       <EditProfileDialog
         open={editOpen}
         onOpenChange={setEditOpen}
-        currentName={user.name}
+        profile={myProfile}
       />
     </div>
   );

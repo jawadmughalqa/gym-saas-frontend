@@ -50,6 +50,7 @@ export interface LoginResponse {
     role: UserRole;
     email: string;
     name: string;
+    branchIds?: string[];
     forcePasswordChange?: boolean;
   };
 }

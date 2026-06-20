@@ -15,7 +15,7 @@
  *   • < lg  → stacked
  */
 
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   TrendingUp, Clock, Wallet, Building2, RefreshCw, FilePlus,
@@ -40,6 +40,7 @@ import {
 import { useGetInvoices } from '@/api/generated/invoices/invoices';
 import { formatCurrency, formatRelative } from '@/utils/format';
 import { usePermission } from '@/hooks/use-permission';
+import { useAuthStore } from '@/stores/auth.store';
 import { useDebounce } from '@/hooks/use-debounce';
 import { cn } from '@/lib/utils';
 import InvoiceForm from './components/InvoiceForm';
@@ -101,6 +102,8 @@ function TxSettlementBadge({ status }: { status?: string }) {
 export default function BillingDashboard() {
   const navigate = useNavigate();
   const { can }  = usePermission();
+  const user = useAuthStore((s) => s.user);
+  const isBranchManager = user?.role === 'branch_manager';
 
   // ── Global filters ─────────────────────────────────────────────────────────
   const [branchId, setBranchId] = useState('');
@@ -126,6 +129,13 @@ export default function BillingDashboard() {
   // ── Data fetching ──────────────────────────────────────────────────────────
   const { data: branchesData } = useGetBranches({ limit: 100 });
   const branches = branchesData?.data ?? [];
+
+  // Auto-select first branch for BMs (they have no "All branches" option)
+  useEffect(() => {
+    if (isBranchManager && branches.length > 0 && !branchId) {
+      setBranchId(branches[0]._id ?? '');
+    }
+  }, [isBranchManager, branches]);
 
   const { data: dashData, isLoading: loadingStats, refetch: refetchStats } =
     useGetBillingDashboard(
@@ -245,7 +255,7 @@ export default function BillingDashboard() {
               <SelectValue placeholder="All branches" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="all">All branches</SelectItem>
+              {!isBranchManager && <SelectItem value="all">All branches</SelectItem>}
               {branches.map(b => (
                 <SelectItem key={b._id} value={b._id}>{b.name}</SelectItem>
               ))}

@@ -254,6 +254,17 @@ export default function DiscountsPage() {
       cell: (row) => <UsageBar discount={row} />,
     },
     {
+      key: "maxUsagePerMember",
+      header: "Per Member",
+      hideOnMobile: true,
+      cell: (row) =>
+        row.maxUsagePerMember ? (
+          <span className="text-sm tabular-nums">{row.maxUsagePerMember}×</span>
+        ) : (
+          <span className="text-sm text-muted-foreground">Unlimited</span>
+        ),
+    },
+    {
       key: "validUntil",
       header: "Expires",
       hideOnMobile: true,

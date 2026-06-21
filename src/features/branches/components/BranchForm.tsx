@@ -17,6 +17,13 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+import {
   Form,
   FormControl,
   FormField,
@@ -24,6 +31,18 @@ import {
   FormLabel,
   FormMessage,
 } from '@/components/ui/form';
+
+// ─── Pakistan provinces / territories ─────────────────────────────────────────
+
+const PK_PROVINCES = [
+  'Punjab',
+  'Sindh',
+  'Khyber Pakhtunkhwa',
+  'Balochistan',
+  'Islamabad Capital Territory',
+  'Azad Jammu & Kashmir',
+  'Gilgit-Baltistan',
+];
 import {
   usePostBranches,
   usePatchBranchesBranchId,
@@ -71,9 +90,9 @@ export default function BranchForm({ open, onOpenChange, branch }: BranchFormPro
       name: '',
       code: '',
       city: '',
-      country: '',
+      country: 'Pakistan',
       street: '',
-      state: '',
+      state: 'Punjab',
       postalCode: '',
       phone: '',
       email: '',
@@ -103,9 +122,9 @@ export default function BranchForm({ open, onOpenChange, branch }: BranchFormPro
         name: '',
         code: '',
         city: '',
-        country: '',
+        country: 'Pakistan',
         street: '',
-        state: '',
+        state: 'Punjab',
         postalCode: '',
         phone: '',
         email: '',
@@ -240,7 +259,18 @@ export default function BranchForm({ open, onOpenChange, branch }: BranchFormPro
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel>State / Province</FormLabel>
-                      <FormControl><Input placeholder="Punjab" {...field} /></FormControl>
+                      <Select value={field.value} onValueChange={field.onChange}>
+                        <FormControl>
+                          <SelectTrigger>
+                            <SelectValue placeholder="Select province" />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          {PK_PROVINCES.map((p) => (
+                            <SelectItem key={p} value={p}>{p}</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
                       <FormMessage />
                     </FormItem>
                   )}
@@ -265,7 +295,16 @@ export default function BranchForm({ open, onOpenChange, branch }: BranchFormPro
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel>Country *</FormLabel>
-                      <FormControl><Input placeholder="PK" {...field} /></FormControl>
+                      <Select value={field.value} onValueChange={field.onChange}>
+                        <FormControl>
+                          <SelectTrigger>
+                            <SelectValue placeholder="Select country" />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          <SelectItem value="Pakistan">Pakistan</SelectItem>
+                        </SelectContent>
+                      </Select>
                       <FormMessage />
                     </FormItem>
                   )}

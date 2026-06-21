@@ -281,6 +281,8 @@ export function buildSaasInvoicePdf(data: InvoicePdfData): jsPDF {
   doc.setTextColor(...MUTED);
   doc.text('SaaS Gym Management Platform', startX + 32, 18);
   doc.text('www.gymanger.com', startX + 32, 24);
+  // Make the text a clickable hyperlink in the PDF
+  doc.link(startX + 32, 21, 38, 4, { url: 'https://www.gymanger.com' });
 
   // Invoice title (top-right)
   doc.setFont('helvetica', 'bold');
@@ -453,10 +455,13 @@ export function buildSaasInvoicePdf(data: InvoicePdfData): jsPDF {
   doc.setFont('helvetica', 'bold');
   doc.setFontSize(9);
   doc.text('www.gymanger.com', W / 2, 288, { align: 'center' });
+  // Clickable link centred under the text (approx 38mm wide)
+  doc.link(W / 2 - 19, 284, 38, 5, { url: 'https://www.gymanger.com' });
   doc.setFont('helvetica', 'normal');
   doc.setFontSize(7);
   doc.setTextColor(...TEAL);
   doc.text('Gymanger · SaaS Gym Management Platform · support@gymanger.com', W / 2, 293, { align: 'center' });
+  doc.link(W / 2 - 50, 290, 100, 4, { url: 'mailto:support@gymanger.com' });
 
   return doc;
 }

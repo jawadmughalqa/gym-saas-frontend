@@ -87,7 +87,31 @@ const availabilitySlotSchema = z.object({
   day: z.number().min(0).max(6),
   startTime: z.string().min(1, "Required"),
   endTime: z.string().min(1, "Required"),
+}).refine((s) => !s.startTime || !s.endTime || s.startTime < s.endTime, {
+  message: "End time must be after start time",
+  path: ["endTime"],
 });
+
+function toMinutes(hhmm: string) {
+  const [h, m] = hhmm.split(":").map(Number);
+  return h * 60 + m;
+}
+
+function noOverlapRefine(slots: { day: number; startTime: string; endTime: string }[], ctx: z.RefinementCtx) {
+  for (let i = 0; i < slots.length; i++) {
+    for (let j = i + 1; j < slots.length; j++) {
+      const a = slots[i], b = slots[j];
+      if (a.day !== b.day || !a.startTime || !a.endTime || !b.startTime || !b.endTime) continue;
+      if (toMinutes(a.startTime) < toMinutes(b.endTime) && toMinutes(b.startTime) < toMinutes(a.endTime)) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: `Slot ${j + 1} overlaps with slot ${i + 1} on the same day`,
+          path: [j, "startTime"],
+        });
+      }
+    }
+  }
+}
 
 const profileFieldsSchema = z.object({
   branchIds: z.array(z.string()).min(1, "At least one branch is required"),
@@ -113,6 +137,8 @@ const profileFieldsSchema = z.object({
   currency: z.string().optional(),
   status: z.enum(["active", "inactive", "on_leave"] as const).optional(),
   availability: z.array(availabilitySlotSchema).optional(),
+}).superRefine((data, ctx) => {
+  if (data.availability) noOverlapRefine(data.availability as { day: number; startTime: string; endTime: string }[], ctx);
 });
 
 const createTrainerSchema = profileFieldsSchema.extend({
@@ -784,18 +810,24 @@ export default function TrainerForm({
                     <Label className="text-xs">Start</Label>
                     <Input
                       type="time"
-                      className="h-8 text-xs"
+                      className={`h-8 text-xs ${errors.availability?.[index]?.startTime ? "border-destructive" : ""}`}
                       {...register(`availability.${index}.startTime`)}
                     />
+                    {errors.availability?.[index]?.startTime && (
+                      <p className="text-xs text-destructive">{errors.availability[index]!.startTime!.message}</p>
+                    )}
                   </div>
 
                   <div className="w-24 space-y-1">
                     <Label className="text-xs">End</Label>
                     <Input
                       type="time"
-                      className="h-8 text-xs"
+                      className={`h-8 text-xs ${errors.availability?.[index]?.endTime ? "border-destructive" : ""}`}
                       {...register(`availability.${index}.endTime`)}
                     />
+                    {errors.availability?.[index]?.endTime && (
+                      <p className="text-xs text-destructive">{errors.availability[index]!.endTime!.message}</p>
+                    )}
                   </div>
 
                   <Button

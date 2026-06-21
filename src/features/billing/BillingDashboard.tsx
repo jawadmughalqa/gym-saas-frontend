@@ -96,6 +96,20 @@ function TxSettlementBadge({ status }: { status?: string }) {
       </span>
     );
   }
+  if (status === 'refunded') {
+    return (
+      <span className="inline-flex items-center gap-1 text-[10px] font-semibold text-red-600 bg-red-50 border border-red-200 rounded-full px-2 py-0.5">
+        <RotateCcw className="h-2.5 w-2.5" /> Refunded
+      </span>
+    );
+  }
+  if (status === 'void') {
+    return (
+      <span className="inline-flex items-center gap-1 text-[10px] font-semibold text-muted-foreground bg-muted border border-border rounded-full px-2 py-0.5">
+        <XCircle className="h-2.5 w-2.5" /> Void
+      </span>
+    );
+  }
   return (
     <span className="inline-flex items-center gap-1 text-[10px] font-semibold text-red-700 bg-red-50 border border-red-200 rounded-full px-2 py-0.5">
       <XCircle className="h-2.5 w-2.5" /> Pending
@@ -464,6 +478,8 @@ export default function BillingDashboard() {
                             'h-7 w-7 rounded-full flex items-center justify-center text-[10px] font-bold shrink-0 uppercase',
                             tx.invoiceStatus === 'fully_paid'   ? 'bg-green-100 text-green-700' :
                             tx.invoiceStatus === 'partial_paid' ? 'bg-orange-100 text-orange-700' :
+                            tx.invoiceStatus === 'refunded'     ? 'bg-red-100 text-red-600' :
+                            tx.invoiceStatus === 'void'         ? 'bg-muted text-muted-foreground' :
                                                                   'bg-red-100 text-red-700',
                           )}>
                             {(tx.memberName ?? '?').charAt(0)}

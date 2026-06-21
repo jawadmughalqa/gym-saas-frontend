@@ -1,5 +1,6 @@
 import { useState } from "react";
-import { Copy, Check, KeyRound, RefreshCw, Users, Star, Calendar, Clock } from "lucide-react";
+import { Copy, Check, KeyRound, RefreshCw, Users, Star, Calendar, Clock, Eye, EyeOff, Mail } from "lucide-react";
+import { Separator } from "@/components/ui/separator";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -10,7 +11,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { useMutation, useQuery } from "@tanstack/react-query";
+import { useQuery } from "@tanstack/react-query";
 import {
   useGetTrainersTrainerId,
   useGetTrainersTrainerIdAssignments,
@@ -175,18 +176,19 @@ export default function ProfileTab({ trainerId }: { trainerId: string }) {
     scheduledSlots?: AvailabilitySlot[];
   }>;
 
-  // ── Credentials state ─────────────────────────────────────────────────────
-  // Lazy-loaded: fetched only when user clicks "Show Credentials"
   const [ratingsOpen, setRatingsOpen] = useState(false);
 
+  // ── Credentials state ─────────────────────────────────────────────────────
+  const [credsRevealed, setCredsRevealed] = useState(false);
   const [creds, setCreds] = useState<{
     loginEmail: string;
     tempPassword: string | null;
     hasSetPassword: boolean;
   } | null>(null);
   const [credsLoading, setCredsLoading] = useState(false);
-  const [revealedPassword, setRevealedPassword] = useState<string | null>(null);
+  const [showPw, setShowPw] = useState(false);
   const [copied, setCopied] = useState(false);
+  const [resending, setResending] = useState(false);
 
   async function loadCredentials() {
     setCredsLoading(true);
@@ -203,33 +205,28 @@ export default function ProfileTab({ trainerId }: { trainerId: string }) {
     }
   }
 
-  const resetPasswordMutation = useMutation({
-    mutationFn: () =>
-      orvalMutator<{ data: { tempPassword: string } }>({
+  async function handleResendCredentials() {
+    setResending(true);
+    try {
+      const res = await orvalMutator<{ data: { tempPassword: string } }>({
         url: `/trainers/${trainerId}/reset-password`,
         method: "POST",
-      }),
-    onSuccess: (res) => {
+      });
       const newPass = (res as any)?.data?.tempPassword ?? null;
-      setRevealedPassword(newPass);
-      // Also update the creds panel if open
-      if (creds) {
-        setCreds((prev) =>
-          prev ? { ...prev, tempPassword: newPass, hasSetPassword: false } : prev,
-        );
-      }
-      toast({ title: "Password reset — copy the new password now" });
-    },
-    onError: (err: any) => {
+      setCreds((prev) => prev ? { ...prev, tempPassword: newPass, hasSetPassword: false } : prev);
+      toast({ title: "Credentials reset — copy the new password now" });
+    } catch (err: any) {
       toast({
         variant: "destructive",
-        title: "Failed to reset password",
+        title: "Failed to reset credentials",
         description: err?.response?.data?.message || "Something went wrong.",
       });
-    },
-  });
+    } finally {
+      setResending(false);
+    }
+  }
 
-  function copyToClipboard(text: string) {
+  function copyText(text: string) {
     navigator.clipboard.writeText(text).then(() => {
       setCopied(true);
       setTimeout(() => setCopied(false), 2000);
@@ -406,110 +403,129 @@ export default function ProfileTab({ trainerId }: { trainerId: string }) {
       {/* ── Login Credentials Card ──────────────────────────────────────── */}
       <Card className="md:col-span-2">
         <CardHeader className="pb-3">
-          <div className="flex items-center justify-between gap-3">
-            <CardTitle className="text-sm font-semibold uppercase tracking-wide text-muted-foreground flex items-center gap-2">
-              <KeyRound className="h-3.5 w-3.5" />
-              Login Credentials
-            </CardTitle>
-            {!creds ? (
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-muted">
+                <KeyRound className="h-4 w-4 text-muted-foreground" />
+              </div>
+              <CardTitle className="text-base">Login Credentials</CardTitle>
+            </div>
+            {!credsRevealed ? (
               <Button
-                variant="outline"
                 size="sm"
-                onClick={loadCredentials}
+                variant="outline"
+                onClick={() => { setCredsRevealed(true); loadCredentials(); }}
                 disabled={credsLoading}
               >
+                <Eye className="h-3.5 w-3.5 mr-1.5" />
                 {credsLoading ? "Loading…" : "Show Credentials"}
               </Button>
             ) : (
               <Button
-                variant="ghost"
                 size="sm"
-                onClick={() => { setCreds(null); setRevealedPassword(null); }}
+                variant="ghost"
+                className="text-muted-foreground"
+                onClick={() => { setCredsRevealed(false); setShowPw(false); }}
               >
+                <EyeOff className="h-3.5 w-3.5 mr-1.5" />
                 Hide
               </Button>
             )}
           </div>
         </CardHeader>
 
-        {creds && (
-          <CardContent className="space-y-4">
-            {/* Revealed-after-reset password banner */}
-            {revealedPassword && (
-              <div className="rounded-lg border border-amber-300 bg-amber-50 dark:bg-amber-950 p-3 text-sm text-amber-800 dark:text-amber-200">
-                <p className="font-medium mb-2">⚠ New temporary password — copy it now, it won't be shown again after you leave this page</p>
-                <div className="flex items-center gap-2 rounded bg-white dark:bg-amber-900/30 border border-amber-200 px-3 py-2 font-mono text-sm">
-                  <span className="flex-1 select-all">{revealedPassword}</span>
-                  <button
-                    type="button"
-                    onClick={() => copyToClipboard(revealedPassword)}
-                    className="text-amber-600 hover:text-amber-800 shrink-0"
-                  >
-                    {copied ? <Check className="h-4 w-4 text-green-500" /> : <Copy className="h-4 w-4" />}
-                  </button>
-                </div>
-              </div>
-            )}
-
-            {/* Login email */}
-            <div>
-              <p className="text-xs text-muted-foreground uppercase tracking-wide mb-1">Login Email</p>
-              <p className="font-mono text-sm">{creds.loginEmail}</p>
-            </div>
-
-            {/* Password */}
-            <div>
-              <div className="flex items-center gap-2 mb-1">
-                <p className="text-xs text-muted-foreground uppercase tracking-wide">Password</p>
-                {creds.hasSetPassword && (
-                  <span className="inline-flex items-center rounded-full bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300 text-xs font-medium px-2 py-0.5">
-                    ✓ Trainer's own
-                  </span>
-                )}
-              </div>
-              {creds.tempPassword ? (
-                <div className="flex items-center gap-2 rounded-md border bg-muted px-3 py-2 font-mono text-sm w-full max-w-xs">
-                  <span className="flex-1 select-all">{creds.tempPassword}</span>
-                  <button
-                    type="button"
-                    onClick={() => copyToClipboard(creds.tempPassword!)}
-                    className="text-muted-foreground hover:text-foreground shrink-0"
-                  >
-                    {copied ? <Check className="h-4 w-4 text-green-500" /> : <Copy className="h-4 w-4" />}
-                  </button>
-                </div>
-              ) : (
-                <p className="text-sm text-muted-foreground italic">
-                  No password on record — use Reset Password below
-                </p>
-              )}
-            </div>
-
-            {/* Reset password */}
-            <div className="pt-1 border-t">
-              <p className="text-xs text-muted-foreground mb-2">
-                Use Reset Password to generate a new temporary password for the trainer (e.g. if they need to log in on a new device or forgot their password).
-              </p>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => resetPasswordMutation.mutate()}
-                disabled={resetPasswordMutation.isPending}
-              >
-                <RefreshCw className="mr-2 h-3.5 w-3.5" />
-                {resetPasswordMutation.isPending ? "Resetting…" : "Reset Password"}
-              </Button>
-            </div>
-          </CardContent>
-        )}
-
-        {!creds && !credsLoading && (
-          <CardContent>
+        <CardContent>
+          {!credsRevealed ? (
             <p className="text-sm text-muted-foreground italic">
               Click "Show Credentials" to view this trainer's login details.
             </p>
-          </CardContent>
-        )}
+          ) : credsLoading ? (
+            <div className="space-y-2">
+              <div className="h-4 w-2/3 animate-pulse rounded bg-muted" />
+              <div className="h-4 w-1/2 animate-pulse rounded bg-muted" />
+            </div>
+          ) : creds ? (
+            <div className="space-y-4">
+              {/* Email row */}
+              <div className="flex items-start gap-3">
+                <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-muted flex-shrink-0">
+                  <Mail className="h-4 w-4 text-muted-foreground" />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="text-xs text-muted-foreground">Login Email</p>
+                  <div className="flex items-center gap-2 mt-0.5">
+                    <p className="text-sm font-mono truncate">{creds.loginEmail}</p>
+                    <button
+                      type="button"
+                      onClick={() => copyText(creds.loginEmail)}
+                      className="text-muted-foreground hover:text-foreground flex-shrink-0"
+                    >
+                      {copied ? <Check className="h-3.5 w-3.5 text-green-500" /> : <Copy className="h-3.5 w-3.5" />}
+                    </button>
+                  </div>
+                </div>
+              </div>
+
+              {/* Password row */}
+              <div className="flex items-start gap-3">
+                <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-muted flex-shrink-0">
+                  <KeyRound className="h-4 w-4 text-muted-foreground" />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="text-xs text-muted-foreground mb-0.5">
+                    Password
+                    {creds.hasSetPassword && (
+                      <span className="ml-2 text-xs text-emerald-600 font-medium">✓ Trainer's own password</span>
+                    )}
+                    {!creds.hasSetPassword && creds.tempPassword && (
+                      <span className="ml-2 text-xs text-amber-600 font-medium">⚠ Must change on first login</span>
+                    )}
+                  </p>
+                  <div className="flex items-center gap-2 rounded bg-muted px-3 py-2 font-mono text-sm">
+                    <span className="flex-1 select-all">
+                      {showPw
+                        ? (creds.tempPassword ?? "(password set by trainer)")
+                        : "••••••••••••"}
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => setShowPw((v) => !v)}
+                      className="text-muted-foreground hover:text-foreground flex-shrink-0"
+                    >
+                      {showPw ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                    </button>
+                    {creds.tempPassword && (
+                      <button
+                        type="button"
+                        onClick={() => copyText(creds.tempPassword!)}
+                        className="text-muted-foreground hover:text-foreground flex-shrink-0"
+                      >
+                        {copied ? <Check className="h-4 w-4 text-green-500" /> : <Copy className="h-4 w-4" />}
+                      </button>
+                    )}
+                  </div>
+                </div>
+              </div>
+
+              <Separator />
+
+              {/* Resend Credentials button */}
+              <Button
+                variant="outline"
+                size="sm"
+                className="gap-2 text-destructive border-destructive/30 hover:bg-destructive/5"
+                onClick={handleResendCredentials}
+                disabled={resending}
+              >
+                <RefreshCw className={`h-3.5 w-3.5 ${resending ? "animate-spin" : ""}`} />
+                {resending ? "Sending…" : "Resend Credentials"}
+              </Button>
+              <p className="text-xs text-muted-foreground">
+                Generates a new temporary password, logs the trainer out of all devices, and emails them the new credentials.
+              </p>
+            </div>
+          ) : null}
+        </CardContent>
       </Card>
 
       {/* ── Weekly Availability Card ────────────────────────────────────── */}

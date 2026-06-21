@@ -65,13 +65,20 @@ export function ReviewRefundDialog({
     void qc.invalidateQueries({ queryKey: getGetBillingDashboardQueryKey() });
   }
 
+  // Close unconditionally — used from onSuccess where isPending is still true
+  function closeDialog() {
+    setNote('');
+    setAction(null);
+    onOpenChange(false);
+  }
+
   const approve = usePostRefundsRefundIdApprove({
     mutation: {
       onSuccess: () => {
         toast({ title: 'Refund approved', description: 'Refund has been executed.' });
         invalidateAfterApproval();
         onSuccess?.();
-        handleClose();
+        closeDialog();
       },
       onError: (err) =>
         toast({ variant: 'destructive', title: 'Failed to approve', description: getErrorMessage(err) }),
@@ -84,7 +91,7 @@ export function ReviewRefundDialog({
         toast({ title: 'Refund rejected' });
         invalidate();
         onSuccess?.();
-        handleClose();
+        closeDialog();
       },
       onError: (err) =>
         toast({ variant: 'destructive', title: 'Failed to reject', description: getErrorMessage(err) }),
@@ -93,12 +100,9 @@ export function ReviewRefundDialog({
 
   const isPending = approve.isPending || reject.isPending;
 
+  // User-initiated close (Cancel button / backdrop) — blocked while request is in-flight
   function handleClose() {
-    if (!isPending) {
-      setNote('');
-      setAction(null);
-      onOpenChange(false);
-    }
+    if (!isPending) closeDialog();
   }
 
   function handleApprove() {

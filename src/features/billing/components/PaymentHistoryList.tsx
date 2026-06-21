@@ -46,12 +46,17 @@ export function PaymentHistoryList({ memberId }: PaymentHistoryListProps) {
 
   const allInvoices = ((invoicesData as any)?.data ?? []) as any[];
 
-  // Show invoices that have at least some payment activity (including refunded)
+  // Show invoices that have at least some payment activity.
+  // 'refunded' covers fully refunded invoices (both properly migrated ones and
+  // the fixed path where status is set correctly by the refund service).
+  // Also catch any legacy records that still have amountPaid > 0 or
+  // have a paid/partial status but slipped through.
   const paidInvoices = allInvoices.filter(
     (inv: any) =>
       inv.status === 'paid' ||
       inv.status === 'partially_paid' ||
       inv.status === 'refunded' ||
+      inv.status === 'void' ||
       inv.amountPaid > 0,
   );
 

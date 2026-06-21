@@ -100,6 +100,7 @@ function PlanCard({
   const color = FREQUENCY_COLORS[freq] ?? "bg-gray-100 text-gray-700";
   const isArchived = plan.isArchived;
   const activeCount = plan.activeSubscriptionCount ?? 0;
+  const [featuresExpanded, setFeaturesExpanded] = useState(false);
 
   return (
     <Card className={isArchived ? "opacity-70 bg-muted/30" : ""}>
@@ -191,7 +192,7 @@ function PlanCard({
 
         {plan.features && plan.features.length > 0 && (
           <ul className="space-y-1">
-            {plan.features.slice(0, 4).map((f, i) => (
+            {(featuresExpanded ? plan.features : plan.features.slice(0, 4)).map((f, i) => (
               <li
                 key={i}
                 className="flex items-center gap-1.5 text-xs text-muted-foreground"
@@ -201,8 +202,16 @@ function PlanCard({
               </li>
             ))}
             {plan.features.length > 4 && (
-              <li className="text-xs text-muted-foreground pl-4">
-                +{plan.features.length - 4} more
+              <li>
+                <button
+                  type="button"
+                  onClick={() => setFeaturesExpanded((v) => !v)}
+                  className="text-xs text-primary hover:underline pl-4.5 mt-0.5"
+                >
+                  {featuresExpanded
+                    ? "Show less"
+                    : `+${plan.features.length - 4} more`}
+                </button>
               </li>
             )}
           </ul>

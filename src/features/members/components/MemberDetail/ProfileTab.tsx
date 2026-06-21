@@ -1,7 +1,8 @@
 import { useState } from 'react';
-import { Mail, Phone, Calendar, MapPin, KeyRound, RefreshCw, Eye, EyeOff, Wallet, ArrowDownToLine } from 'lucide-react';
+import { Mail, Phone, Calendar, MapPin, KeyRound, RefreshCw, Eye, EyeOff, Wallet, ArrowDownToLine, Copy, Check } from 'lucide-react';
 import { Button }  from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Separator } from '@/components/ui/separator';
 import { Skeleton } from '@/components/ui/skeleton';
 import { MemberStatusPanel } from '@/features/members/components/MemberStatusPanel';
 import { formatDate, formatCurrency } from '@/utils/format';
@@ -31,7 +32,7 @@ function useLoginCredentials(memberId: string) {
       const res = await api.get<{ data: LoginCredentials }>(`/members/${memberId}/login-credentials`);
       return res.data.data;
     },
-    staleTime: 1000 * 30, // 30 s — short so resend refresh picks up quickly
+    staleTime: 1000 * 30,
   });
 }
 
@@ -72,9 +73,12 @@ export function ProfileTab({ memberId }: ProfileTabProps) {
   const { toast } = useToast();
   const { can } = usePermission();
   const queryClient = useQueryClient();
-  const [resending,    setResending]    = useState(false);
-  const [showPassword, setShowPassword] = useState(false);
-  const [payoutOpen,   setPayoutOpen]   = useState(false);
+
+  const [resending,  setResending]  = useState(false);
+  const [revealed,   setRevealed]   = useState(false);
+  const [showPw,     setShowPw]     = useState(false);
+  const [copied,     setCopied]     = useState(false);
+  const [payoutOpen, setPayoutOpen] = useState(false);
 
   const {
     data: creds,
@@ -87,12 +91,18 @@ export function ProfileTab({ memberId }: ProfileTabProps) {
     try {
       await api.post(`/members/${memberId}/resend-credentials`);
       toast({ title: 'Credentials sent', description: 'New login credentials emailed to the member.' });
-      void refetchCreds(); // refresh displayed temp password
+      void refetchCreds();
     } catch {
       toast({ variant: 'destructive', title: 'Failed', description: 'Could not resend credentials. Try again.' });
     } finally {
       setResending(false);
     }
+  };
+
+  const copyText = (text: string) => {
+    void navigator.clipboard.writeText(text);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
   };
 
   if (isLoading) {
@@ -109,14 +119,14 @@ export function ProfileTab({ memberId }: ProfileTabProps) {
   return (
     <div className="grid gap-4 md:grid-cols-2">
 
-      {/* Status panel — full width, always first */}
+      {/* Status panel — full width */}
       <div className="md:col-span-2">
         <MemberStatusPanel
           member={member as Parameters<typeof MemberStatusPanel>[0]['member']}
         />
       </div>
 
-      {/* Wallet credit balance — shown only when > 0 */}
+      {/* Wallet credit balance */}
       {((member as typeof member & { walletBalance?: number }).walletBalance ?? 0) > 0 && (
         <div className="md:col-span-2">
           <Card className="border-emerald-200 bg-emerald-50/50">
@@ -125,9 +135,7 @@ export function ProfileTab({ memberId }: ProfileTabProps) {
                 <Wallet className="h-5 w-5 text-emerald-600" />
               </div>
               <div className="min-w-0">
-                <p className="text-xs text-emerald-700 font-medium uppercase tracking-wide">
-                  Wallet Credit
-                </p>
+                <p className="text-xs text-emerald-700 font-medium uppercase tracking-wide">Wallet Credit</p>
                 <p className="text-lg font-bold text-emerald-800 leading-tight">
                   {formatCurrency(
                     (member as typeof member & { walletBalance?: number }).walletBalance!,
@@ -204,11 +212,7 @@ export function ProfileTab({ memberId }: ProfileTabProps) {
           />
           <InfoRow
             label="Date of Birth"
-            value={
-              (member as any).dateOfBirth
-                ? formatDate((member as any).dateOfBirth)
-                : undefined
-            }
+            value={(member as any).dateOfBirth ? formatDate((member as any).dateOfBirth) : undefined}
           />
           <InfoRow
             label="Age"
@@ -268,9 +272,7 @@ export function ProfileTab({ memberId }: ProfileTabProps) {
               />
             </>
           ) : (
-            <p className="text-sm text-muted-foreground italic">
-              No emergency contact on file.
-            </p>
+            <p className="text-sm text-muted-foreground italic">No emergency contact on file.</p>
           )}
         </CardContent>
       </Card>
@@ -289,71 +291,130 @@ export function ProfileTab({ memberId }: ProfileTabProps) {
         </Card>
       )}
 
-      {/* Login Account */}
+      {/* Login Credentials — matches StaffDetailPage design */}
       <Card className="md:col-span-2">
         <CardHeader className="pb-3">
-          <CardTitle className="text-sm font-semibold uppercase tracking-wide text-muted-foreground flex items-center gap-2">
-            <KeyRound className="h-4 w-4" />
-            Login Account (Mobile App)
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-4">
-
-          {/* Email row */}
-          <div className="space-y-1">
-            <p className="text-xs text-muted-foreground uppercase tracking-wide">Login Email</p>
-            <div className="flex items-center gap-1.5">
-              <Mail className="h-3.5 w-3.5 text-muted-foreground" />
-              <span className="text-sm font-mono select-all">{member.email}</span>
-            </div>
-          </div>
-
-          {/* Password row */}
-          <div className="space-y-1">
-            <p className="text-xs text-muted-foreground uppercase tracking-wide">Temporary Password</p>
-            {credsLoading ? (
-              <Skeleton className="h-8 w-40" />
-            ) : creds?.hasSetPassword ? (
-              <p className="text-sm text-muted-foreground italic">
-                Member has set their own password.
-              </p>
-            ) : creds?.tempPassword ? (
-              <div className="flex items-center gap-2">
-                <span className="font-mono text-sm select-all">
-                  {showPassword ? creds.tempPassword : '••••••••••••'}
-                </span>
-                <button
-                  onClick={() => setShowPassword((v) => !v)}
-                  className="text-muted-foreground hover:text-foreground transition-colors"
-                  title={showPassword ? 'Hide password' : 'Show password'}
-                >
-                  {showPassword
-                    ? <EyeOff className="h-4 w-4" />
-                    : <Eye className="h-4 w-4" />}
-                </button>
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-muted">
+                <KeyRound className="h-4 w-4 text-muted-foreground" />
               </div>
+              <CardTitle className="text-base">Login Credentials</CardTitle>
+            </div>
+            {!revealed ? (
+              <Button size="sm" variant="outline" onClick={() => setRevealed(true)}>
+                <Eye className="h-3.5 w-3.5 mr-1.5" />
+                Show Credentials
+              </Button>
             ) : (
-              <p className="text-sm text-muted-foreground italic">No temporary password on file.</p>
-            )}
-            {!creds?.hasSetPassword && (
-              <p className="text-xs text-muted-foreground mt-1">
-                This is the temporary password. The member will be asked to change it on first login. Use <strong>Resend Credentials</strong> to generate a new one.
-              </p>
+              <Button
+                size="sm"
+                variant="ghost"
+                className="text-muted-foreground"
+                onClick={() => { setRevealed(false); setShowPw(false); }}
+              >
+                <EyeOff className="h-3.5 w-3.5 mr-1.5" />
+                Hide
+              </Button>
             )}
           </div>
+        </CardHeader>
 
-          {/* Resend button */}
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={handleResendCredentials}
-            disabled={resending}
-            className="shrink-0"
-          >
-            <RefreshCw className={`h-4 w-4 mr-2 ${resending ? 'animate-spin' : ''}`} />
-            {resending ? 'Sending…' : 'Resend Credentials'}
-          </Button>
+        <CardContent>
+          {!revealed ? (
+            <p className="text-sm text-muted-foreground italic">
+              Click "Show Credentials" to view this member's login details.
+            </p>
+          ) : credsLoading ? (
+            <div className="space-y-2">
+              <Skeleton className="h-4 w-2/3" />
+              <Skeleton className="h-4 w-1/2" />
+            </div>
+          ) : creds ? (
+            <div className="space-y-4">
+              {/* Email row */}
+              <div className="flex items-start gap-3">
+                <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-muted flex-shrink-0">
+                  <Mail className="h-4 w-4 text-muted-foreground" />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="text-xs text-muted-foreground">Login Email</p>
+                  <div className="flex items-center gap-2 mt-0.5">
+                    <p className="text-sm font-mono truncate">{creds.loginEmail}</p>
+                    <button
+                      type="button"
+                      onClick={() => copyText(creds.loginEmail)}
+                      className="text-muted-foreground hover:text-foreground flex-shrink-0"
+                    >
+                      {copied
+                        ? <Check className="h-3.5 w-3.5 text-green-500" />
+                        : <Copy className="h-3.5 w-3.5" />}
+                    </button>
+                  </div>
+                </div>
+              </div>
 
+              {/* Password row */}
+              <div className="flex items-start gap-3">
+                <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-muted flex-shrink-0">
+                  <KeyRound className="h-4 w-4 text-muted-foreground" />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="text-xs text-muted-foreground mb-0.5">
+                    Password
+                    {creds.hasSetPassword && (
+                      <span className="ml-2 text-xs text-emerald-600 font-medium">✓ Member's own password</span>
+                    )}
+                    {!creds.hasSetPassword && creds.tempPassword && (
+                      <span className="ml-2 text-xs text-amber-600 font-medium">⚠ Must change on first login</span>
+                    )}
+                  </p>
+                  <div className="flex items-center gap-2 rounded bg-muted px-3 py-2 font-mono text-sm">
+                    <span className="flex-1 select-all">
+                      {showPw
+                        ? (creds.tempPassword ?? '(password set by member)')
+                        : '••••••••••••'}
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => setShowPw((v) => !v)}
+                      className="text-muted-foreground hover:text-foreground flex-shrink-0"
+                    >
+                      {showPw ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                    </button>
+                    {creds.tempPassword && (
+                      <button
+                        type="button"
+                        onClick={() => copyText(creds.tempPassword!)}
+                        className="text-muted-foreground hover:text-foreground flex-shrink-0"
+                      >
+                        {copied
+                          ? <Check className="h-4 w-4 text-green-500" />
+                          : <Copy className="h-4 w-4" />}
+                      </button>
+                    )}
+                  </div>
+                </div>
+              </div>
+
+              <Separator />
+
+              {/* Resend button */}
+              <Button
+                variant="outline"
+                size="sm"
+                className="gap-2 text-destructive border-destructive/30 hover:bg-destructive/5"
+                onClick={handleResendCredentials}
+                disabled={resending}
+              >
+                <RefreshCw className={`h-3.5 w-3.5 ${resending ? 'animate-spin' : ''}`} />
+                {resending ? 'Sending…' : 'Resend Credentials'}
+              </Button>
+              <p className="text-xs text-muted-foreground">
+                Generates a new temporary password, logs the member out of all devices, and emails them the new credentials.
+              </p>
+            </div>
+          ) : null}
         </CardContent>
       </Card>
 

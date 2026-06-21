@@ -4,7 +4,7 @@ import {
   ArrowLeft, Building2, Mail, Phone, Globe,
   RefreshCw, Ban, CheckCircle, Zap, CreditCard,
   User, Calendar, KeyRound, Copy, Check, Eye, EyeOff,
-  MoreHorizontal, Download, Printer, MessageCircle, Pencil,
+  MoreHorizontal, Download, Printer, MessageCircle, Pencil, Play, Settings2,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -718,6 +718,153 @@ function EditTrialDialog({
   );
 }
 
+// ─── BillingSettingsCard ──────────────────────────────────────────────────────
+
+function BillingSettingsCard({
+  tenantId,
+  currentAdvanceDays,
+}: {
+  tenantId: string;
+  currentAdvanceDays: number;
+}) {
+  const [advanceDays, setAdvanceDays] = useState<number>(currentAdvanceDays);
+  const [triggerResult, setTriggerResult] = useState<null | {
+    invoices: { created: number; skipped: number; errors: number };
+    ptInvoices: { created: number; skipped: number; errors: number };
+    overdue: { marked: number };
+    elapsedMs: number;
+  }>(null);
+
+  // Sync if parent data changes (e.g. after refetch)
+  useEffect(() => { setAdvanceDays(currentAdvanceDays); }, [currentAdvanceDays]);
+
+  const saveMutation = useMutation({
+    mutationFn: async (days: number) => {
+      const res = await orvalMutator<{ data: { invoiceAdvanceDays: number } }>({
+        url: `/super/tenants/${tenantId}/billing-settings`,
+        method: 'PATCH',
+        data: { invoiceAdvanceDays: days },
+      });
+      return res;
+    },
+    onSuccess: (res) => {
+      toast({ title: `Invoice advance set to ${res.data.invoiceAdvanceDays} day(s)` });
+    },
+    onError: (err) => {
+      toast({ variant: 'destructive', title: getErrorMessage(err) });
+    },
+  });
+
+  const triggerMutation = useMutation({
+    mutationFn: async () => {
+      const res = await orvalMutator<{ data: typeof triggerResult }>({
+        url: `/super/tenants/${tenantId}/billing/trigger`,
+        method: 'POST',
+      });
+      return res.data;
+    },
+    onSuccess: (data) => {
+      setTriggerResult(data);
+      toast({ title: 'Billing worker finished' });
+    },
+    onError: (err) => {
+      toast({ variant: 'destructive', title: getErrorMessage(err) });
+    },
+  });
+
+  return (
+    <Card className="md:col-span-2">
+      <CardHeader className="pb-3">
+        <CardTitle className="text-sm font-medium text-muted-foreground flex items-center gap-2">
+          <Settings2 className="h-4 w-4" /> Billing Worker Settings
+        </CardTitle>
+      </CardHeader>
+      <CardContent className="space-y-4">
+        {/* Advance days */}
+        <div className="flex flex-wrap items-end gap-3">
+          <div className="flex-1 min-w-[180px]">
+            <p className="text-xs text-muted-foreground mb-1">
+              Generate invoices <span className="font-medium text-foreground">N days before</span> the due date
+            </p>
+            <p className="text-[11px] text-muted-foreground">
+              0 = same day as due date. Max 30. Members receive the invoice this many days early.
+            </p>
+          </div>
+          <div className="flex items-center gap-2">
+            <Input
+              type="number"
+              min={0}
+              max={30}
+              value={advanceDays}
+              onChange={(e) => setAdvanceDays(Math.max(0, Math.min(30, Number(e.target.value))))}
+              className="w-20 text-center"
+            />
+            <Button
+              size="sm"
+              variant="outline"
+              disabled={saveMutation.isPending}
+              onClick={() => saveMutation.mutate(advanceDays)}
+            >
+              {saveMutation.isPending ? <RefreshCw className="h-3.5 w-3.5 animate-spin" /> : 'Save'}
+            </Button>
+          </div>
+        </div>
+
+        <Separator />
+
+        {/* Manual trigger */}
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <div>
+            <p className="text-sm font-medium">Run Billing Worker Now</p>
+            <p className="text-xs text-muted-foreground">
+              Immediately generates due invoices, marks overdue, and sends alerts for this tenant.
+            </p>
+          </div>
+          <Button
+            size="sm"
+            disabled={triggerMutation.isPending}
+            onClick={() => triggerMutation.mutate()}
+          >
+            {triggerMutation.isPending
+              ? <><RefreshCw className="mr-1.5 h-3.5 w-3.5 animate-spin" /> Running...</>
+              : <><Play className="mr-1.5 h-3.5 w-3.5" /> Run Worker</>
+            }
+          </Button>
+        </div>
+
+        {/* Results */}
+        {triggerResult && (
+          <Alert>
+            <AlertDescription>
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-sm">
+                <div>
+                  <p className="text-xs text-muted-foreground">Invoices Created</p>
+                  <p className="font-semibold text-green-600">{triggerResult.invoices.created}</p>
+                </div>
+                <div>
+                  <p className="text-xs text-muted-foreground">Skipped</p>
+                  <p className="font-semibold">{triggerResult.invoices.skipped}</p>
+                </div>
+                <div>
+                  <p className="text-xs text-muted-foreground">Marked Overdue</p>
+                  <p className="font-semibold text-amber-600">{triggerResult.overdue.marked}</p>
+                </div>
+                <div>
+                  <p className="text-xs text-muted-foreground">Elapsed</p>
+                  <p className="font-semibold">{triggerResult.elapsedMs}ms</p>
+                </div>
+              </div>
+              {triggerResult.invoices.errors > 0 && (
+                <p className="mt-2 text-xs text-destructive">{triggerResult.invoices.errors} error(s) — check server logs</p>
+              )}
+            </AlertDescription>
+          </Alert>
+        )}
+      </CardContent>
+    </Card>
+  );
+}
+
 // ─── TenantDetailPage ─────────────────────────────────────────────────────────
 
 export default function TenantDetailPage() {
@@ -1230,6 +1377,9 @@ export default function TenantDetailPage() {
                 </CardContent>
               </Card>
             )}
+
+            {/* Billing Settings card */}
+            <BillingSettingsCard tenantId={tenantId!} currentAdvanceDays={(tenant as any)?.settings?.invoiceAdvanceDays ?? 0} />
           </div>
         </TabsContent>
 

@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { format, parseISO, isToday } from 'date-fns';
+import { format, parseISO, isToday, isBefore, startOfDay } from 'date-fns';
 import {
   CheckCircle2, Loader2, Utensils, Dumbbell, Droplets,
   Flame, Clock, ChevronRight, Apple, ArrowLeftRight,
@@ -55,10 +55,12 @@ export default function DayDetailSheet({ date, calendarParams, days, onClose }: 
   const nutrition = detail?.nutrition;
 
   const isSelectedToday = date ? isToday(parseISO(date)) : false;
-  const isPastDay       = date ? parseISO(date) < new Date() && !isSelectedToday : false;
-  // Allow completing today's planned day OR any past planned day (retroactive logging)
-  const canComplete     = day?.status === 'planned' && (isSelectedToday || isPastDay);
-  const alreadyDone = day?.status === 'completed';
+  const isPastDay       = date ? isBefore(startOfDay(parseISO(date)), startOfDay(new Date())) : false;
+  // Only allow completing today's workout — not past or future days
+  const canComplete     = day?.status === 'planned' && isSelectedToday;
+  // Swap only makes sense for future/today planned days — past planned days can't be rescheduled
+  const canSwap         = canComplete && day?.dayType !== 'rest' && !isPastDay;
+  const alreadyDone     = day?.status === 'completed';
 
   const typeConfig   = DAY_TYPE_CONFIG[day?.dayType ?? ''] ?? DAY_TYPE_CONFIG['full_body'];
   const statusConfig = STATUS_CONFIG[day?.status ?? ''] ?? STATUS_CONFIG['planned'];
@@ -284,9 +286,8 @@ export default function DayDetailSheet({ date, calendarParams, days, onClose }: 
         </div>
 
         {/* ── Sticky footer CTA ────────────────────────────────────────── */}
-        {(canComplete || (day?.status === 'planned' && day?.dayType !== 'rest')) && (
+        {(canComplete || canSwap) && (
           <div className="px-6 py-4 border-t bg-background space-y-2">
-            {/* Mark complete — today only */}
             {canComplete && (
               <Button
                 className="w-full h-11 gap-2 text-sm font-semibold"
@@ -301,8 +302,7 @@ export default function DayDetailSheet({ date, calendarParams, days, onClose }: 
                 Mark as Complete
               </Button>
             )}
-            {/* Swap — any planned non-rest day (past, today, or future) */}
-            {day?.status === 'planned' && day?.dayType !== 'rest' && (
+            {canSwap && (
               <Button
                 variant="outline"
                 className="w-full h-10 gap-2 text-sm"
@@ -327,7 +327,7 @@ export default function DayDetailSheet({ date, calendarParams, days, onClose }: 
       </SheetContent>
 
       {/* Swap picker — nested sheet */}
-      {date && day && day.dayType !== 'rest' && (
+      {date && canSwap && (
         <SwapDaySheet
           sourceDate={date}
           sourceDayType={day.dayType ?? ''}

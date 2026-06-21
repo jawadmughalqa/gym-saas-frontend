@@ -1,4 +1,4 @@
-import { useQueryClient, useMutation } from '@tanstack/react-query';
+import { useQueryClient, useMutation, useQuery } from '@tanstack/react-query';
 import { orvalMutator } from '@/lib/orval-mutator';
 import { toast } from '@/hooks/use-toast';
 import { getErrorMessage } from '@/utils/error';
@@ -67,6 +67,8 @@ function useInvalidateFitPlan() {
       qc.invalidateQueries({ queryKey: getGetFitPlanStatsQueryKey() }),
       // Always invalidate ALL calendar months/years (prefix match — no params = wildcard)
       qc.invalidateQueries({ queryKey: getGetFitPlanCalendarQueryKey() }),
+      // Invalidate plan history so it reflects the latest plan settings immediately
+      qc.invalidateQueries({ queryKey: ['/fit-plan/history'] }),
       // Invalidate specific day detail if provided
       date ? qc.invalidateQueries({ queryKey: getGetFitPlanDayQueryKey(date) }) : Promise.resolve(),
     ]);
@@ -115,9 +117,9 @@ export function useCompleteDay(date: string, calendarParams: GetFitPlanCalendarP
   const invalidate = useInvalidateFitPlan();
   return useCompleteFitPlanDay({
     mutation: {
-      onSuccess: (res) => {
+      onSuccess: async (res) => {
         const streak = res.data?.data?.streak;
-        invalidate(date, calendarParams);
+        await invalidate(date, calendarParams);
         toast({
           title: 'Workout logged! 💪',
           description: streak
@@ -152,7 +154,8 @@ export function useBulkAssign(calendarParams: GetFitPlanCalendarParams) {
   return useBulkAssignFitPlanDays({
     mutation: {
       onSuccess: () => {
-        qc.invalidateQueries({ queryKey: getGetFitPlanCalendarQueryKey(calendarParams) });
+        // Wildcard — no params = all months
+        qc.invalidateQueries({ queryKey: getGetFitPlanCalendarQueryKey() });
         toast({ title: 'Calendar updated' });
       },
       onError: (err) => {
@@ -221,11 +224,47 @@ export function useSwapDays(calendarParams: GetFitPlanCalendarParams) {
       // Invalidate both individual day queries and the calendar
       qc.invalidateQueries({ queryKey: getGetFitPlanDayQueryKey(vars.date1) });
       qc.invalidateQueries({ queryKey: getGetFitPlanDayQueryKey(vars.date2) });
-      qc.invalidateQueries({ queryKey: getGetFitPlanCalendarQueryKey(calendarParams) });
+      // Wildcard — invalidates all months in case the two days span month boundaries
+      qc.invalidateQueries({ queryKey: getGetFitPlanCalendarQueryKey() });
       toast({ title: 'Days swapped! 🔄', description: 'Your workout schedule has been updated.' });
     },
     onError: (err) => {
       toast({ variant: 'destructive', title: 'Swap failed', description: getErrorMessage(err) });
     },
+  });
+}
+
+// ─── Plan History ─────────────────────────────────────────────────────────────
+
+export interface PlanHistoryEntry {
+  _id:                 string;
+  goal:                string;
+  fitnessLevel:        string;
+  activityLevel:       string;
+  trainingDaysPerWeek: number;
+  currentWeight:       number;
+  targetWeight:        number | null;
+  dietaryRestrictions: string[];
+  status:              string;
+  startDate:           string;
+  lastWorkoutDate:     string | null;
+  completedWorkouts:   number;
+  totalWorkouts:       number;
+  completionRate:      number;
+  peakStreak:          number;
+  streakTier:          string | null;
+  streakTierEmoji:     string | null;
+  createdAt:           string;
+}
+
+export function usePlanHistory() {
+  return useQuery({
+    queryKey: ['/fit-plan/history'],
+    queryFn:  () =>
+      orvalMutator<{ success: boolean; data: PlanHistoryEntry[] }>({
+        url:    '/fit-plan/history',
+        method: 'GET',
+      }).then((r) => r.data),
+    staleTime: 1000 * 60 * 5,
   });
 }

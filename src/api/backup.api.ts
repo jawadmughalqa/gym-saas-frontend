@@ -1,4 +1,5 @@
 import api from '@/lib/axios';
+import { useAuthStore } from '@/stores/auth.store';
 import type { ApiResponse } from '@/types/api.types';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -18,13 +19,13 @@ export interface BackupLog {
 // ─── API functions ────────────────────────────────────────────────────────────
 
 export async function downloadBackup(trigger: 'manual' | 'auto' = 'manual'): Promise<void> {
-  const token = api.defaults.headers.common?.['Authorization'] as string | undefined;
+  const token = useAuthStore.getState().accessToken;
   const baseURL = (api.defaults.baseURL ?? '/api/v1').replace(/\/$/, '');
 
   const response = await fetch(`${baseURL}/backup/export?trigger=${trigger}`, {
     method: 'GET',
     credentials: 'include',
-    headers: token ? { Authorization: token } : {},
+    headers: token ? { Authorization: `Bearer ${token}` } : {},
   });
 
   if (!response.ok) {

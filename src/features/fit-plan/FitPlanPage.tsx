@@ -1,11 +1,12 @@
 import { useState } from 'react';
 import { format, addMonths, subMonths } from 'date-fns';
-import { ChevronLeft, ChevronRight, TrendingUp, Settings2 } from 'lucide-react';
+import { ChevronLeft, ChevronRight, TrendingUp, Settings2, History, Target, Scale, Activity, Dumbbell, Calendar, Leaf } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import FeatureGate from '@/components/shared/FeatureGate';
 import PageShell from '@/components/layout/PageShell';
 import PageHeader from '@/components/layout/PageHeader';
 import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
 import {
@@ -29,6 +30,128 @@ import {
   useFitPlanCalendar,
   useUseFreeze,
 } from './hooks/use-fit-plan';
+
+// ─── Config labels ────────────────────────────────────────────────────────────
+
+const GOAL_LABELS: Record<string, { label: string; emoji: string }> = {
+  weight_loss: { label: 'Lose Weight',     emoji: '🔥' },
+  muscle_gain: { label: 'Build Muscle',    emoji: '💪' },
+  maintain:    { label: 'Stay Fit',        emoji: '⚖️' },
+  endurance:   { label: 'Build Endurance', emoji: '🏃' },
+  recovery:    { label: 'Active Recovery', emoji: '🧘' },
+};
+
+const ACTIVITY_LABELS: Record<string, string> = {
+  sedentary:  'Sedentary',
+  light:      'Lightly Active',
+  moderate:   'Moderately Active',
+  active:     'Very Active',
+  very_active:'Extra Active',
+};
+
+const FITNESS_LABELS: Record<string, string> = {
+  beginner:     'Beginner',
+  intermediate: 'Intermediate',
+  advanced:     'Advanced',
+};
+
+// ─── Plan Details Card ────────────────────────────────────────────────────────
+
+function PlanDetailsCard({
+  plan,
+  onEdit,
+}: {
+  plan: import('@/api/generated/schemas').FitPlan;
+  onEdit: () => void;
+}) {
+  const goal = GOAL_LABELS[plan.goal ?? ''] ?? { label: plan.goal ?? '', emoji: '🏋️' };
+
+  return (
+    <Card className="mt-4">
+      <CardHeader className="pb-3 flex flex-row items-center justify-between">
+        <CardTitle className="text-sm font-semibold text-muted-foreground uppercase tracking-wide">
+          Your Plan Settings
+        </CardTitle>
+        <Button variant="ghost" size="sm" className="h-7 text-xs gap-1" onClick={onEdit}>
+          <Settings2 className="h-3.5 w-3.5" />
+          Edit
+        </Button>
+      </CardHeader>
+      <CardContent className="pt-0">
+        <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+          {/* Goal */}
+          <div className="flex items-start gap-2.5 rounded-xl bg-muted/50 px-3 py-2.5">
+            <Target className="h-4 w-4 text-primary mt-0.5 flex-shrink-0" />
+            <div>
+              <p className="text-[10px] text-muted-foreground uppercase tracking-wide font-medium">Goal</p>
+              <p className="text-sm font-semibold">{goal.emoji} {goal.label}</p>
+            </div>
+          </div>
+
+          {/* Fitness level */}
+          <div className="flex items-start gap-2.5 rounded-xl bg-muted/50 px-3 py-2.5">
+            <Dumbbell className="h-4 w-4 text-primary mt-0.5 flex-shrink-0" />
+            <div>
+              <p className="text-[10px] text-muted-foreground uppercase tracking-wide font-medium">Fitness Level</p>
+              <p className="text-sm font-semibold">{FITNESS_LABELS[plan.fitnessLevel ?? ''] ?? plan.fitnessLevel}</p>
+            </div>
+          </div>
+
+          {/* Training days */}
+          <div className="flex items-start gap-2.5 rounded-xl bg-muted/50 px-3 py-2.5">
+            <Calendar className="h-4 w-4 text-primary mt-0.5 flex-shrink-0" />
+            <div>
+              <p className="text-[10px] text-muted-foreground uppercase tracking-wide font-medium">Training Days</p>
+              <p className="text-sm font-semibold">{plan.trainingDaysPerWeek}× per week</p>
+            </div>
+          </div>
+
+          {/* Activity level */}
+          <div className="flex items-start gap-2.5 rounded-xl bg-muted/50 px-3 py-2.5">
+            <Activity className="h-4 w-4 text-primary mt-0.5 flex-shrink-0" />
+            <div>
+              <p className="text-[10px] text-muted-foreground uppercase tracking-wide font-medium">Activity Level</p>
+              <p className="text-sm font-semibold">{ACTIVITY_LABELS[plan.activityLevel ?? ''] ?? plan.activityLevel}</p>
+            </div>
+          </div>
+
+          {/* Current & target weight */}
+          <div className="flex items-start gap-2.5 rounded-xl bg-muted/50 px-3 py-2.5">
+            <Scale className="h-4 w-4 text-primary mt-0.5 flex-shrink-0" />
+            <div>
+              <p className="text-[10px] text-muted-foreground uppercase tracking-wide font-medium">Weight</p>
+              <p className="text-sm font-semibold">
+                {plan.currentWeight} kg
+                {plan.targetWeight != null && (
+                  <span className="text-muted-foreground font-normal"> → {plan.targetWeight} kg</span>
+                )}
+              </p>
+            </div>
+          </div>
+
+          {/* Dietary restrictions */}
+          {(plan.dietaryRestrictions ?? []).length > 0 && (
+            <div className="flex items-start gap-2.5 rounded-xl bg-muted/50 px-3 py-2.5">
+              <Leaf className="h-4 w-4 text-green-600 mt-0.5 flex-shrink-0" />
+              <div>
+                <p className="text-[10px] text-muted-foreground uppercase tracking-wide font-medium">Diet</p>
+                <div className="flex flex-wrap gap-1 mt-0.5">
+                  {(plan.dietaryRestrictions ?? []).map((d: string) => (
+                    <Badge key={d} variant="secondary" className="text-[10px] px-1.5 py-0 rounded-full capitalize">
+                      {d.replace(/_/g, ' ')}
+                    </Badge>
+                  ))}
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
+      </CardContent>
+    </Card>
+  );
+}
+
+// ─── Page ─────────────────────────────────────────────────────────────────────
 
 export default function FitPlanPage() {
   return (
@@ -132,9 +255,12 @@ function FitPlanPageContent() {
     <PageShell>
       <PageHeader
         title="My FitPlan"
-        description={`${plan.goal?.replace('_', ' ')} · ${plan.fitnessLevel} · ${plan.trainingDaysPerWeek}×/week`}
         actions={
           <div className="flex items-center gap-2">
+            <Button variant="outline" size="sm" onClick={() => navigate('/member/fit-plan/history')}>
+              <History className="h-4 w-4 mr-1.5" />
+              History
+            </Button>
             <Button variant="outline" size="sm" onClick={() => navigate('/member/fit-plan/progress')}>
               <TrendingUp className="h-4 w-4 mr-1.5" />
               Progress
@@ -146,6 +272,9 @@ function FitPlanPageContent() {
           </div>
         }
       />
+
+      {/* Plan settings card — shows all current plan details */}
+      <PlanDetailsCard plan={plan} onEdit={() => setShowConfirm(true)} />
 
       {/* Top row: streak + week view */}
       <div className="grid gap-4 md:grid-cols-3 mt-4">
@@ -164,7 +293,7 @@ function FitPlanPageContent() {
           </CardHeader>
           <CardContent>
             <WeekView
-              referenceDate={currentDate}
+              referenceDate={new Date()}
               days={days}
               onDayClick={setSelectedDay}
             />
@@ -232,8 +361,11 @@ function FitPlanPageContent() {
           <AlertDialogHeader>
             <AlertDialogTitle>Change your FitPlan goal?</AlertDialogTitle>
             <AlertDialogDescription>
-              Switching goals will regenerate your upcoming workouts based on your new settings.
-              Your completed workouts, streak, and progress history are fully preserved.
+              If you change your <strong>goal</strong> or <strong>training days per week</strong>,
+              your current plan will be archived and a new one will start fresh — including a new streak from zero.
+              Your completed workouts and progress history are fully preserved in Plan History.
+              <br /><br />
+              Changing only your weight, activity level, fitness level, or dietary restrictions updates your current plan in place with no streak reset.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>

@@ -13,10 +13,14 @@ import {
 import { useAuthStore } from '@/stores/auth.store';
 import { useLogout } from '@/features/auth/hooks/use-auth';
 
+const BACKUP_ROLES = ['gym_owner', 'branch_manager', 'super_admin'];
+
 export default function UserMenu() {
   const user = useAuthStore((s) => s.user);
   const logout = useLogout();
   const navigate = useNavigate();
+
+  const canAccessBackup = BACKUP_ROLES.includes(user?.role ?? '');
 
   const initials = user?.name
     ? user.name.split(' ').map((n) => n[0]).join('').toUpperCase().slice(0, 2)
@@ -55,10 +59,12 @@ export default function UserMenu() {
             <KeyRound className="mr-2 h-4 w-4" />
             Change password
           </DropdownMenuItem>
-          <DropdownMenuItem onClick={() => navigate('/settings/backup')}>
-            <HardDrive className="mr-2 h-4 w-4" />
-            Backup &amp; Restore
-          </DropdownMenuItem>
+          {canAccessBackup && (
+            <DropdownMenuItem onClick={() => navigate('/settings/backup')}>
+              <HardDrive className="mr-2 h-4 w-4" />
+              Backup &amp; Restore
+            </DropdownMenuItem>
+          )}
         </DropdownMenuGroup>
 
         <DropdownMenuSeparator />

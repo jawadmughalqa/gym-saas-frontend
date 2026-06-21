@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { format } from 'date-fns';
-import { Plus, Scale, TrendingDown, TrendingUp, Minus, ArrowLeft } from 'lucide-react';
+import { Plus, Scale, TrendingDown, TrendingUp, Minus, ArrowLeft, History } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import {
   LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip,
@@ -15,6 +15,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import ContributionGraph from './components/ContributionGraph';
 import CheckInDialog from './components/CheckInDialog';
 import { useMyFitPlan, useFitPlanStats, useFitPlanCheckIns } from './hooks/use-fit-plan';
+import type { StreakInfo } from '@/api/generated/schemas';
 
 // ─── Completion ring ──────────────────────────────────────────────────────────
 
@@ -54,6 +55,7 @@ export default function ProgressPage() {
 
   const plan        = planRes?.data?.plan;
   const stats       = statsRes?.data;
+  const streak      = stats?.streak as StreakInfo | null;
   const checkIns    = checkInsRes?.data ?? [];
   const contribution = stats?.contributionDays ?? [];
 
@@ -82,6 +84,10 @@ export default function ProgressPage() {
             <Button variant="outline" size="sm" onClick={() => navigate('/member/fit-plan')}>
               <ArrowLeft className="h-4 w-4 mr-1.5" />
               Back to FitPlan
+            </Button>
+            <Button variant="outline" size="sm" onClick={() => navigate('/member/fit-plan/history')}>
+              <History className="h-4 w-4 mr-1.5" />
+              Plan History
             </Button>
             <Button size="sm" onClick={() => setCheckInOpen(true)}>
               <Plus className="h-4 w-4 mr-1.5" />
@@ -166,17 +172,17 @@ export default function ProgressPage() {
               <>
                 <div className="flex items-end gap-1">
                   <span className="text-4xl font-bold">
-                    {(stats?.streak as { currentStreak?: number })?.currentStreak ?? 0}
+                    {streak?.currentStreak ?? 0}
                   </span>
                   <span className="text-muted-foreground mb-1">day streak</span>
                 </div>
                 <p className="text-xs text-muted-foreground">
-                  Best: {(stats?.streak as { longestStreak?: number })?.longestStreak ?? 0} days
+                  Best: {streak?.longestStreak ?? 0} days
                 </p>
-                {(stats?.streak as { tierLabel?: string; tierEmoji?: string })?.tierLabel && (
+                {streak?.tierLabel && (
                   <p className="text-sm font-medium">
-                    {(stats?.streak as { tierEmoji?: string })?.tierEmoji}{' '}
-                    {(stats?.streak as { tierLabel?: string })?.tierLabel}
+                    {streak.tierEmoji}{' '}
+                    {streak.tierLabel}
                   </p>
                 )}
               </>

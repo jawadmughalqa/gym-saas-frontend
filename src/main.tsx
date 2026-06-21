@@ -7,6 +7,7 @@ import { queryClient } from '@/lib/query-client';
 import { setAxiosQueryClient } from '@/lib/axios';
 import { Toaster } from '@/components/ui/toaster';
 import AuthProvider from '@/features/auth/AuthProvider';
+import ThemeProvider from '@/components/providers/ThemeProvider';
 import router from './router';
 import './index.css';
 
@@ -16,12 +17,14 @@ setAxiosQueryClient(queryClient);
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
-    <QueryClientProvider client={queryClient}>
-      <AuthProvider>
-        <RouterProvider router={router} />
-        <Toaster />
-      </AuthProvider>
-      <ReactQueryDevtools initialIsOpen={false} />
-    </QueryClientProvider>
+    <ThemeProvider>
+      <QueryClientProvider client={queryClient}>
+        <AuthProvider>
+          <RouterProvider router={router} />
+          <Toaster />
+        </AuthProvider>
+        <ReactQueryDevtools initialIsOpen={false} />
+      </QueryClientProvider>
+    </ThemeProvider>
   </StrictMode>,
 );

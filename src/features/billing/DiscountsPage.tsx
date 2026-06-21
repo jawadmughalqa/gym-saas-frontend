@@ -49,19 +49,19 @@ function StatusBadge({ discount }: { discount: Discount }) {
   const status = getDiscountStatus(discount);
   if (status === "active")
     return (
-      <Badge className="bg-emerald-500/15 text-emerald-600 border-emerald-200 hover:bg-emerald-500/20">
+      <Badge className="bg-emerald-500 text-emerald-600 border-emerald-500/25 hover:bg-emerald-500">
         Active
       </Badge>
     );
   if (status === "expired")
     return (
-      <Badge className="bg-amber-500/15 text-amber-600 border-amber-200 hover:bg-amber-500/20">
+      <Badge className="bg-amber-500 text-amber-600 border-amber-500/25 hover:bg-amber-500">
         Expired
       </Badge>
     );
   if (status === "maxed")
     return (
-      <Badge className="bg-blue-500/15 text-blue-600 border-blue-200 hover:bg-blue-500/20">
+      <Badge className="bg-blue-500 text-blue-600 border-blue-500/25 hover:bg-blue-500">
         Limit Reached
       </Badge>
     );

@@ -71,7 +71,7 @@ export default function StreakCard({ streak, isLoading, onUseFreeze, freezeLoadi
           <Button
             variant="outline"
             size="sm"
-            className="w-full gap-1.5 text-blue-600 border-blue-200 hover:bg-blue-50 hover:text-blue-700"
+            className="w-full gap-1.5 text-blue-600 border-blue-500/25 hover:bg-blue-500/10 hover:text-blue-500"
             disabled={freezes === 0 || freezeLoading}
             onClick={onUseFreeze}
           >

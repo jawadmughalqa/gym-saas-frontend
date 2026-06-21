@@ -75,30 +75,30 @@ const STATUS_CONFIG: Record<
   active: {
     icon: <CheckCircle2 className="h-4 w-4" />,
     label: "Active",
-    color: "text-green-700",
-    bg: "bg-green-50",
-    border: "border-green-200",
+    color: "text-green-500",
+    bg: "bg-green-500/10",
+    border: "border-green-500/25",
   },
   suspended: {
     icon: <AlertTriangle className="h-4 w-4" />,
     label: "Suspended",
-    color: "text-orange-700",
-    bg: "bg-orange-50",
-    border: "border-orange-200",
+    color: "text-orange-500",
+    bg: "bg-orange-500/10",
+    border: "border-orange-500/25",
   },
   frozen: {
     icon: <Snowflake className="h-4 w-4" />,
     label: "Frozen",
-    color: "text-blue-700",
-    bg: "bg-blue-50",
-    border: "border-blue-200",
+    color: "text-blue-500",
+    bg: "bg-blue-500/10",
+    border: "border-blue-500/25",
   },
   inactive: {
     icon: <UserX className="h-4 w-4" />,
     label: "Inactive",
-    color: "text-red-700",
-    bg: "bg-red-50",
-    border: "border-red-200",
+    color: "text-red-500",
+    bg: "bg-red-500/10",
+    border: "border-red-500/25",
   },
 };
 
@@ -172,8 +172,8 @@ export function MemberStatusPanel({ member }: MemberStatusPanelProps) {
               </div>
             )}
 
-            <div className="rounded-md bg-orange-100/60 border border-orange-200 px-3 py-2">
-              <p className="text-xs text-orange-700">
+            <div className="rounded-md bg-orange-500/15 border border-orange-500/25 px-3 py-2">
+              <p className="text-xs text-orange-500">
                 Billing continues during suspension. Member must settle dues to
                 reactivate.
               </p>
@@ -206,7 +206,7 @@ export function MemberStatusPanel({ member }: MemberStatusPanelProps) {
               <div>
                 {isFuture(new Date(member.currentFreeze.freezeEndDate)) ? (
                   <>
-                    <p className="font-medium text-blue-700">
+                    <p className="font-medium text-blue-500">
                       Resumes in {daysUntil(member.currentFreeze.freezeEndDate)}{" "}
                       day
                       {daysUntil(member.currentFreeze.freezeEndDate) !== 1
@@ -249,8 +249,8 @@ export function MemberStatusPanel({ member }: MemberStatusPanelProps) {
               </div>
             )}
 
-            <div className="rounded-md bg-blue-100/60 border border-blue-200 px-3 py-2">
-              <p className="text-xs text-blue-700">
+            <div className="rounded-md bg-blue-500/15 border border-blue-500/25 px-3 py-2">
+              <p className="text-xs text-blue-500">
                 Billing paused. Subscription expiry will extend by actual frozen
                 days on reactivation.
               </p>
@@ -274,8 +274,8 @@ export function MemberStatusPanel({ member }: MemberStatusPanelProps) {
               </div>
             </div>
 
-            <div className="rounded-md bg-red-100/60 border border-red-200 px-3 py-2">
-              <p className="text-xs text-red-700">
+            <div className="rounded-md bg-red-500/15 border border-red-500/25 px-3 py-2">
+              <p className="text-xs text-red-500">
                 All subscriptions cancelled. Member can be reactivated if they
                 return.
               </p>

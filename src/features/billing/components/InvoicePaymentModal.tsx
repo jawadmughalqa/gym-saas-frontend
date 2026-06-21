@@ -120,11 +120,11 @@ type PayFormValues = z.infer<typeof paySchema>;
 
 function StatusBadge({ status }: { status: string }) {
   const cfg: Record<string, { cls: string; label: string }> = {
-    overdue:        { cls: 'bg-red-50 text-red-700 border-red-300',       label: 'Overdue' },
-    partially_paid: { cls: 'bg-orange-50 text-orange-700 border-orange-300', label: 'Partial' },
-    issued:         { cls: 'bg-blue-50 text-blue-700 border-blue-300',    label: 'Issued' },
+    overdue:        { cls: 'bg-red-500/10 text-red-500 border-red-300',       label: 'Overdue' },
+    partially_paid: { cls: 'bg-orange-500/10 text-orange-500 border-orange-300', label: 'Partial' },
+    issued:         { cls: 'bg-blue-500/10 text-blue-500 border-blue-300',    label: 'Issued' },
     draft:          { cls: 'bg-muted text-muted-foreground border-border', label: 'Draft' },
-    paid:           { cls: 'bg-green-50 text-green-700 border-green-300', label: 'Paid' },
+    paid:           { cls: 'bg-green-500/10 text-green-500 border-green-300', label: 'Paid' },
     void:           { cls: 'bg-muted text-muted-foreground border-border', label: 'Void' },
   };
   const c = cfg[status] ?? cfg['draft'];
@@ -247,18 +247,18 @@ function PaymentStatusPill({
 
   if (remaining <= 0) {
     return (
-      <div className="flex items-center gap-2 rounded-md bg-green-50 border border-green-200 px-3 py-2">
+      <div className="flex items-center gap-2 rounded-md bg-green-500/10 border border-green-500/25 px-3 py-2">
         <CheckCircle2 className="h-4 w-4 text-green-600 shrink-0" />
-        <span className="text-sm font-medium text-green-700">Fully Paid</span>
+        <span className="text-sm font-medium text-green-500">Fully Paid</span>
       </div>
     );
   }
 
   if (entered > 0 && entered < amountDue) {
     return (
-      <div className="flex items-center gap-2 rounded-md bg-orange-50 border border-orange-200 px-3 py-2">
+      <div className="flex items-center gap-2 rounded-md bg-orange-500/10 border border-orange-500/25 px-3 py-2">
         <Clock className="h-4 w-4 text-orange-600 shrink-0" />
-        <span className="text-sm font-medium text-orange-700">
+        <span className="text-sm font-medium text-orange-500">
           Partial — {formatCurrency(remaining, currency)} remaining
         </span>
       </div>
@@ -477,11 +477,11 @@ function ReceiptPanel({
   return (
     <div className="space-y-4">
       {/* Success banner */}
-      <div className="flex items-center gap-3 rounded-lg bg-green-50 border border-green-200 px-4 py-3">
+      <div className="flex items-center gap-3 rounded-lg bg-green-500/10 border border-green-500/25 px-4 py-3">
         <CheckCircle2 className="h-6 w-6 text-green-600 shrink-0" />
         <div>
-          <p className="font-semibold text-green-800">Payment Recorded!</p>
-          <p className="text-sm text-green-700">
+          <p className="font-semibold text-green-500">Payment Recorded!</p>
+          <p className="text-sm text-green-500">
             {formatCurrency(paymentAmount, invoice.currency)} collected via{' '}
             <span className="capitalize">{method.replace('_', ' ')}</span>
           </p>
@@ -491,7 +491,7 @@ function ReceiptPanel({
       {/* Receipt preview */}
       <div
         ref={receiptRef}
-        className="rounded-lg border bg-white p-4 space-y-3 font-mono text-sm"
+        className="rounded-lg border bg-card p-4 space-y-3 font-mono text-sm"
       >
         <div className="text-center space-y-0.5">
           <p className="font-bold text-base">PAYMENT RECEIPT</p>
@@ -534,8 +534,8 @@ function ReceiptPanel({
           <span className={cn(
             'inline-block px-4 py-1 rounded-full text-xs font-bold',
             isFullyPaid
-              ? 'bg-green-100 text-green-800'
-              : 'bg-orange-100 text-orange-800',
+              ? 'bg-green-500/15 text-green-500'
+              : 'bg-orange-500/15 text-orange-500',
           )}>
             {isFullyPaid ? 'FULLY PAID' : 'PARTIAL PAYMENT'}
           </span>
@@ -552,7 +552,7 @@ function ReceiptPanel({
           <Button
             size="sm"
             variant="outline"
-            className="flex-1 min-w-[100px] text-green-700 border-green-300 hover:bg-green-50"
+            className="flex-1 min-w-[100px] text-green-500 border-green-300 hover:bg-green-500/10"
             onClick={handleWhatsApp}
           >
             <MessageCircle className="h-3.5 w-3.5 mr-1.5" />
@@ -604,7 +604,7 @@ function PaymentHistory({ invoiceId, currency }: { invoiceId: string; currency: 
     <div className="space-y-1 divide-y">
       {payments.map((p: any) => (
         <div key={p._id} className="flex items-center gap-3 py-2">
-          <div className="h-7 w-7 rounded-full bg-green-100 flex items-center justify-center shrink-0">
+          <div className="h-7 w-7 rounded-full bg-green-500/15 flex items-center justify-center shrink-0">
             <CheckCircle2 className="h-3.5 w-3.5 text-green-600" />
           </div>
           <div className="flex-1 min-w-0">
@@ -614,7 +614,7 @@ function PaymentHistory({ invoiceId, currency }: { invoiceId: string; currency: 
               <p className="text-xs text-muted-foreground font-mono">Ref: {p.reference}</p>
             )}
           </div>
-          <p className="text-sm font-semibold text-green-700">{formatCurrency(p.amount, currency)}</p>
+          <p className="text-sm font-semibold text-green-500">{formatCurrency(p.amount, currency)}</p>
         </div>
       ))}
     </div>
@@ -745,18 +745,18 @@ function DiscountSection({
 
   if (appliedCode) {
     return (
-      <div className="flex items-center justify-between gap-2 rounded-md bg-green-50 border border-green-200 px-3 py-2">
+      <div className="flex items-center justify-between gap-2 rounded-md bg-green-500/10 border border-green-500/25 px-3 py-2">
         <div className="flex items-center gap-2 text-sm min-w-0">
           <Tag className="h-3.5 w-3.5 text-green-600 shrink-0" />
-          <span className="text-green-700 font-medium">Discount applied:</span>
-          <span className="font-mono text-green-800 truncate">{appliedCode}</span>
+          <span className="text-green-500 font-medium">Discount applied:</span>
+          <span className="font-mono text-green-500 truncate">{appliedCode}</span>
         </div>
         {!disabled && (
           <Button
             type="button"
             size="sm"
             variant="ghost"
-            className="h-6 px-2 text-xs text-red-600 hover:bg-red-50 hover:text-red-700 shrink-0"
+            className="h-6 px-2 text-xs text-red-600 hover:bg-red-500/10 hover:text-red-500 shrink-0"
             onClick={() => removeDiscount.mutate()}
             disabled={isPendingAny}
           >
@@ -1271,7 +1271,7 @@ export function InvoicePaymentModal({
               <Separator />
               <div className="flex justify-between text-base font-bold">
                 <span>Amount</span>
-                <span className="text-green-700">{formatCurrency(pendingPayment.amount, invoice.currency)}</span>
+                <span className="text-green-500">{formatCurrency(pendingPayment.amount, invoice.currency)}</span>
               </div>
             </div>
             <div className="flex gap-2">
@@ -1314,7 +1314,7 @@ export function InvoicePaymentModal({
         {/* ── Header ──────────────────────────────────────────────────────── */}
         <DialogHeader className={cn(
           'pl-6 pr-6 pt-5 pb-4 shrink-0 rounded-t-lg',
-          isOverdue ? 'bg-red-50 border-b border-red-200' : 'border-b',
+          isOverdue ? 'bg-red-500/10 border-b border-red-500/25' : 'border-b',
         )}>
           <div className="flex items-start justify-between gap-4">
             <div className="space-y-1 flex-1 min-w-0">
@@ -1322,7 +1322,7 @@ export function InvoicePaymentModal({
                 <DialogTitle className="font-mono text-lg">{invoice.invoiceNumber}</DialogTitle>
                 <StatusBadge status={invoice.status} />
                 {isOverdue && (
-                  <span className="inline-flex items-center gap-1 text-xs font-bold text-red-700 bg-red-100 px-2 py-0.5 rounded-full">
+                  <span className="inline-flex items-center gap-1 text-xs font-bold text-red-500 bg-red-500/15 px-2 py-0.5 rounded-full">
                     <AlertTriangle className="h-3 w-3" />
                     OVERDUE
                   </span>
@@ -1377,9 +1377,9 @@ export function InvoicePaymentModal({
 
             {/* Overdue warning strip */}
             {isOverdue && (
-              <div className="flex items-center gap-2 rounded-lg bg-red-50 border border-red-200 px-4 py-2.5">
+              <div className="flex items-center gap-2 rounded-lg bg-red-500/10 border border-red-500/25 px-4 py-2.5">
                 <AlertTriangle className="h-4 w-4 text-red-600 shrink-0" />
-                <p className="text-sm text-red-700 font-medium">
+                <p className="text-sm text-red-500 font-medium">
                   This invoice is overdue.{' '}
                   {invoice.dueDate && (
                     <span className="font-normal">
@@ -1558,7 +1558,7 @@ export function InvoicePaymentModal({
             <p className="text-xs text-muted-foreground">
               Total: <span className="font-semibold text-foreground">{formatCurrency(invoice.total, invoice.currency)}</span>
               {invoice.amountPaid > 0 && (
-                <> · Paid: <span className="font-semibold text-green-700">{formatCurrency(invoice.amountPaid, invoice.currency)}</span></>
+                <> · Paid: <span className="font-semibold text-green-500">{formatCurrency(invoice.amountPaid, invoice.currency)}</span></>
               )}
             </p>
 
@@ -1569,7 +1569,7 @@ export function InvoicePaymentModal({
                   type="button"
                   size="sm"
                   variant="outline"
-                  className="text-green-700 border-green-300 hover:bg-green-50 h-8 px-3"
+                  className="text-green-500 border-green-300 hover:bg-green-500/10 h-8 px-3"
                   onClick={handleInvoiceWhatsApp}
                 >
                   <MessageCircle className="h-3.5 w-3.5 mr-1.5" />

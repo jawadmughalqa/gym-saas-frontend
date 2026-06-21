@@ -35,7 +35,7 @@ const ACTION_META: Record<string, {
       const code = (e.after?.code as string) ?? 'a coupon';
       return `Applied discount code ${code}`;
     },
-    color: 'bg-green-100 text-green-700',
+    color: 'bg-green-500/15 text-green-500',
   },
   'invoice.manual_discount_applied': {
     icon: <Tag className="h-3.5 w-3.5" />,
@@ -44,12 +44,12 @@ const ACTION_META: Record<string, {
       const reason = e.after?.reason as string | undefined;
       return `Applied manual discount${amt != null ? ` of ${amt}` : ''}${reason ? ` — ${reason}` : ''}`;
     },
-    color: 'bg-blue-100 text-blue-700',
+    color: 'bg-blue-500/15 text-blue-500',
   },
   'invoice.discount_removed': {
     icon: <Undo2 className="h-3.5 w-3.5" />,
     label: () => 'Removed discount',
-    color: 'bg-orange-100 text-orange-700',
+    color: 'bg-orange-500/15 text-orange-500',
   },
   'payment.recorded': {
     icon: <CreditCard className="h-3.5 w-3.5" />,
@@ -64,7 +64,7 @@ const ACTION_META: Record<string, {
   'invoice.voided': {
     icon: <XCircle className="h-3.5 w-3.5" />,
     label: () => 'Voided invoice',
-    color: 'bg-red-100 text-red-700',
+    color: 'bg-red-500/15 text-red-500',
   },
 };
 

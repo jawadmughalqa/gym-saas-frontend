@@ -155,7 +155,7 @@ export default function LoginPage() {
           <ul className="space-y-4">
             {FEATURES.map(({ icon: Icon, text }) => (
               <li key={text} className="flex items-center gap-3">
-                <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-white/15">
+                <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-card/15">
                   <Icon className="h-4 w-4" />
                 </div>
                 <span className="text-sm text-primary-foreground/90">{text}</span>
@@ -164,7 +164,7 @@ export default function LoginPage() {
           </ul>
 
           {/* Testimonial */}
-          <div className="rounded-xl bg-white/10 px-5 py-4 border border-white/15">
+          <div className="rounded-xl bg-card/10 px-5 py-4 border border-white/15">
             <p className="text-sm text-primary-foreground/80 italic leading-relaxed">
               "Gymanger cut our admin time in half. Everything from member check-ins to monthly invoices just works."
             </p>

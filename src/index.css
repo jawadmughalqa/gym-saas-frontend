@@ -110,49 +110,77 @@
 }
 
 /* ── Dark mode tokens ────────────────────────────────────────────────────────── */
+/*
+ * Design language: "Slate Night"
+ * Inspired by Linear, Supabase, and Vercel dark modes.
+ *
+ * Four depth layers (darkest → lightest):
+ *   background  ≈ #0f1117   (page canvas — almost black with cool blue)
+ *   sidebar     ≈ #141720   (navigation chrome — a half-step above background)
+ *   card        ≈ #1c1f2e   (panels, dialogs, table rows — clearly elevated)
+ *   popover     ≈ #22263a   (dropdowns, tooltips — float above cards)
+ *
+ * Text:
+ *   foreground       = very bright near-white (high contrast)
+ *   muted-foreground = medium slate — readable secondary text without gray fog
+ *
+ * Colour tint: hue 248° (cool indigo-slate) throughout, chroma increases
+ * with elevation so each layer feels intentionally coloured, not just gray.
+ */
 .dark {
-  --primary:            oklch(0.64  0.20  264);       /* lighter indigo in dark */
-  --primary-foreground: oklch(0.145 0 0);
+  /* ── Brand ── */
+  --primary:            oklch(0.618 0.215 264);   /* vivid indigo — pops on dark */
+  --primary-foreground: oklch(0.985 0     0);
 
-  --background:         oklch(0.135 0 0);
-  --foreground:         oklch(0.985 0 0);
+  /* ── Canvas ── */
+  --background:         oklch(0.138 0.018 252);
+  --foreground:         oklch(0.960 0.006 264);   /* warm near-white */
 
-  --card:               oklch(0.185 0 0);
-  --card-foreground:    oklch(0.985 0 0);
+  /* ── Panels / cards / dialogs ── */
+  --card:               oklch(0.196 0.018 252);
+  --card-foreground:    oklch(0.960 0.006 264);
 
-  --popover:            oklch(0.185 0 0);
-  --popover-foreground: oklch(0.985 0 0);
+  /* ── Floating surfaces ── */
+  --popover:            oklch(0.222 0.018 250);
+  --popover-foreground: oklch(0.960 0.006 264);
 
-  --secondary:          oklch(0.27 0 0);
-  --secondary-foreground: oklch(0.985 0 0);
+  /* ── Secondary actions ── */
+  --secondary:          oklch(0.262 0.016 252);
+  --secondary-foreground: oklch(0.960 0.006 264);
 
-  --muted:              oklch(0.27 0 0);
-  --muted-foreground:   oklch(0.65 0 0);
+  /* ── Muted / subdued surfaces ── */
+  --muted:              oklch(0.245 0.014 252);
+  --muted-foreground:   oklch(0.635 0.014 255);   /* slate-400 equivalent — clear but soft */
 
-  --accent:             oklch(0.27 0.02 264);
-  --accent-foreground:  oklch(0.985 0 0);
+  /* ── Hover / accent highlight ── */
+  --accent:             oklch(0.278 0.026 262);
+  --accent-foreground:  oklch(0.960 0.006 264);
 
-  --destructive:        oklch(0.704 0.191 22.216);
+  /* ── Status — destructive ── */
+  --destructive:        oklch(0.648 0.215 22);
   --destructive-foreground: oklch(0.985 0 0);
 
+  /* ── Chrome ── */
   --border:             oklch(1 0 0 / 10%);
-  --input:              oklch(1 0 0 / 15%);
-  --ring:               oklch(0.64 0.20 264);
+  --input:              oklch(0.240 0.016 252);
+  --ring:               oklch(0.618 0.215 264 / 70%);
 
-  --chart-1: oklch(0.64  0.20  264);
-  --chart-2: oklch(0.68  0.17  160);
-  --chart-3: oklch(0.72  0.18  55);
-  --chart-4: oklch(0.65  0.20  300);
-  --chart-5: oklch(0.65  0.22  15);
+  /* ── Charts (all vivid, works on dark bg) ── */
+  --chart-1: oklch(0.618 0.215 264);   /* indigo  */
+  --chart-2: oklch(0.670 0.155 162);   /* teal    */
+  --chart-3: oklch(0.720 0.165  55);   /* amber   */
+  --chart-4: oklch(0.640 0.195 300);   /* violet  */
+  --chart-5: oklch(0.650 0.215  22);   /* rose    */
 
-  --sidebar:                    oklch(0.185 0 0);
-  --sidebar-foreground:         oklch(0.985 0 0);
-  --sidebar-primary:            oklch(0.64  0.20  264);
-  --sidebar-primary-foreground: oklch(0.985 0 0);
-  --sidebar-accent:             oklch(0.27 0.02 264);
-  --sidebar-accent-foreground:  oklch(0.985 0 0);
-  --sidebar-border:             oklch(1 0 0 / 10%);
-  --sidebar-ring:               oklch(0.64 0.20 264);
+  /* ── Sidebar — between background and card ── */
+  --sidebar:                    oklch(0.162 0.018 252);
+  --sidebar-foreground:         oklch(0.960 0.006 264);
+  --sidebar-primary:            oklch(0.618 0.215 264);
+  --sidebar-primary-foreground: oklch(0.985 0     0);
+  --sidebar-accent:             oklch(0.262 0.022 262);
+  --sidebar-accent-foreground:  oklch(0.960 0.006 264);
+  --sidebar-border:             oklch(1     0     0 / 9%);
+  --sidebar-ring:               oklch(0.618 0.215 264);
 }
 
 /* ── Base styles ─────────────────────────────────────────────────────────────── */
@@ -195,4 +223,84 @@
   :focus-visible {
     @apply outline-none ring-2 ring-ring ring-offset-2 ring-offset-background;
   }
+
+  /* Text selection */
+  ::selection {
+    background-color: oklch(0.488 0.243 264.376 / 25%);
+  }
+  .dark ::selection {
+    background-color: oklch(0.618 0.215 264 / 30%);
+  }
 }
+
+/* ── Dark mode component polish ─────────────────────────────────────────────── */
+
+/* Cards get a subtle lift shadow in dark mode — critical for depth perception */
+.dark .border {
+  border-color: oklch(1 0 0 / 10%);
+}
+
+/* Card elevation: thin top-highlight + soft drop shadow */
+.dark [class*="rounded"] {
+  --tw-shadow: 0 0 0 1px oklch(1 0 0 / 5%), 0 2px 12px oklch(0 0 0 / 40%);
+}
+
+/* Input fields — distinct from card bg so they register as interactive */
+.dark input:not([type="checkbox"]):not([type="radio"]),
+.dark textarea,
+.dark [role="combobox"],
+.dark [data-radix-select-trigger] {
+  background-color: oklch(0.185 0.016 252);
+  border-color: oklch(1 0 0 / 12%);
+  color: oklch(0.960 0.006 264);
+}
+.dark input::placeholder,
+.dark textarea::placeholder {
+  color: oklch(0.520 0.012 255);
+}
+.dark input:focus-within,
+.dark textarea:focus-within {
+  border-color: oklch(0.618 0.215 264 / 60%);
+}
+
+/* Table rows — alternate stripe for readability */
+.dark [class*="divide-y"] > * + * {
+  border-color: oklch(1 0 0 / 7%);
+}
+
+/* Table header muted bg */
+.dark [class*="bg-muted\/40"] {
+  background-color: oklch(0.218 0.014 252 / 80%);
+}
+
+/* Dropdown menus — slightly elevated above cards */
+.dark [data-radix-popper-content-wrapper] [role="menu"],
+.dark [data-radix-popper-content-wrapper] [role="listbox"] {
+  background-color: oklch(0.222 0.018 250);
+  border-color: oklch(1 0 0 / 12%);
+  box-shadow: 0 4px 24px oklch(0 0 0 / 50%), 0 0 0 1px oklch(1 0 0 / 8%);
+}
+
+/* Badges — ensure they're readable at small size in dark mode */
+.dark [class*="rounded-full"][class*="border"] {
+  border-color: currentColor;
+  border-opacity: 0.3;
+}
+
+/* ── Scrollbar styling ───────────────────────────────────────────────────────── */
+/* Light mode */
+:root {
+  scrollbar-color: oklch(0.80 0 0) transparent;
+  scrollbar-width: thin;
+}
+::-webkit-scrollbar        { width: 6px; height: 6px; }
+::-webkit-scrollbar-track  { background: transparent; }
+::-webkit-scrollbar-thumb  { background: oklch(0.78 0 0); border-radius: 999px; }
+::-webkit-scrollbar-thumb:hover { background: oklch(0.65 0 0); }
+
+/* Dark mode scrollbars */
+.dark {
+  scrollbar-color: oklch(0.32 0.010 258) transparent;
+}
+.dark ::-webkit-scrollbar-thumb       { background: oklch(0.32 0.010 258); }
+.dark ::-webkit-scrollbar-thumb:hover { background: oklch(0.42 0.012 258); }

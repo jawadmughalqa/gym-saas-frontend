@@ -115,17 +115,17 @@ function initials(s: StaffUserExt) {
 function BranchManagerCapabilities() {
   const [open, setOpen] = useState(false);
   return (
-    <Card className="border-blue-200 dark:border-blue-800">
+    <Card className="border-blue-500/25 dark:border-blue-800">
       <CardHeader >
         <button
           type="button"
           className="flex items-center gap-2 text-left w-full"
           onClick={() => setOpen((v) => !v)}
         >
-          <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-blue-100 dark:bg-blue-900/40 flex-shrink-0">
+          <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-blue-500/15 dark:bg-blue-900/40 flex-shrink-0">
             <ShieldCheckIcon className="h-4 w-4 text-blue-600" />
           </div>
-          <CardTitle className="text-base flex-1 text-blue-800 dark:text-blue-300">
+          <CardTitle className="text-base flex-1 text-blue-500 dark:text-blue-300">
             Branch Manager Capabilities
           </CardTitle>
           {open ? <ChevronUp className="h-4 w-4 text-blue-500" /> : <ChevronDown className="h-4 w-4 text-blue-500" />}
@@ -135,7 +135,7 @@ function BranchManagerCapabilities() {
       {open && (
         <CardContent className="pt-4 space-y-4">
           <div className="space-y-2">
-            <p className="text-xs font-semibold text-emerald-700 dark:text-emerald-400 uppercase tracking-wide">✓ Can do</p>
+            <p className="text-xs font-semibold text-emerald-500 dark:text-emerald-400 uppercase tracking-wide">✓ Can do</p>
             <div className="grid sm:grid-cols-2 gap-2">
               {BM_CAPABILITIES.map(({ icon: Icon, label, detail }) => (
                 <div key={label} className="flex gap-2">
@@ -158,10 +158,10 @@ function BranchManagerCapabilities() {
               </div>
             ))}
           </div>
-          <div className="rounded-md bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800 px-3 py-2">
+          <div className="rounded-md bg-amber-500/10 dark:bg-amber-950/30 border border-amber-500/25 dark:border-amber-800 px-3 py-2">
             <div className="flex gap-2 items-start">
               <Info className="h-3.5 w-3.5 text-amber-600 flex-shrink-0 mt-px" />
-              <p className="text-xs text-amber-700 dark:text-amber-400">
+              <p className="text-xs text-amber-500 dark:text-amber-400">
                 Access is scoped to assigned branches only.
               </p>
             </div>
@@ -481,7 +481,7 @@ export default function StaffDetailPage() {
                     className={cn(
                       'text-xs',
                       role === 'branch_manager'
-                        ? 'border-blue-200 text-blue-700 bg-blue-50 dark:border-blue-800 dark:text-blue-300'
+                        ? 'border-blue-500/25 text-blue-500 bg-blue-500/10 dark:border-blue-800 dark:text-blue-300'
                         : '',
                     )}
                   >
@@ -508,7 +508,7 @@ export default function StaffDetailPage() {
                     <Button
                       size="sm"
                       variant="outline"
-                      className="text-amber-600 border-amber-200 hover:bg-amber-50"
+                      className="text-amber-600 border-amber-500/25 hover:bg-amber-500/10"
                       onClick={() => setStatusDialog({ open: true, action: 'inactive' })}
                     >
                       <UserX className="h-4 w-4 mr-1.5" />
@@ -529,7 +529,7 @@ export default function StaffDetailPage() {
                   <Button
                     size="sm"
                     variant="outline"
-                    className="text-emerald-600 border-emerald-200 hover:bg-emerald-50"
+                    className="text-emerald-600 border-emerald-500/25 hover:bg-emerald-500/10"
                     onClick={() => setStatusDialog({ open: true, action: 'active' })}
                   >
                     <ShieldCheck className="h-4 w-4 mr-1.5" />

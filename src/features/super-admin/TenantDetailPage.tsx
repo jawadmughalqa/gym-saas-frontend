@@ -93,7 +93,7 @@ function TenantStatusBadge({ status }: { status?: string }) {
 
 function PlanBadge({ plan }: { plan?: string }) {
   const cls: Record<string, string> = {
-    starter:    'text-slate-600 border-slate-300',
+    starter:    'text-muted-foreground border-border',
     pro:        'text-purple-600 border-purple-300',
     enterprise: 'text-amber-600 border-amber-300',
   };
@@ -374,8 +374,8 @@ function ResetPasswordDialog({
 
         {result ? (
           <div className="space-y-4">
-            <Alert className="border-green-500 bg-green-50 dark:bg-green-950">
-              <AlertDescription className="text-green-700 dark:text-green-300 font-medium">
+            <Alert className="border-green-500 bg-green-500/10 dark:bg-green-950">
+              <AlertDescription className="text-green-500 dark:text-green-300 font-medium">
                 ✓ Password reset successfully!
               </AlertDescription>
             </Alert>

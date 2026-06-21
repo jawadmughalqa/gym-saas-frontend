@@ -67,11 +67,11 @@ export function isOverdue(row: DueRow) {
 
 function InvoiceStatusBadge({ status }: { status: string }) {
   const cfg: Record<string, { cls: string; label: string }> = {
-    overdue:        { cls: 'bg-red-50 text-red-700 border-red-200',         label: 'Overdue' },
-    partially_paid: { cls: 'bg-orange-50 text-orange-700 border-orange-200', label: 'Partial' },
-    issued:         { cls: 'bg-blue-50 text-blue-700 border-blue-200',      label: 'Issued' },
+    overdue:        { cls: 'bg-red-500/10 text-red-500 border-red-500/25',         label: 'Overdue' },
+    partially_paid: { cls: 'bg-orange-500/10 text-orange-500 border-orange-500/25', label: 'Partial' },
+    issued:         { cls: 'bg-blue-500/10 text-blue-500 border-blue-500/25',      label: 'Issued' },
     draft:          { cls: 'bg-muted text-muted-foreground border-border',   label: 'Draft' },
-    paid:           { cls: 'bg-green-50 text-green-700 border-green-200',   label: 'Paid' },
+    paid:           { cls: 'bg-green-500/10 text-green-500 border-green-500/25',   label: 'Paid' },
     void:           { cls: 'bg-muted text-muted-foreground border-border',   label: 'Void' },
   };
   const c = cfg[status] ?? cfg['draft'];
@@ -349,14 +349,14 @@ export default function DuePaymentsTable({
                   key={row._id}
                   className={cn(
                     'grid grid-cols-1 md:grid-cols-[1fr_auto_auto_auto_auto] gap-2 md:gap-0 px-4 py-3 hover:bg-muted/30 transition-colors',
-                    overdue && 'bg-red-50/40 hover:bg-red-50/60',
+                    overdue && 'bg-red-500 hover:bg-red-500',
                   )}
                 >
                   {/* Member info */}
                   <div className="flex items-center gap-3 min-w-0">
                     <div className={cn(
                       'h-8 w-8 rounded-full flex items-center justify-center text-xs font-bold shrink-0',
-                      overdue ? 'bg-red-100 text-red-700' : 'bg-primary/10 text-primary',
+                      overdue ? 'bg-red-500/15 text-red-500' : 'bg-primary/10 text-primary',
                     )}>
                       {initials}
                     </div>
@@ -366,7 +366,7 @@ export default function DuePaymentsTable({
                           {member ? `${member.firstName} ${member.lastName}` : '—'}
                         </p>
                         {overdue && (
-                          <span className="text-[10px] font-semibold bg-red-100 text-red-700 px-1.5 py-0.5 rounded-full shrink-0">
+                          <span className="text-[10px] font-semibold bg-red-500/15 text-red-500 px-1.5 py-0.5 rounded-full shrink-0">
                             OVERDUE
                           </span>
                         )}
@@ -444,7 +444,7 @@ export default function DuePaymentsTable({
                         {member?.phone && (
                           <DropdownMenuItem
                             onClick={() => handleRowWhatsApp(row)}
-                            className="text-green-700 focus:text-green-700 focus:bg-green-50"
+                            className="text-green-500 focus:text-green-500 focus:bg-green-500/10"
                           >
                             <MessageCircle className="h-3.5 w-3.5 mr-2" />
                             Share on WhatsApp

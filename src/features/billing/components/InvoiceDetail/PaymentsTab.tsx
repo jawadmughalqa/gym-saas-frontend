@@ -81,7 +81,7 @@ export default function PaymentsTab({ invoice }: { invoice: Invoice }) {
                         <td className="px-4 py-3 text-muted-foreground">{formatDate(p.paidAt ?? p.createdAt)}</td>
                         <td className="px-4 py-3 capitalize">{METHOD_LABELS[p.method] ?? p.method}</td>
                         <td className="px-4 py-3 font-mono text-xs text-muted-foreground">{p.reference ?? '—'}</td>
-                        <td className="px-4 py-3 text-right font-semibold text-green-700">
+                        <td className="px-4 py-3 text-right font-semibold text-green-500">
                           {formatCurrency(p.amount, invoice.currency)}
                         </td>
                         <td className="px-4 py-3 text-right">

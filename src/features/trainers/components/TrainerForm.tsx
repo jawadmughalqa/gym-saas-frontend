@@ -514,7 +514,7 @@ export default function TrainerForm({
         {/* ── Credentials shown after successful creation ── */}
         {credentials && (
           <div className="mt-6 space-y-4">
-            <div className="rounded-lg border border-green-500 bg-green-50 dark:bg-green-950 p-3 text-sm text-green-700 dark:text-green-300 font-medium">
+            <div className="rounded-lg border border-green-500 bg-green-500/10 dark:bg-green-950 p-3 text-sm text-green-500 dark:text-green-300 font-medium">
               ✓ Trainer created successfully!
             </div>
             <div className="rounded-lg border p-4 space-y-3">

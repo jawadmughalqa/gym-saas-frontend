@@ -34,7 +34,7 @@ const FEATURES: FeatureDef[] = [
   { key: 'reports',       label: 'Advanced Reports',  description: 'Analytics, revenue & growth reports',  icon: BarChart3,   color: 'text-rose-500'   },
   { key: 'expenses',      label: 'Expenses',          description: 'Expense tracking & analytics',         icon: Receipt,     color: 'text-orange-500' },
   { key: 'branches',      label: 'Multi-Branch',      description: 'Multiple gym locations',               icon: GitBranch,   color: 'text-teal-500'   },
-  { key: 'equipment',     label: 'Equipment',         description: 'Equipment & maintenance management',   icon: Wrench,      color: 'text-slate-500'  },
+  { key: 'equipment',     label: 'Equipment',         description: 'Equipment & maintenance management',   icon: Wrench,      color: 'text-muted-foreground'  },
   { key: 'discounts',     label: 'Discounts',         description: 'Discount codes & promotions',          icon: Tag,         color: 'text-pink-500'   },
   { key: 'fitPlan',       label: 'FitPlan',           description: 'AI-powered personalised fitness plans', icon: Dumbbell,   color: 'text-emerald-500'},
 ];
@@ -44,9 +44,9 @@ const FEATURES: FeatureDef[] = [
 const TIER_STYLES: Record<string, {
   border: string; activeBorder: string; badge: string; accent: string; cardBg: string;
 }> = {
-  starter:    { border: 'border-slate-200',  activeBorder: 'border-slate-500',   badge: 'bg-slate-100 text-slate-700',   accent: 'text-slate-700',   cardBg: '' },
-  pro:        { border: 'border-purple-200', activeBorder: 'border-purple-500',  badge: 'bg-purple-100 text-purple-700', accent: 'text-purple-700',  cardBg: 'bg-purple-50/40 dark:bg-purple-950/20' },
-  enterprise: { border: 'border-amber-200',  activeBorder: 'border-amber-500',   badge: 'bg-amber-100 text-amber-700',   accent: 'text-amber-700',   cardBg: 'bg-amber-50/40 dark:bg-amber-950/20' },
+  starter:    { border: 'border-border',  activeBorder: 'border-slate-500',   badge: 'bg-muted text-muted-foreground',   accent: 'text-muted-foreground',   cardBg: '' },
+  pro:        { border: 'border-purple-500/25', activeBorder: 'border-purple-500',  badge: 'bg-purple-500/15 text-purple-500', accent: 'text-purple-500',  cardBg: 'bg-purple-500/10 dark:bg-purple-950/20' },
+  enterprise: { border: 'border-amber-500/25',  activeBorder: 'border-amber-500',   badge: 'bg-amber-500/15 text-amber-500',   accent: 'text-amber-500',   cardBg: 'bg-amber-500/10 dark:bg-amber-950/20' },
 };
 
 // ─── Quota display ────────────────────────────────────────────────────────────
@@ -219,7 +219,7 @@ export default function PricingPage() {
 
         <div className="flex items-center gap-2 sm:flex-shrink-0">
           <a href={whatsappUrl} target="_blank" rel="noopener noreferrer" className="flex-1 sm:flex-none">
-            <Button variant="outline" className="w-full sm:w-auto gap-2 text-green-600 border-green-200 hover:bg-green-50 hover:text-green-700">
+            <Button variant="outline" className="w-full sm:w-auto gap-2 text-green-600 border-green-500/25 hover:bg-green-500/10 hover:text-green-500">
               <MessageCircle className="h-4 w-4" />
               WhatsApp
             </Button>
@@ -257,7 +257,7 @@ export default function PricingPage() {
           <p className="text-muted-foreground text-sm">No plans configured yet. Contact us for details.</p>
           <div className="flex flex-col sm:flex-row items-center gap-2 w-full sm:w-auto">
             <a href={whatsappUrl} target="_blank" rel="noopener noreferrer" className="w-full sm:w-auto">
-              <Button variant="outline" className="w-full sm:w-auto gap-2 text-green-600 border-green-200 hover:bg-green-50 hover:text-green-700">
+              <Button variant="outline" className="w-full sm:w-auto gap-2 text-green-600 border-green-500/25 hover:bg-green-500/10 hover:text-green-500">
                 <MessageCircle className="h-4 w-4" />
                 WhatsApp
               </Button>
@@ -303,7 +303,7 @@ export default function PricingPage() {
         </p>
         <div className="flex flex-col sm:flex-row items-center justify-center gap-3 mt-1">
           <a href={whatsappUrl} target="_blank" rel="noopener noreferrer" className="w-full sm:w-auto">
-            <Button variant="outline" className="w-full sm:w-auto gap-2 text-green-600 border-green-200 hover:bg-green-50 hover:text-green-700">
+            <Button variant="outline" className="w-full sm:w-auto gap-2 text-green-600 border-green-500/25 hover:bg-green-500/10 hover:text-green-500">
               <MessageCircle className="h-4 w-4" />
               WhatsApp
             </Button>

@@ -30,7 +30,7 @@ export default function ImpersonationBanner() {
       <Button
         size="sm"
         variant="outline"
-        className="h-7 text-xs border-amber-800 bg-amber-50 text-amber-900 hover:bg-amber-100 shrink-0"
+        className="h-7 text-xs border-amber-800 bg-amber-500/10 text-amber-900 hover:bg-amber-500/15 shrink-0"
         onClick={handleExit}
       >
         <LogOut className="mr-1.5 h-3 w-3" />

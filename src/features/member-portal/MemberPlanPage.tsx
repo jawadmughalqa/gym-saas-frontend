@@ -27,14 +27,14 @@ function statusVariant(status: string): 'default' | 'secondary' | 'destructive' 
 function WalletBanner({ balance }: { balance: number }) {
   if (balance <= 0) return null;
   return (
-    <Card className="border-emerald-200 bg-emerald-50/60">
+    <Card className="border-emerald-500/25 bg-emerald-500/10">
       <CardContent className="flex items-center gap-3 py-3 px-4">
-        <div className="flex h-9 w-9 items-center justify-center rounded-full bg-emerald-100 shrink-0">
+        <div className="flex h-9 w-9 items-center justify-center rounded-full bg-emerald-500/15 shrink-0">
           <Wallet className="h-5 w-5 text-emerald-600" />
         </div>
         <div className="flex-1 min-w-0">
-          <p className="text-xs text-emerald-700 font-medium">Wallet Credit</p>
-          <p className="text-lg font-bold text-emerald-800 leading-tight">
+          <p className="text-xs text-emerald-500 font-medium">Wallet Credit</p>
+          <p className="text-lg font-bold text-emerald-500 leading-tight">
             {formatCurrency(balance, CURRENCY)}
           </p>
         </div>
@@ -118,7 +118,7 @@ function SubscriptionCard({ sub, isActive }: { sub: Subscription; isActive: bool
           ((sub as Subscription & { prorationRefundAmount?: number }).prorationRefundAmount ?? 0) > 0 && (
           <div className="mt-2 pt-2 border-t border-border flex justify-between">
             <span className="text-emerald-600">Wallet credit issued</span>
-            <span className="text-emerald-700 font-semibold">
+            <span className="text-emerald-500 font-semibold">
               +{formatCurrency(
                 (sub as Subscription & { prorationRefundAmount?: number }).prorationRefundAmount ?? 0,
                 CURRENCY,

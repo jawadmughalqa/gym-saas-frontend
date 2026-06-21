@@ -23,7 +23,7 @@ import SubscriptionForm from '@/features/members/components/SubscriptionForm';
 import { FreezeDialog }              from './FreezeDialog';
 import { CancelSubscriptionDialog }  from './CancelSubscriptionDialog';
 import { ChangePlanDialog }          from './ChangePlanDialog';
-import { CURRENCY } from '@/config/tenant.config';
+import { useTenantCurrency } from '@/hooks/use-tenant-currency';
 import { resumeSubscription } from '@/api/members.api';
 import { useToast } from '@/hooks/use-toast';
 
@@ -40,6 +40,7 @@ export function SubscriptionsTab({ memberId, branchId }: SubscriptionsTabProps) 
   const { can }     = usePermission();
   const queryClient = useQueryClient();
   const { toast }   = useToast();
+  const { currency: tenantCurrency } = useTenantCurrency();
 
   const { data: subResponse, isLoading } = useGetMembersMemberIdSubscriptions(memberId);
   const subscriptions = subResponse?.data ?? [];
@@ -104,7 +105,7 @@ export function SubscriptionsTab({ memberId, branchId }: SubscriptionsTabProps) 
       hideOnMobile: true,
       cell:         (row) => {
         const price    = (row as { finalPrice?: number }).finalPrice;
-        const currency = (row as { currency?: string }).currency ?? CURRENCY;
+        const currency = (row as { currency?: string }).currency ?? tenantCurrency;
         return price != null ? `${currency} ${price.toFixed(2)}` : '—';
       },
     },
@@ -145,7 +146,7 @@ export function SubscriptionsTab({ memberId, branchId }: SubscriptionsTabProps) 
               )}
               {(sub.prorationRefundAmount ?? 0) > 0 && (
                 <span className="block text-[10px] text-emerald-600 font-medium">
-                  +{formatCurrency(sub.prorationRefundAmount!, CURRENCY)} wallet
+                  +{formatCurrency(sub.prorationRefundAmount!, tenantCurrency)} wallet
                 </span>
               )}
             </div>

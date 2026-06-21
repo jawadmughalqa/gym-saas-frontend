@@ -29,7 +29,7 @@ import {
 import { useGetMembershipPlans } from '@/api/generated/membership-plans/membership-plans';
 import type { MembershipPlan }   from '@/api/generated/schemas';
 import type { MemberFormValues } from './types';
-import { CURRENCY } from '@/config/tenant.config';
+import { useTenantCurrency } from '@/hooks/use-tenant-currency';
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 
@@ -55,7 +55,9 @@ interface Props {
 
 // ─── Component ────────────────────────────────────────────────────────────────
 
-export function AssignMembershipSection({ control, errors, isPending, currency = CURRENCY }: Props) {
+export function AssignMembershipSection({ control, errors, isPending, currency: currencyProp }: Props) {
+  const { currency: tenantCurrency } = useTenantCurrency();
+  const currency = currencyProp ?? tenantCurrency;
   const [expanded,      setExpanded]      = useState(false);
   const [pricingMode,   setPricingMode]   = useState<'plan' | 'custom'>('plan');
   const [selectedPlan,  setSelectedPlan]  = useState<MembershipPlan | null>(null);

@@ -27,7 +27,7 @@ import {
 import { toast } from '@/hooks/use-toast';
 import { getErrorMessage } from '@/utils/error';
 import type { Equipment } from '@/api/generated/schemas/equipment';
-import { CURRENCY, CURRENCIES } from '@/config/tenant.config';
+import { useTenantCurrency } from '@/hooks/use-tenant-currency';
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 
@@ -82,6 +82,7 @@ interface EquipmentFormProps {
 export default function EquipmentForm({ open, onOpenChange, equipment }: EquipmentFormProps) {
   const isEdit = !!equipment;
   const qc = useQueryClient();
+  const { currency } = useTenantCurrency();
 
   const { data: branchesData } = useGetBranches({ limit: 100 });
   const branches = branchesData?.data ?? [];
@@ -125,7 +126,7 @@ export default function EquipmentForm({ open, onOpenChange, equipment }: Equipme
     defaultValues: {
       category: 'cardio',
       condition: 'good',
-      currency: CURRENCY,
+      currency: currency,
       status: 'operational',
     },
   });
@@ -141,7 +142,7 @@ export default function EquipmentForm({ open, onOpenChange, equipment }: Equipme
         assetTag: equipment.assetTag ?? '',
         purchaseDate: equipment.purchaseDate?.slice(0, 10) ?? '',
         purchasePrice: equipment.purchasePrice != null ? String(equipment.purchasePrice) : '',
-        currency: equipment.currency ?? CURRENCY,
+        currency: equipment.currency ?? currency,
         warrantyExpiresAt: equipment.warrantyExpiresAt?.slice(0, 10) ?? '',
         vendor: equipment.vendor ?? '',
         condition: (equipment.condition as EquipmentFormValues['condition']) ?? 'good',
@@ -154,7 +155,7 @@ export default function EquipmentForm({ open, onOpenChange, equipment }: Equipme
       reset({
         category: 'cardio',
         condition: 'good',
-        currency: CURRENCY,
+        currency: currency,
         status: 'operational',
       });
     }
@@ -323,14 +324,12 @@ export default function EquipmentForm({ open, onOpenChange, equipment }: Equipme
             <div className="space-y-1.5">
               <Label>Currency</Label>
               <Select
-                value={watch('currency') ?? CURRENCY}
+                value={watch('currency') ?? currency}
                 onValueChange={(v) => setValue('currency', v)}
               >
                 <SelectTrigger><SelectValue /></SelectTrigger>
                 <SelectContent>
-                  {CURRENCIES.map((c) => (
-                    <SelectItem key={c.value} value={c.value}>{c.value}</SelectItem>
-                  ))}
+                  <SelectItem key={currency} value={currency}>{currency}</SelectItem>
                 </SelectContent>
               </Select>
             </div>

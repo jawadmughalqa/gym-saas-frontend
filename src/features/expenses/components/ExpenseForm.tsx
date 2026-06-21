@@ -24,7 +24,7 @@ import {
 import { useGetBranches } from "@/api/generated/branches/branches";
 import { useCreateExpense, useUpdateExpense } from "../hooks/use-expenses";
 import type { Expense } from "@/api/generated/expenses/expenses";
-import { CURRENCY, CURRENCIES } from "@/config/tenant.config";
+import { useTenantCurrency } from "@/hooks/use-tenant-currency";
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 
@@ -59,8 +59,6 @@ const RECURRING_LABELS: Record<string, string> = {
   monthly: "Monthly",
   yearly: "Yearly",
 };
-
-// CURRENCIES imported from tenant.config — PKR is the default
 
 // ─── Schema ───────────────────────────────────────────────────────────────────
 
@@ -111,6 +109,7 @@ export default function ExpenseForm({
   expense,
 }: ExpenseFormProps) {
   const isEditing = !!expense;
+  const { currency } = useTenantCurrency();
 
   const { data: branchesData } = useGetBranches({ limit: 100 });
   const branches = branchesData?.data ?? [];
@@ -138,7 +137,7 @@ export default function ExpenseForm({
       category: "",
       customCategory: "",
       amount: "" as unknown as string,
-      currency: CURRENCY,
+      currency: currency,
       date: new Date().toISOString().slice(0, 10),
       status: "pending",
       recurring: "none",
@@ -172,7 +171,7 @@ export default function ExpenseForm({
         category: "",
         customCategory: "",
         amount: "" as unknown as string,
-        currency: CURRENCY,
+        currency: currency,
         date: new Date().toISOString().slice(0, 10),
         status: "pending",
         recurring: "none",
@@ -361,11 +360,7 @@ export default function ExpenseForm({
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  {CURRENCIES.map((c) => (
-                    <SelectItem key={c.value} value={c.value}>
-                      {c.value}
-                    </SelectItem>
-                  ))}
+                  <SelectItem value={currency}>{currency}</SelectItem>
                 </SelectContent>
               </Select>
             </div>

@@ -34,7 +34,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui";
-import { CURRENCY } from "@/config/tenant.config";
+import { useTenantCurrency } from "@/hooks/use-tenant-currency";
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 
@@ -68,6 +68,7 @@ export default function AssignTrainerDialog({
   onSuccess,
 }: Props) {
   const queryClient = useQueryClient();
+  const { currency } = useTenantCurrency();
   const [selectedTrainerId, setSelectedTrainerId] = useState<string>("");
   const [goal, setGoal] = useState("");
   const [sessionsPerWeek, setSessionsPerWeek] = useState<number | undefined>();
@@ -237,7 +238,7 @@ export default function AssignTrainerDialog({
         sessionFrequencyPerWeek: sessionsPerWeek,
         scheduledSlots: selectedSlots.length > 0 ? selectedSlots : undefined,
         monthlyCharge: charge,
-        currency: CURRENCY,
+        currency: currency,
       },
     });
   }
@@ -301,7 +302,7 @@ export default function AssignTrainerDialog({
                         <div className="flex items-center gap-2 shrink-0">
                           {rate != null && (
                             <span className="text-xs text-muted-foreground">
-                              {CURRENCY} {Number(rate).toLocaleString()}/mo
+                              {currency} {Number(rate).toLocaleString()}/mo
                             </span>
                           )}
                           <span className="text-xs text-muted-foreground">
@@ -322,7 +323,7 @@ export default function AssignTrainerDialog({
               {/* Monthly PT charge */}
               <div className="space-y-1.5">
                 <Label htmlFor="monthlyCharge">
-                  PT Charge / Month ({CURRENCY})
+                  PT Charge / Month ({currency})
                 </Label>
                 <Input
                   id="monthlyCharge"
@@ -440,7 +441,7 @@ export default function AssignTrainerDialog({
                   </p>
                   <p className="text-xs text-muted-foreground">
                     {monthlyCharge && Number(monthlyCharge) > 0
-                      ? `PT fee invoice of ${CURRENCY} ${Number(monthlyCharge).toLocaleString()} will be created`
+                      ? `PT fee invoice of ${currency} ${Number(monthlyCharge).toLocaleString()} will be created`
                       : "No PT fee invoice (charge not set)"}
                   </p>
                 </div>

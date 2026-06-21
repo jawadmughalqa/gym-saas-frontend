@@ -13,7 +13,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { toast } from '@/hooks/use-toast';
 import { getErrorMessage } from '@/utils/error';
 import { formatCurrency } from '@/lib/utils';
-import { CURRENCY } from '@/config/tenant.config';
+import { useTenantCurrency } from '@/hooks/use-tenant-currency';
 import { useQueryClient } from '@tanstack/react-query';
 import {
   usePostRefundsRefundIdApprove,
@@ -121,9 +121,10 @@ export function ReviewRefundDialog({
     reject.mutate({ refundId: refund._id, data: { reviewNote: note } });
   }
 
+  const { currency: tenantCurrency } = useTenantCurrency();
   if (!displayRefund) return null;
 
-  const currency = (displayRefund.paymentId as any)?.currency ?? CURRENCY;
+  const currency = (displayRefund.paymentId as any)?.currency ?? tenantCurrency;
   const memberName = displayRefund.memberId
     ? `${displayRefund.memberId.firstName ?? ''} ${displayRefund.memberId.lastName ?? ''}`.trim()
     : 'Unknown member';

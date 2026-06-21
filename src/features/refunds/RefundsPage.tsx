@@ -14,7 +14,7 @@ import { Button } from '@/components/ui/button';
 import { usePermission } from '@/hooks/use-permission';
 import { formatCurrency, formatDateTime } from '@/lib/utils';
 import { formatDate } from '@/utils/format';
-import { CURRENCY } from '@/config/tenant.config';
+import { useTenantCurrency } from '@/hooks/use-tenant-currency';
 import { useGetRefunds, getGetRefundsQueryKey } from '@/api/generated/refunds/refunds';
 import type { Refund, RefundStatus } from '@/api/generated/refunds/refunds';
 import { useQueryClient, useQuery } from '@tanstack/react-query';
@@ -54,6 +54,7 @@ function RefundTypeBadge({ type }: { type?: string }) {
 function PaymentRefundsTab() {
   const { can } = usePermission();
   const qc = useQueryClient();
+  const { currency: tenantCurrency } = useTenantCurrency();
   const table = useTableState({ defaultLimit: 20 });
   const [statusFilter, setStatusFilter] = useState<RefundStatus | 'all'>('all');
   const [reviewRefund, setReviewRefund] = useState<Refund | null>(null);
@@ -97,7 +98,7 @@ function PaymentRefundsTab() {
       key: 'amount',
       header: 'Amount',
       cell: (row) => {
-        const currency = (row.paymentId as any)?.currency ?? CURRENCY;
+        const currency = (row.paymentId as any)?.currency ?? tenantCurrency;
         return (
           <div>
             <p className="font-semibold">{formatCurrency(row.amount ?? 0, currency)}</p>
@@ -239,6 +240,7 @@ interface PayoutRow extends WalletPayout {
 
 function WalletPayoutsTab() {
   const table = useTableState({ defaultLimit: 20 });
+  const { currency: tenantCurrency } = useTenantCurrency();
 
   const { data, isLoading } = useQuery({
     queryKey: ['wallet-payouts-all', table.queryParams.page, table.queryParams.limit],
@@ -280,7 +282,7 @@ function WalletPayoutsTab() {
       header: 'Amount',
       cell: (row) => (
         <span className="font-semibold text-emerald-700">
-          {formatCurrency(row.amount, CURRENCY)}
+          {formatCurrency(row.amount, tenantCurrency)}
         </span>
       ),
     },
@@ -341,7 +343,7 @@ function WalletPayoutsTab() {
                 <p className="text-xs text-emerald-700 font-medium">{label}</p>
               </div>
               <p className="text-lg font-bold text-emerald-800">
-                {formatCurrency(value, CURRENCY)}
+                {formatCurrency(value, tenantCurrency)}
               </p>
             </div>
           ))}

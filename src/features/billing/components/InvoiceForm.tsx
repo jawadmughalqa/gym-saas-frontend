@@ -48,7 +48,7 @@ import {
 } from "@/api/generated/invoices/invoices";
 import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "@/hooks/use-toast";
-import { CURRENCY } from "@/config/tenant.config";
+import { useTenantCurrency } from "@/hooks/use-tenant-currency";
 
 // ─── Charge presets ───────────────────────────────────────────────────────────
 // Maps line item type → default description label.
@@ -131,7 +131,7 @@ const lineItemSchema = z.object({
 const formSchema = z.object({
   memberId: z.string().min(1, "Member is required"),
   branchId: z.string().min(1, "Branch is required"),
-  currency: z.string().default(CURRENCY),
+  currency: z.string(),
   dueDate: z.string().optional(),
   discountCode: z.string().optional(),
   invoiceLevelDiscountAmount: z.coerce.number().min(0).optional(),
@@ -294,6 +294,7 @@ export default function InvoiceForm({
   defaultBranchId,
 }: InvoiceFormProps) {
   const queryClient = useQueryClient();
+  const { currency: tenantCurrency } = useTenantCurrency();
 
   // Orval mutation for creating invoice
   const createInvoice = usePostInvoices({
@@ -364,7 +365,7 @@ export default function InvoiceForm({
     defaultValues: {
       memberId: defaultMemberId ?? "",
       branchId: defaultBranchId ?? "",
-      currency: CURRENCY,
+      currency: tenantCurrency,
       issueImmediately: true,
       lineItems: [
         {
@@ -627,7 +628,7 @@ export default function InvoiceForm({
                 <Input
                   readOnly
                   id="currency"
-                  placeholder={CURRENCY}
+                  placeholder={tenantCurrency}
                   disabled={isPending}
                   {...register("currency")}
                 />

@@ -57,7 +57,7 @@ import DuePaymentsTable, {
 import { useGetPayments } from '@/api/generated/payments/payments';
 import { useGetMyTenant } from '@/api/generated/tenants/tenants';
 import type { GetBillingRecentTransactions200DataItem } from '@/api/generated/schemas';
-import { CURRENCY } from '@/config/tenant.config';
+import { useTenantCurrency } from '@/hooks/use-tenant-currency';
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 
@@ -128,6 +128,7 @@ export default function BillingDashboard() {
   // ── Gym name (for PDF / WhatsApp) ─────────────────────────────────────────
   const { data: tenantData } = useGetMyTenant({ query: { staleTime: Infinity } });
   const gymName: string | undefined = (tenantData?.data as any)?.name;
+  const { currency: tenantCurrency } = useTenantCurrency();
 
   // ── Global filters ─────────────────────────────────────────────────────────
   const [branchId, setBranchId] = useState('');
@@ -170,7 +171,7 @@ export default function BillingDashboard() {
       { query: { staleTime: 1000 * 60 } },
     );
   const stats    = dashData?.data;
-  const currency = stats?.currency ?? CURRENCY;
+  const currency = stats?.currency ?? tenantCurrency;
 
   const { data: invoicesData, isLoading: loadingInvoices, refetch: refetchInvoices } =
     useGetInvoices(

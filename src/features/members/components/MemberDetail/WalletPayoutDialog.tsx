@@ -20,7 +20,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { toast }    from '@/hooks/use-toast';
 import { api }      from '@/lib/axios';
 import { formatCurrency } from '@/utils/format';
-import { CURRENCY } from '@/config/tenant.config';
+import { useTenantCurrency } from '@/hooks/use-tenant-currency';
 import type { PayoutMedium, CreateWalletPayoutDto } from '@/types/member.types';
 
 // ─── Medium card ──────────────────────────────────────────────────────────────
@@ -80,6 +80,7 @@ interface Props {
 
 export function WalletPayoutDialog({ open, onOpenChange, memberId, walletBalance, onSuccess }: Props) {
   const qc = useQueryClient();
+  const { currency } = useTenantCurrency();
   const [amount,  setAmount]  = useState('');
   const [medium,  setMedium]  = useState<PayoutMedium>('cash');
   const [notes,   setNotes]   = useState('');
@@ -112,7 +113,7 @@ export function WalletPayoutDialog({ open, onOpenChange, memberId, walletBalance
       await api.post(`/members/${memberId}/wallet/payouts`, dto);
       toast({
         title:       'Payout recorded',
-        description: `${formatCurrency(parsedAmount, CURRENCY)} deducted from wallet via ${medium === 'cash' ? 'cash' : 'bank transfer'}.`,
+        description: `${formatCurrency(parsedAmount, currency)} deducted from wallet via ${medium === 'cash' ? 'cash' : 'bank transfer'}.`,
       });
       // Invalidate the global wallet-payouts list shown on RefundsPage
       void qc.invalidateQueries({ queryKey: ['wallet-payouts-all'] });
@@ -140,7 +141,7 @@ export function WalletPayoutDialog({ open, onOpenChange, memberId, walletBalance
             Record cash or bank transfer returned to the member.
             Available balance:{' '}
             <strong className="text-emerald-700">
-              {formatCurrency(walletBalance, CURRENCY)}
+              {formatCurrency(walletBalance, currency)}
             </strong>
           </DialogDescription>
         </DialogHeader>
@@ -158,14 +159,14 @@ export function WalletPayoutDialog({ open, onOpenChange, memberId, walletBalance
               min="1"
               step="1"
               max={walletBalance}
-              placeholder={`Max ${formatCurrency(walletBalance, CURRENCY)}`}
+              placeholder={`Max ${formatCurrency(walletBalance, currency)}`}
               value={amount}
               onChange={(e) => setAmount(e.target.value)}
               disabled={loading}
             />
             {parsedAmount > walletBalance && (
               <p className="text-xs text-destructive">
-                Cannot exceed wallet balance of {formatCurrency(walletBalance, CURRENCY)}.
+                Cannot exceed wallet balance of {formatCurrency(walletBalance, currency)}.
               </p>
             )}
           </div>

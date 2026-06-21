@@ -17,7 +17,7 @@ import { useGetBranches } from '@/api/generated/branches/branches';
 import { useExpenseSummary, useExpenseAnalytics } from './hooks/use-expenses';
 import { CATEGORY_LABELS } from './components/ExpenseForm';
 import { TrendingDown, Building2, ListOrdered, Calendar } from 'lucide-react';
-import { CURRENCY } from '@/config/tenant.config';
+import { useTenantCurrency } from '@/hooks/use-tenant-currency';
 import { CHART_COLORS } from '@/lib/constants';
 
 // ─── Constants ────────────────────────────────────────────────────────────────
@@ -40,6 +40,7 @@ function formatCurrency(amount: number) {
 
 export default function ExpenseAnalyticsPage() {
   const isBranchManager = useAuthStore((s) => s.user?.role === 'branch_manager');
+  const { currency } = useTenantCurrency();
   const [selectedYear, setSelectedYear] = useState<number>(CURRENT_YEAR);
   const [selectedMonth, setSelectedMonth] = useState<string>('all');
   const [branchFilter, setBranchFilter] = useState<string>('all');
@@ -162,7 +163,7 @@ export default function ExpenseAnalyticsPage() {
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
         <StatCard
           title="Total Expenses"
-          value={summaryLoading ? '…' : `${CURRENCY} ${formatCurrency(summary?.total ?? 0)}`}
+          value={summaryLoading ? '…' : `${currency} ${formatCurrency(summary?.total ?? 0)}`}
           icon={TrendingDown}
           subtitle="All categories"
         />
@@ -178,7 +179,7 @@ export default function ExpenseAnalyticsPage() {
             summaryLoading
               ? '…'
               : summary && summary.count > 0
-              ? `${CURRENCY} ${formatCurrency(Math.round(summary.total / summary.count))}`
+              ? `${currency} ${formatCurrency(Math.round(summary.total / summary.count))}`
               : '—'
           }
           icon={Calendar}
@@ -222,7 +223,7 @@ export default function ExpenseAnalyticsPage() {
                   width={54}
                 />
                 <Tooltip
-                  formatter={(v: number) => [`${CURRENCY} ${v.toLocaleString()}`, 'Total']}
+                  formatter={(v: number) => [`${currency} ${v.toLocaleString()}`, 'Total']}
                   contentStyle={{ borderRadius: '8px', fontSize: '12px' }}
                 />
                 <Bar dataKey="total" fill="#6366f1" radius={[4, 4, 0, 0]} />
@@ -274,7 +275,7 @@ export default function ExpenseAnalyticsPage() {
                       )}
                     />
                     <Tooltip
-                      formatter={(v: number) => [`${CURRENCY} ${v.toLocaleString()}`, 'Total']}
+                      formatter={(v: number) => [`${currency} ${v.toLocaleString()}`, 'Total']}
                       contentStyle={{ borderRadius: '8px', fontSize: '12px' }}
                     />
                   </PieChart>
@@ -292,7 +293,7 @@ export default function ExpenseAnalyticsPage() {
                         <span className="text-muted-foreground">{c.name}</span>
                       </div>
                       <span className="font-medium tabular-nums">
-                        {CURRENCY} {formatCurrency(c.total)}
+                        {currency} {formatCurrency(c.total)}
                       </span>
                     </div>
                   ))}
@@ -338,7 +339,7 @@ export default function ExpenseAnalyticsPage() {
                         width={80}
                       />
                       <Tooltip
-                        formatter={(v: number) => [`${CURRENCY} ${v.toLocaleString()}`, 'Total']}
+                        formatter={(v: number) => [`${currency} ${v.toLocaleString()}`, 'Total']}
                         contentStyle={{ borderRadius: '8px', fontSize: '12px' }}
                       />
                       <Bar dataKey="total" fill="#f59e0b" radius={[0, 4, 4, 0]} />
@@ -355,7 +356,7 @@ export default function ExpenseAnalyticsPage() {
                         <div className="flex items-center gap-2">
                           <Badge variant="outline" className="text-xs">{b.count} expenses</Badge>
                           <span className="font-medium tabular-nums">
-                            {CURRENCY} {formatCurrency(b.total)}
+                            {currency} {formatCurrency(b.total)}
                           </span>
                         </div>
                       </div>
@@ -392,7 +393,7 @@ export default function ExpenseAnalyticsPage() {
                   width={54}
                 />
                 <Tooltip
-                  formatter={(v: number) => [`${CURRENCY} ${v.toLocaleString()}`, 'Total']}
+                  formatter={(v: number) => [`${currency} ${v.toLocaleString()}`, 'Total']}
                   contentStyle={{ borderRadius: '8px', fontSize: '12px' }}
                 />
                 <Bar dataKey="total" fill="#10b981" radius={[4, 4, 0, 0]} />

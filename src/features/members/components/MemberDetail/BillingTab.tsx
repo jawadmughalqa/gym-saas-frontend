@@ -41,7 +41,7 @@ import { PaymentHistoryList } from '@/features/billing/components/PaymentHistory
 import { StatusBadge } from '@/features/billing/components/StatusBadge';
 import { MultiInvoicePaymentDialog } from '@/features/billing/components/MultiInvoicePaymentDialog';
 import InvoiceForm from '@/features/billing/components/InvoiceForm';
-import { CURRENCY } from '@/config/tenant.config';
+import { useTenantCurrency } from '@/hooks/use-tenant-currency';
 
 // ─── BillingTabProps ──────────────────────────────────────────────────────────
 
@@ -57,6 +57,7 @@ export function BillingTab({ memberId, branchId, memberName }: BillingTabProps) 
   const navigate = useNavigate();
   const { can } = usePermission();
   const queryClient = useQueryClient();
+  const { currency: tenantCurrency } = useTenantCurrency();
 
   // Single-invoice collect
   const [activeInvoiceId, setActiveInvoiceId] = useState<string | null>(null);
@@ -107,7 +108,7 @@ export function BillingTab({ memberId, branchId, memberName }: BillingTabProps) 
       total: inv.total ?? 0,
       subtotal: inv.subtotal ?? undefined,
       discountTotal: inv.discountTotal ?? 0,
-      currency: inv.currency ?? CURRENCY,
+      currency: inv.currency ?? tenantCurrency,
       dueDate: inv.dueDate,
       lineItems: (inv.lineItems ?? []).map((li: any) => ({
         description: li.description ?? '',
@@ -129,7 +130,7 @@ export function BillingTab({ memberId, branchId, memberName }: BillingTabProps) 
 
   // Selected invoices (for multi-pay dialog)
   const selectedInvoices = outstandingInvoices.filter((inv) => selectedIds.has(inv._id));
-  const currency = outstandingInvoices[0]?.currency ?? CURRENCY;
+  const currency = outstandingInvoices[0]?.currency ?? tenantCurrency;
 
   // ── Handlers ───────────────────────────────────────────────────────────────
 
@@ -295,7 +296,7 @@ export function BillingTab({ memberId, branchId, memberName }: BillingTabProps) 
                 <CollectPaymentForm
                   invoiceId={activeInvoice._id}
                   amountDue={activeInvoice.amountDue}
-                  currency={activeInvoice.currency || CURRENCY}
+                  currency={activeInvoice.currency || tenantCurrency}
                   onSuccess={handlePaymentSuccess}
                 />
               </div>
@@ -328,7 +329,7 @@ export function BillingTab({ memberId, branchId, memberName }: BillingTabProps) 
                       </div>
                       <div className="flex-1 min-w-0">
                         <p className="text-sm font-medium text-emerald-800 leading-tight">
-                          {formatCurrency(payout.amount, payout.medium === 'cash' ? CURRENCY : CURRENCY)} paid out
+                          {formatCurrency(payout.amount, tenantCurrency)} paid out
                           {' '}
                           <span className="font-normal text-emerald-700">
                             via {payout.medium === 'cash' ? 'Cash' : 'Bank Transfer'}

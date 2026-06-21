@@ -44,7 +44,7 @@ import {
 
 import { useToast } from "@/hooks/use-toast";
 import { usePermission } from "@/hooks/use-permission";
-import { CURRENCY } from "@/config/tenant.config";
+import { useTenantCurrency } from "@/hooks/use-tenant-currency";
 import { PlanFormDialog } from "./components/PlanFormDialog";
 import { ArchivePlanDialog } from "./components/ArchivePlanDialog";
 import RestorePlanDialog from "./components/RestorePlanDialog";
@@ -95,6 +95,7 @@ function PlanCard({
   onArchive,
   onRestore,
 }: PlanCardProps) {
+  const { currency: tenantCurrency } = useTenantCurrency();
   const freq = plan.billingFrequency ?? "";
   const label = FREQUENCY_LABELS[freq] ?? freq;
   const color = FREQUENCY_COLORS[freq] ?? "bg-gray-100 text-gray-700";
@@ -163,7 +164,7 @@ function PlanCard({
       <CardContent className="space-y-3 pb-3">
         <div className="flex items-baseline gap-1">
           <span className="text-2xl font-bold">
-            {plan.currency ?? CURRENCY} {(plan.basePrice ?? 0).toFixed(2)}
+            {plan.currency ?? tenantCurrency} {(plan.basePrice ?? 0).toFixed(2)}
           </span>
           <span className="text-sm text-muted-foreground">
             / {label.toLowerCase()}

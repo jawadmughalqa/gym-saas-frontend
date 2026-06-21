@@ -24,7 +24,7 @@ import { useMutation } from '@tanstack/react-query';
 import { toast } from '@/hooks/use-toast';
 import { useGetMembershipPlans } from '@/api/generated/membership-plans/membership-plans';
 import type { MembershipPlan } from '@/api/generated/schemas';
-import { CURRENCY } from '@/config/tenant.config';
+import { useTenantCurrency } from '@/hooks/use-tenant-currency';
 import { formatCurrency } from '@/lib/utils';
 import { api } from '@/lib/axios';
 
@@ -65,6 +65,7 @@ interface Props {
 export function ChangePlanDialog({
   open, onOpenChange, memberId, subscriptionId, currentPlanName, onSuccess,
 }: Props) {
+  const { currency: tenantCurrency } = useTenantCurrency();
   const [selectedPlanId, setSelectedPlanId] = useState('');
   const [discount,       setDiscount]       = useState<string>('0');
 
@@ -79,7 +80,7 @@ export function ChangePlanDialog({
   const basePrice    = selectedPlan?.basePrice ?? 0;
   const discountNum  = Math.max(0, Number(discount) || 0);
   const finalPrice   = Math.max(0, basePrice - discountNum);
-  const currency     = selectedPlan?.currency ?? CURRENCY;
+  const currency     = selectedPlan?.currency ?? tenantCurrency;
 
   // ── Mutation ───────────────────────────────────────────────────────────────
   const changeMutation = useChangePlan();

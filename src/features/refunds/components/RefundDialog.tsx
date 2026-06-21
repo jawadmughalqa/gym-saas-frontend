@@ -25,7 +25,7 @@ import {
 import { toast } from '@/hooks/use-toast';
 import { getErrorMessage } from '@/utils/error';
 import { formatCurrency } from '@/lib/utils';
-import { CURRENCY } from '@/config/tenant.config';
+import { useTenantCurrency } from '@/hooks/use-tenant-currency';
 import { useQueryClient } from '@tanstack/react-query';
 import { usePostRefunds, getGetRefundsQueryKey } from '@/api/generated/refunds/refunds';
 import { getGetPaymentsQueryKey } from '@/api/generated/payments/payments';
@@ -70,11 +70,13 @@ export function RefundDialog({
   paymentId,
   paymentAmount,
   alreadyRefunded,
-  currency = CURRENCY,
+  currency: currencyProp,
   subscriptionId,
   invoiceId,
   onSuccess,
 }: RefundDialogProps) {
+  const { currency: tenantCurrency } = useTenantCurrency();
+  const currency = currencyProp ?? tenantCurrency;
   const qc = useQueryClient();
   const maxRefundable = Math.max(0, paymentAmount - alreadyRefunded);
 

@@ -34,7 +34,7 @@ import {
   useMyTrainerProfile,
   useMyTrainerRatings,
 } from '@/features/trainer-portal/hooks/use-trainer-portal';
-import { COUNTRY_BY_NAME } from '@/config/world-countries';
+import { COUNTRY_BY_NAME, applyPhoneMask, maskDigitCount } from '@/config/world-countries';
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -448,7 +448,10 @@ function GymOwnerInfoCard({ profile }: { profile: MyProfile }) {
   const gymName   = tenant?.businessName ?? tenant?.name ?? null;
   const country   = tenant?.country ?? null;
   const currency  = tenant?.settings?.currency ?? null;
-  const currSym   = tenant?.settings?.currencySymbol ?? null;
+  // Derive symbol from WORLD_COUNTRIES (backend only stores the ISO code, not the symbol)
+  const currSym   = currency
+    ? ([...COUNTRY_BY_NAME.values()].find((c) => c.currencyCode === currency)?.currencySymbol ?? null)
+    : null;
   const phone     = tenant?.contactPhone ?? null;
 
   return (
@@ -507,7 +510,8 @@ function TrainerProfessionalCard() {
   const { data: tenant } = useGetMyTenant({ query: { staleTime: 1000 * 60 * 5 } });
 
   const gymName  = (tenant?.data as any)?.name ?? null;
-  const currency = profile?.currency ?? 'PKR';
+  const tenantCurrency = (tenant?.data as any)?.settings?.currency ?? 'USD';
+  const currency = profile?.currency ?? tenantCurrency;
 
   if (isLoading) {
     return (
@@ -814,8 +818,9 @@ function EditProfileDialog({
   });
   const allCountries = countriesData?.enabledCountries ?? [];
 
-  // Phone placeholder from COUNTRY_BY_NAME
-  const [phonePlaceholder, setPhonePlaceholder] = useState('e.g. +92 312-3456789');
+  // Phone masking state — driven by selected country
+  const [phoneMask,    setPhoneMask]    = useState('');
+  const [phoneExample, setPhoneExample] = useState('');
 
   const { register, handleSubmit, reset, control, watch, setValue, formState: { errors } } = useForm<EditProfileValues>({
     defaultValues: {
@@ -844,19 +849,30 @@ function EditProfileDialog({
         city:      profile.city    ?? '',
         address:   profile.address ?? '',
       });
-      // Set phone placeholder from stored country
-      if (country) {
-        const meta = COUNTRY_BY_NAME.get(country);
-        if (meta) setPhonePlaceholder(meta.phoneExample);
-      }
+      // Set phone mask from stored country
+      const meta = country ? COUNTRY_BY_NAME.get(country) : undefined;
+      setPhoneMask(meta?.phoneMask ?? '');
+      setPhoneExample(meta?.phoneExample ?? '');
     }
   }, [open, profile, reset]);
 
-  // Update phone placeholder when country changes
+  // Update phone mask when country changes and clear current phone value
   function handleCountryChange(countryName: string) {
     setValue('country', countryName);
     const meta = COUNTRY_BY_NAME.get(countryName);
-    setPhonePlaceholder(meta?.phoneExample ?? 'e.g. +1 (212) 555-0147');
+    setPhoneMask(meta?.phoneMask ?? '');
+    setPhoneExample(meta?.phoneExample ?? '');
+    setValue('phone', ''); // clear so user re-enters in new format
+  }
+
+  // Apply mask as user types
+  function handlePhoneInput(raw: string) {
+    if (!phoneMask) {
+      setValue('phone', raw);
+      return;
+    }
+    const masked = applyPhoneMask(raw, phoneMask);
+    setValue('phone', masked, { shouldValidate: true });
   }
 
   function onClose() {
@@ -962,24 +978,47 @@ function EditProfileDialog({
             />
           </div>
 
-          {/* Phone — placeholder updates based on country */}
-          <div className="space-y-1.5">
-            <Label htmlFor="ep-phone">
-              Phone
-              {watchedCountry && (
-                <span className="ml-1.5 text-xs text-muted-foreground font-normal">
-                  e.g. {phonePlaceholder}
-                </span>
-              )}
-            </Label>
-            <Input
-              id="ep-phone"
-              type="tel"
-              inputMode="numeric"
-              placeholder={watchedCountry ? phonePlaceholder : 'Select a country first'}
-              {...register('phone')}
-            />
-          </div>
+          {/* Phone — masked to the selected country's format */}
+          {(() => {
+            const isComplete = phoneMask
+              ? maskDigitCount(phoneMask) === maskDigitCount(watch('phone'))
+              : false;
+            const maskPlaceholder = phoneMask
+              ? phoneMask.replace(/#/g, '0')
+              : 'Select a country first';
+            return (
+              <div className="space-y-1.5">
+                <Label htmlFor="ep-phone">
+                  Phone
+                  {phoneExample && (
+                    <span className="ml-1.5 text-xs text-muted-foreground font-normal">
+                      e.g. {phoneExample}
+                    </span>
+                  )}
+                </Label>
+                <div className="relative">
+                  <Input
+                    id="ep-phone"
+                    type="tel"
+                    inputMode="numeric"
+                    disabled={!watchedCountry}
+                    placeholder={maskPlaceholder}
+                    value={watch('phone')}
+                    onChange={(e) => handlePhoneInput(e.target.value)}
+                    className={isComplete ? 'pr-8' : ''}
+                  />
+                  {isComplete && (
+                    <span className="absolute right-2.5 top-1/2 -translate-y-1/2 text-green-600 text-sm">✓</span>
+                  )}
+                </div>
+                {phoneMask && watch('phone') && !isComplete && (
+                  <p className="text-xs text-muted-foreground">
+                    Format: {phoneMask.replace(/#/g, '0')}
+                  </p>
+                )}
+              </div>
+            );
+          })()}
 
           {/* Gender + Age */}
           <div className="grid grid-cols-2 gap-3">

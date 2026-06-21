@@ -15,7 +15,7 @@ import {
   useRateMyTrainer,
 } from './hooks/use-member-portal';
 import { formatDate, formatCurrency } from '@/utils/format';
-import { CURRENCY } from '@/config/tenant.config';
+import { useTenantCurrency } from '@/hooks/use-tenant-currency';
 
 // ─── Star picker ──────────────────────────────────────────────────────────────
 
@@ -57,6 +57,7 @@ function StarPicker({
 // ─── Page ─────────────────────────────────────────────────────────────────────
 
 export default function MemberTrainerPage() {
+  const { currency } = useTenantCurrency();
   const { data: trainerData, isLoading, isError, refetch } = useMyTrainer();
 
   const hasTrainer = !!(trainerData?.trainer && trainerData?.assignment);
@@ -209,7 +210,7 @@ export default function MemberTrainerPage() {
                 <div className="flex justify-between">
                   <span className="text-muted-foreground">Monthly Charge</span>
                   <span className="font-semibold">
-                    {formatCurrency(trainerData.assignment!.monthlyCharge, CURRENCY)}
+                    {formatCurrency(trainerData.assignment!.monthlyCharge, currency)}
                   </span>
                 </div>
               )}

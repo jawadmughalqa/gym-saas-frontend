@@ -10,6 +10,17 @@ import type { TenantPlan } from './tenantPlan';
 import type { TenantQuotas } from './tenantQuotas';
 import type { TenantStatus } from './tenantStatus';
 
+export interface TenantSettings {
+  currency?: string;         // ISO 4217 code e.g. 'USD', 'GBP', 'PKR'
+  timezone?: string;
+  locale?: string;
+  invoicePrefix?: string;
+  invoicePadding?: number;
+  taxRate?: number;
+  taxLabel?: string;
+  invoiceAdvanceDays?: number;
+}
+
 export interface Tenant {
   _id?: string;
   businessName?: string;
@@ -20,6 +31,7 @@ export interface Tenant {
   status?: TenantStatus;
   quotas?: TenantQuotas;
   featureFlags?: TenantFeatureFlags;
+  settings?: TenantSettings;
   /** @nullable */
   trialEndsAt?: string | null;
   billingCycleDay?: number;

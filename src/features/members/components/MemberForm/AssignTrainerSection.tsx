@@ -22,7 +22,7 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { useGetTrainers } from '@/api/generated/trainers/trainers';
-import { CURRENCY } from '@/config/tenant.config';
+import { useTenantCurrency } from '@/hooks/use-tenant-currency';
 import type { MemberFormValues } from './types';
 
 // ─── Props ────────────────────────────────────────────────────────────────────
@@ -37,6 +37,7 @@ interface Props {
 // ─── Component ────────────────────────────────────────────────────────────────
 
 export function AssignTrainerSection({ control, errors, isPending, branchId }: Props) {
+  const { currency } = useTenantCurrency();
   // ── Controlled fields ─────────────────────────────────────────────────────
   const { field: enabledField }  = useController({ control, name: 'trainer.enabled' });
   const { field: trainerField }  = useController({ control, name: 'trainer.trainerId' });
@@ -175,7 +176,7 @@ export function AssignTrainerSection({ control, errors, isPending, branchId }: P
                         <div className="flex items-center gap-2 shrink-0">
                           {rate != null && (
                             <span className="text-xs text-muted-foreground">
-                              {CURRENCY} {Number(rate).toLocaleString()}/mo
+                              {currency} {Number(rate).toLocaleString()}/mo
                             </span>
                           )}
                           <span className="text-xs text-muted-foreground">
@@ -200,7 +201,7 @@ export function AssignTrainerSection({ control, errors, isPending, branchId }: P
             <>
               {/* Monthly PT charge */}
               <div className="space-y-1.5">
-                <Label htmlFor="ptCharge">PT Charge / Month ({CURRENCY})</Label>
+                <Label htmlFor="ptCharge">PT Charge / Month ({currency})</Label>
                 <Input
                   id="ptCharge"
                   type="number"
@@ -257,7 +258,7 @@ export function AssignTrainerSection({ control, errors, isPending, branchId }: P
                   <p className="text-sm font-medium text-primary">{trainerName}</p>
                   <p className="text-xs text-muted-foreground">
                     {chargeVal && chargeVal > 0
-                      ? `PT fee invoice of ${CURRENCY} ${chargeVal.toLocaleString()} will be created`
+                      ? `PT fee invoice of ${currency} ${chargeVal.toLocaleString()} will be created`
                       : 'No PT fee invoice (charge not set)'}
                   </p>
                 </div>

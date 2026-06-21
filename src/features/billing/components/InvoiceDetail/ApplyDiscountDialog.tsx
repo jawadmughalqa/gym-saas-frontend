@@ -300,7 +300,7 @@ export default function ApplyDiscountDialog({
                   type="number"
                   min={0}
                   max={manualType === 'percent' ? 100 : invoiceTotal}
-                  step="0.01"
+                  step="1"
                   placeholder={manualType === 'percent' ? 'e.g. 10' : 'e.g. 500'}
                   value={manualAmount}
                   onChange={(e) => setManualAmount(e.target.value)}

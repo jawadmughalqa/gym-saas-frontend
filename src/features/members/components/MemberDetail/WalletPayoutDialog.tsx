@@ -155,8 +155,8 @@ export function WalletPayoutDialog({ open, onOpenChange, memberId, walletBalance
             <Input
               id="payoutAmount"
               type="number"
-              min="0.01"
-              step="0.01"
+              min="1"
+              step="1"
               max={walletBalance}
               placeholder={`Max ${formatCurrency(walletBalance, CURRENCY)}`}
               value={amount}

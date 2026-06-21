@@ -56,14 +56,21 @@ export function useExpenseAnalytics(params?: ExpenseAnalyticsParams) {
 
 // ─── Mutations ────────────────────────────────────────────────────────────────
 
+function invalidateAllExpenseQueries(qc: ReturnType<typeof useQueryClient>, expenseId?: string) {
+  qc.invalidateQueries({ queryKey: getGetExpensesQueryKey() });
+  qc.invalidateQueries({ queryKey: getGetExpensesSummaryQueryKey() });
+  qc.invalidateQueries({ queryKey: getGetExpensesAnalyticsQueryKey() });
+  if (expenseId) {
+    qc.invalidateQueries({ queryKey: getGetExpensesExpenseIdQueryKey(expenseId) });
+  }
+}
+
 export function useCreateExpense(options?: { onSuccess?: () => void }) {
   const qc = useQueryClient();
   return usePostExpenses({
     mutation: {
       onSuccess: () => {
-        qc.invalidateQueries({ queryKey: getGetExpensesQueryKey() });
-        qc.invalidateQueries({ queryKey: ['/expenses/summary'] });
-        qc.invalidateQueries({ queryKey: ['/expenses/analytics'] });
+        invalidateAllExpenseQueries(qc);
         toast({ title: 'Expense recorded' });
         options?.onSuccess?.();
       },
@@ -82,9 +89,7 @@ export function useUpdateExpense(expenseId: string, options?: { onSuccess?: () =
   return usePatchExpensesExpenseId({
     mutation: {
       onSuccess: () => {
-        qc.invalidateQueries({ queryKey: getGetExpensesQueryKey() });
-        qc.invalidateQueries({ queryKey: getGetExpensesExpenseIdQueryKey(expenseId) });
-        qc.invalidateQueries({ queryKey: ['/expenses/summary'] });
+        invalidateAllExpenseQueries(qc, expenseId);
         toast({ title: 'Expense updated' });
         options?.onSuccess?.();
       },
@@ -103,9 +108,7 @@ export function useDeleteExpense(options?: { onSuccess?: () => void }) {
   return useDeleteExpensesExpenseId({
     mutation: {
       onSuccess: () => {
-        qc.invalidateQueries({ queryKey: getGetExpensesQueryKey() });
-        qc.invalidateQueries({ queryKey: ['/expenses/summary'] });
-        qc.invalidateQueries({ queryKey: ['/expenses/analytics'] });
+        invalidateAllExpenseQueries(qc);
         toast({ title: 'Expense deleted' });
         options?.onSuccess?.();
       },

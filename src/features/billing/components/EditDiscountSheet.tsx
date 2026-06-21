@@ -168,7 +168,7 @@ export function EditDiscountSheet({
                 id="minInvoiceAmount"
                 type="number"
                 min="0"
-                step="0.01"
+                step="1"
                 placeholder="No minimum"
                 disabled={isPending}
                 {...register("minInvoiceAmount")}

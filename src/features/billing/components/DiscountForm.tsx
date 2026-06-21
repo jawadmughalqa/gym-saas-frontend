@@ -164,7 +164,7 @@ export default function DiscountForm({ open, onOpenChange }: DiscountFormProps) 
                 id="value"
                 type="number"
                 min="0"
-                step="0.01"
+                step="1"
                 disabled={isPending}
                 className={errors.value ? "border-destructive" : ""}
                 {...register("value")}
@@ -204,7 +204,7 @@ export default function DiscountForm({ open, onOpenChange }: DiscountFormProps) 
                 id="minInvoiceAmount"
                 type="number"
                 min="0"
-                step="0.01"
+                step="1"
                 placeholder="No minimum"
                 disabled={isPending}
                 {...register("minInvoiceAmount")}

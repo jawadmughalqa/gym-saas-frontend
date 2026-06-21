@@ -245,7 +245,7 @@ function LogMaintenanceDialog({
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-1.5">
               <Label htmlFor="cost">Cost</Label>
-              <Input id="cost" type="number" min={0} step="0.01" placeholder="0.00" {...register('cost')} />
+              <Input id="cost" type="number" min={0} step="1" placeholder="0.00" {...register('cost')} />
               {errors.cost && <p className="text-xs text-destructive">{errors.cost.message}</p>}
             </div>
             <div className="space-y-1.5">
@@ -356,7 +356,7 @@ function CreateWorkOrderDialog({
           </div>
           <div className="space-y-1.5">
             <Label htmlFor="wo-cost">Estimated Cost</Label>
-            <Input id="wo-cost" type="number" min={0} step="0.01" placeholder="0.00" {...register('estimatedCost')} />
+            <Input id="wo-cost" type="number" min={0} step="1" placeholder="0.00" {...register('estimatedCost')} />
           </div>
           <DialogFooter>
             <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>Cancel</Button>
@@ -418,7 +418,7 @@ function ResolveWorkOrderDialog({
           </div>
           <div className="space-y-1.5">
             <Label htmlFor="actual-cost">Actual Cost</Label>
-            <Input id="actual-cost" type="number" min={0} step="0.01" placeholder="0.00" {...register('actualCost')} />
+            <Input id="actual-cost" type="number" min={0} step="1" placeholder="0.00" {...register('actualCost')} />
           </div>
           <DialogFooter>
             <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>Cancel</Button>

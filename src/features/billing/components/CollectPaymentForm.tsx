@@ -112,8 +112,8 @@ export function CollectPaymentForm({
             </span>
             <Input
               type="number"
-              step="0.01"
-              min="0.01"
+              step="1"
+              min="1"
               max={amountDue}
               className="h-8 pl-12 text-sm font-semibold"
               {...register('paidAmount')}

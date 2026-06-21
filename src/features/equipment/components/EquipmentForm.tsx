@@ -317,7 +317,7 @@ export default function EquipmentForm({ open, onOpenChange, equipment }: Equipme
             </div>
             <div className="space-y-1.5">
               <Label htmlFor="purchasePrice">Purchase Price</Label>
-              <Input id="purchasePrice" type="number" min={0} step="0.01" placeholder="0.00" {...register('purchasePrice')} />
+              <Input id="purchasePrice" type="number" min={0} step="1" placeholder="0.00" {...register('purchasePrice')} />
               {errors.purchasePrice && <p className="text-xs text-destructive">{errors.purchasePrice.message}</p>}
             </div>
             <div className="space-y-1.5">

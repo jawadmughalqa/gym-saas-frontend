@@ -340,7 +340,7 @@ export default function ExpenseForm({
                 id="amount"
                 type="number"
                 min={0}
-                step="0.01"
+                step="1"
                 placeholder="0.00"
                 {...register("amount")}
                 className={errors.amount ? "border-destructive" : ""}
@@ -424,6 +424,11 @@ export default function ExpenseForm({
                   ))}
                 </SelectContent>
               </Select>
+              {watch("recurring") !== "none" && (
+                <p className="text-xs text-muted-foreground">
+                  Tag only — recurring entries are not auto-created.
+                </p>
+              )}
             </div>
           </div>
 

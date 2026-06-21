@@ -99,7 +99,7 @@ export default function ExpenseAnalyticsPage() {
     <PageShell>
       <PageHeader
         title="Expense Analytics"
-        subtitle="Overview of operational costs across branches and categories"
+        subtitle="Approved and paid expenses across branches and categories (pending excluded)"
       />
 
       {/* Filters */}

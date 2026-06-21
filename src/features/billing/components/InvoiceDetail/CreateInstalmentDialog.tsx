@@ -98,7 +98,7 @@ export default function CreateInstalmentDialog({ invoiceId, open, onOpenChange }
           </div>
           <div className="space-y-1.5">
             <Label>Down Payment</Label>
-            <Input type="number" step="0.01" min={0} placeholder="0.00" disabled={create.isPending} {...register('downPayment')} />
+            <Input type="number" step="1" min={0} placeholder="0.00" disabled={create.isPending} {...register('downPayment')} />
           </div>
           <div className="space-y-1.5">
             <Label>Start Date</Label>

@@ -102,7 +102,7 @@ export default function RecordPaymentDialog({ invoiceId, currency, amountDue, op
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
           <div className="space-y-1.5">
             <Label>Amount ({currency}) *</Label>
-            <Input type="number" step="0.01" min="0.01" disabled={recordPayment.isPending} {...register('amount')} />
+            <Input type="number" step="1" min="1" disabled={recordPayment.isPending} {...register('amount')} />
             {errors.amount && <p className="text-xs text-destructive">{errors.amount.message}</p>}
             <p className="text-xs text-muted-foreground">Outstanding: {formatCurrency(amountDue, currency)}</p>
           </div>

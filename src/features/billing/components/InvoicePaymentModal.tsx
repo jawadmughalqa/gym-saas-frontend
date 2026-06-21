@@ -1438,8 +1438,8 @@ export function InvoicePaymentModal({
                     </Label>
                     <Input
                       type="number"
-                      step="0.01"
-                      min="0.01"
+                      step="1"
+                      min="1"
                       className="h-9"
                       {...register('amount')}
                     />

@@ -13,6 +13,7 @@ import DashboardPage from "@/features/dashboard/DashboardPage";
 
 const ChangePasswordPage  = lazy(() => import("@/features/auth/ChangePasswordPage"));
 const PricingPage         = lazy(() => import("@/features/settings/PricingPage"));
+const BackupPage          = lazy(() => import("@/features/settings/BackupPage"));
 const ProfilePage         = lazy(() => import("@/features/auth/ProfilePage"));
 const MembersPage         = lazy(() => import("@/features/members/MembersPage"));
 const MemberDetailPage    = lazy(() => import("@/features/members/MemberDetailPage"));
@@ -114,6 +115,11 @@ const router = createBrowserRouter([
                 path: "pricing",
                 element: <Lazy><PricingPage /></Lazy>,
                 handle: { crumb: "Plans & Pricing" },
+              },
+              {
+                path: "backup",
+                element: <Lazy><BackupPage /></Lazy>,
+                handle: { crumb: "Backup & Restore" },
               },
             ],
           },

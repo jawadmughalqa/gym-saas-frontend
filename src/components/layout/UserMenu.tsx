@@ -1,5 +1,5 @@
 import { useNavigate } from 'react-router-dom';
-import { KeyRound, LogOut, User } from 'lucide-react';
+import { KeyRound, LogOut, User, HardDrive } from 'lucide-react';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import {
   DropdownMenu,
@@ -54,6 +54,10 @@ export default function UserMenu() {
           <DropdownMenuItem onClick={() => navigate('/settings/change-password')}>
             <KeyRound className="mr-2 h-4 w-4" />
             Change password
+          </DropdownMenuItem>
+          <DropdownMenuItem onClick={() => navigate('/settings/backup')}>
+            <HardDrive className="mr-2 h-4 w-4" />
+            Backup &amp; Restore
           </DropdownMenuItem>
         </DropdownMenuGroup>
 

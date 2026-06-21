@@ -13,6 +13,7 @@ import UserMenu from './UserMenu';
 import ImpersonationBanner from './ImpersonationBanner';
 import ErrorBoundary from '@/components/shared/ErrorBoundary';
 import { cn } from '@/lib/utils';
+import { useAutoBackup } from '@/hooks/use-auto-backup';
 
 // ─── Unread count sync ────────────────────────────────────────────────────────
 // Polls every 60s so the bell badge stays current across all pages.
@@ -171,6 +172,7 @@ export default function AppShell() {
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
   useUnreadCountSync();
+  useAutoBackup();
 
   return (
     <div className="flex h-screen overflow-hidden bg-background">

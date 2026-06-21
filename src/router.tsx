@@ -125,6 +125,11 @@ const router = createBrowserRouter([
             ],
           },
 
+          // ── Admin routes (gym_owner, branch_manager, staff, super_admin) ──
+          {
+            element: <ProtectedRoute allowedRoles={["gym_owner", "branch_manager", "staff", "super_admin"]} />,
+            children: [
+
           // ── Members ──────────────────────────────────────────────────
           {
             path: "members",
@@ -264,8 +269,26 @@ const router = createBrowserRouter([
             handle: { crumb: "Notifications" },
           },
 
-          // ── Member portal ─────────────────────────────────────────────
+          // ── Branches ─────────────────────────────────────────────────
           {
+            path: "branches",
+            handle: { crumb: "Branches" },
+            children: [
+              { index: true, element: <Lazy><BranchesPage /></Lazy> },
+              {
+                path: ":branchId",
+                element: <Lazy><BranchDetailPage /></Lazy>,
+                handle: { crumb: "Branch Detail" },
+              },
+            ],
+          },
+
+            ]},  // end admin ProtectedRoute
+
+          // ── Member portal (members only) ─────────────────────────────
+          {
+            element: <ProtectedRoute allowedRoles={["member"]} />,
+            children: [{
             path: "member",
             children: [
               { index: true, element: <Navigate to="/member/home" replace /> },
@@ -308,9 +331,12 @@ const router = createBrowserRouter([
               },
             ],
           },
+          ]},  // end member ProtectedRoute
 
-          // ── Trainer portal ────────────────────────────────────────────
+          // ── Trainer portal (trainers only) ───────────────────────────
           {
+            element: <ProtectedRoute allowedRoles={["trainer"]} />,
+            children: [{
             path: "trainer",
             children: [
               { index: true, element: <Navigate to="/trainer/dashboard" replace /> },
@@ -331,20 +357,7 @@ const router = createBrowserRouter([
               },
             ],
           },
-
-          // ── Branches ─────────────────────────────────────────────────
-          {
-            path: "branches",
-            handle: { crumb: "Branches" },
-            children: [
-              { index: true, element: <Lazy><BranchesPage /></Lazy> },
-              {
-                path: ":branchId",
-                element: <Lazy><BranchDetailPage /></Lazy>,
-                handle: { crumb: "Branch Detail" },
-              },
-            ],
-          },
+          ]},  // end trainer ProtectedRoute
 
           // ── Roles ─────────────────────────────────────────────────────
           // {

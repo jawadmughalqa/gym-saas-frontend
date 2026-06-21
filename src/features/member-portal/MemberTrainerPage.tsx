@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Mail, Phone, User, FileText, Star } from 'lucide-react';
+import { Mail, Phone, User, FileText, Star, AlertTriangle } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -15,6 +15,7 @@ import {
   useRateMyTrainer,
 } from './hooks/use-member-portal';
 import { formatDate, formatCurrency } from '@/utils/format';
+import { CURRENCY } from '@/config/tenant.config';
 
 // ─── Star picker ──────────────────────────────────────────────────────────────
 
@@ -56,13 +57,16 @@ function StarPicker({
 // ─── Page ─────────────────────────────────────────────────────────────────────
 
 export default function MemberTrainerPage() {
-  const { data: trainerData, isLoading } = useMyTrainer();
-  const { data: notesData, isLoading: notesLoading } = useMySessionNotes();
-  const { data: ratingData } = useMyTrainerRating();
+  const { data: trainerData, isLoading, isError, refetch } = useMyTrainer();
+
+  const hasTrainer = !!(trainerData?.trainer && trainerData?.assignment);
+
+  const { data: notesData,  isLoading: notesLoading  } = useMySessionNotes(hasTrainer);
+  const { data: ratingData                            } = useMyTrainerRating(hasTrainer);
   const rateTrainer = useRateMyTrainer();
 
   const [starValue, setStarValue] = useState(0);
-  const [review, setReview] = useState('');
+  const [review,    setReview   ] = useState('');
 
   function handleSubmitRating() {
     if (starValue === 0) {
@@ -97,7 +101,20 @@ export default function MemberTrainerPage() {
     );
   }
 
-  const hasTrainer = trainerData?.trainer && trainerData?.assignment;
+  if (isError) {
+    return (
+      <PageShell>
+        <PageHeader title="My Trainer" />
+        <Card className="border-destructive/30">
+          <CardContent className="py-10 flex flex-col items-center gap-3 text-center">
+            <AlertTriangle className="h-6 w-6 text-destructive" />
+            <p className="text-sm text-muted-foreground">Failed to load trainer information.</p>
+            <Button variant="outline" size="sm" onClick={() => refetch()}>Try again</Button>
+          </CardContent>
+        </Card>
+      </PageShell>
+    );
+  }
 
   return (
     <PageShell>
@@ -192,7 +209,7 @@ export default function MemberTrainerPage() {
                 <div className="flex justify-between">
                   <span className="text-muted-foreground">Monthly Charge</span>
                   <span className="font-semibold">
-                    {formatCurrency(trainerData.assignment!.monthlyCharge)}
+                    {formatCurrency(trainerData.assignment!.monthlyCharge, CURRENCY)}
                   </span>
                 </div>
               )}

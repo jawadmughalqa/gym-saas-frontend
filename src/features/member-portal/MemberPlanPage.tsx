@@ -1,7 +1,8 @@
-import { Wallet } from 'lucide-react';
+import { Wallet, AlertTriangle } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
+import { Button } from '@/components/ui/button';
 import PageShell from '@/components/layout/PageShell';
 import PageHeader from '@/components/layout/PageHeader';
 import { useMySubscriptions, useMyProfile } from './hooks/use-member-portal';
@@ -114,12 +115,12 @@ function SubscriptionCard({ sub, isActive }: { sub: Subscription; isActive: bool
 
         {/* Proration refund detail — only shown on cancelled + refund > 0 */}
         {sub.status === 'cancelled' &&
-          (sub as Subscription & { prorationRefundAmount?: number }).prorationRefundAmount! > 0 && (
+          ((sub as Subscription & { prorationRefundAmount?: number }).prorationRefundAmount ?? 0) > 0 && (
           <div className="mt-2 pt-2 border-t border-border flex justify-between">
             <span className="text-emerald-600">Wallet credit issued</span>
             <span className="text-emerald-700 font-semibold">
               +{formatCurrency(
-                (sub as Subscription & { prorationRefundAmount?: number }).prorationRefundAmount!,
+                (sub as Subscription & { prorationRefundAmount?: number }).prorationRefundAmount ?? 0,
                 CURRENCY,
               )}
             </span>
@@ -133,9 +134,10 @@ function SubscriptionCard({ sub, isActive }: { sub: Subscription; isActive: bool
 // ─── Page ─────────────────────────────────────────────────────────────────────
 
 export default function MemberPlanPage() {
-  const { data: profile,       isLoading: profileLoading }  = useMyProfile();
-  const { data: subscriptions, isLoading: subsLoading }     = useMySubscriptions();
+  const { data: profile,       isLoading: profileLoading, isError: profileError, refetch: refetchProfile } = useMyProfile();
+  const { data: subscriptions, isLoading: subsLoading,   isError: subsError,    refetch: refetchSubs    } = useMySubscriptions();
   const isLoading = profileLoading || subsLoading;
+  const isError   = profileError   || subsError;
 
   if (isLoading) {
     return (
@@ -146,6 +148,23 @@ export default function MemberPlanPage() {
             <Skeleton key={i} className="h-40 w-full rounded-xl" />
           ))}
         </div>
+      </PageShell>
+    );
+  }
+
+  if (isError) {
+    return (
+      <PageShell>
+        <PageHeader title="My Plan" />
+        <Card className="border-destructive/30">
+          <CardContent className="py-10 flex flex-col items-center gap-3 text-center">
+            <AlertTriangle className="h-6 w-6 text-destructive" />
+            <p className="text-sm text-muted-foreground">Failed to load plan information.</p>
+            <Button variant="outline" size="sm" onClick={() => { refetchProfile(); refetchSubs(); }}>
+              Try again
+            </Button>
+          </CardContent>
+        </Card>
       </PageShell>
     );
   }

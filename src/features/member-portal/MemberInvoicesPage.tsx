@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { ChevronDown, ChevronRight } from 'lucide-react';
+import { ChevronDown, ChevronRight, AlertTriangle } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -115,22 +115,32 @@ function InvoiceCard({ invoice }: { invoice: Invoice }) {
 
 // ─── Filter tabs ──────────────────────────────────────────────────────────────
 
-type StatusFilter = 'all' | 'issued' | 'paid' | 'overdue';
+type StatusFilter = 'all' | 'outstanding' | 'paid' | 'overdue';
 
 const TABS: { value: StatusFilter; label: string }[] = [
-  { value: 'all',     label: 'All' },
-  { value: 'issued',  label: 'Unpaid' },
-  { value: 'paid',    label: 'Paid' },
-  { value: 'overdue', label: 'Overdue' },
+  { value: 'all',         label: 'All' },
+  { value: 'outstanding', label: 'Outstanding' },  // issued + partially_paid + overdue
+  { value: 'paid',        label: 'Paid' },
+  { value: 'overdue',     label: 'Overdue' },
 ];
+
+// Client-side filter — we always fetch all invoices so no tab causes a missing subset
+function filterInvoices(invoices: Invoice[], tab: StatusFilter): Invoice[] {
+  if (tab === 'all')         return invoices;
+  if (tab === 'outstanding') return invoices.filter((i) => ['issued', 'partially_paid', 'overdue'].includes(i.status));
+  if (tab === 'paid')        return invoices.filter((i) => i.status === 'paid');
+  if (tab === 'overdue')     return invoices.filter((i) => i.status === 'overdue');
+  return invoices;
+}
 
 // ─── Page ─────────────────────────────────────────────────────────────────────
 
 export default function MemberInvoicesPage() {
   const [activeTab, setActiveTab] = useState<StatusFilter>('all');
-  const { data: invoicesData, isLoading } = useMyInvoices(activeTab === 'all' ? undefined : activeTab);
+  const { data: invoicesData, isLoading, isError, refetch } = useMyInvoices();
 
-  const invoices = invoicesData?.invoices ?? [];
+  const allInvoices = invoicesData?.invoices ?? [];
+  const invoices    = filterInvoices(allInvoices, activeTab);
 
   return (
     <PageShell>
@@ -155,6 +165,16 @@ export default function MemberInvoicesPage() {
             <Skeleton key={i} className="h-32 w-full rounded-xl" />
           ))}
         </div>
+      ) : isError ? (
+        <Card className="border-destructive/30">
+          <CardContent className="py-10 flex flex-col items-center gap-3 text-center">
+            <AlertTriangle className="h-6 w-6 text-destructive" />
+            <p className="text-sm text-muted-foreground">Failed to load invoices.</p>
+            <Button variant="outline" size="sm" onClick={() => refetch()}>
+              Try again
+            </Button>
+          </CardContent>
+        </Card>
       ) : invoices.length === 0 ? (
         <Card>
           <CardContent className="py-10 text-center text-muted-foreground text-sm">

@@ -72,7 +72,9 @@ function fmtDate(iso: string) {
 
 function genderLabel(v?: string) {
   if (!v) return null;
-  const map: Record<string, string> = { male: 'Male', female: 'Female', other: 'Prefer not to say' };
+  const map: Record<string, string> = {
+    male: 'Male', female: 'Female', other: 'Other', prefer_not_to_say: 'Prefer not to say',
+  };
   return map[v] ?? v;
 }
 
@@ -111,6 +113,7 @@ interface MyProfile {
   phone?: string;
   gender?: string;
   age?: number;
+  dateOfBirth?: string;
   country?: string;
   city?: string;
   address?: string;
@@ -387,6 +390,109 @@ function BranchManagerCard({ profile }: { profile: MyProfile }) {
   );
 }
 
+// ─── Member Personal Info Card ────────────────────────────────────────────────
+
+function MemberInfoCard({ profile }: { profile: MyProfile }) {
+  const hasExtra = profile.phone || profile.gender || profile.age || profile.dateOfBirth
+    || profile.country || profile.city || profile.address;
+
+  if (!hasExtra) return null;
+
+  return (
+    <Card>
+      <CardHeader className="pb-3">
+        <div className="flex items-center gap-2">
+          <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary/10">
+            <User className="h-4 w-4 text-primary" />
+          </div>
+          <CardTitle className="text-base">Personal Information</CardTitle>
+        </div>
+      </CardHeader>
+      <CardContent className="space-y-3">
+        <div className="grid sm:grid-cols-2 gap-3">
+          {profile.phone && (
+            <div className="flex items-center gap-3">
+              <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-muted flex-shrink-0">
+                <Phone className="h-4 w-4 text-muted-foreground" />
+              </div>
+              <div className="min-w-0">
+                <p className="text-xs text-muted-foreground">Phone</p>
+                <p className="text-sm font-medium">{profile.phone}</p>
+              </div>
+            </div>
+          )}
+          {profile.gender && (
+            <div className="flex items-center gap-3">
+              <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-muted flex-shrink-0">
+                <User className="h-4 w-4 text-muted-foreground" />
+              </div>
+              <div className="min-w-0">
+                <p className="text-xs text-muted-foreground">Gender</p>
+                <p className="text-sm font-medium capitalize">{genderLabel(profile.gender)}</p>
+              </div>
+            </div>
+          )}
+          {profile.age != null && (
+            <div className="flex items-center gap-3">
+              <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-muted flex-shrink-0">
+                <Calendar className="h-4 w-4 text-muted-foreground" />
+              </div>
+              <div className="min-w-0">
+                <p className="text-xs text-muted-foreground">Age</p>
+                <p className="text-sm font-medium">{profile.age} years</p>
+              </div>
+            </div>
+          )}
+          {profile.dateOfBirth && (
+            <div className="flex items-center gap-3">
+              <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-muted flex-shrink-0">
+                <Calendar className="h-4 w-4 text-muted-foreground" />
+              </div>
+              <div className="min-w-0">
+                <p className="text-xs text-muted-foreground">Date of Birth</p>
+                <p className="text-sm font-medium">{fmtDate(profile.dateOfBirth)}</p>
+              </div>
+            </div>
+          )}
+          {profile.country && (
+            <div className="flex items-center gap-3">
+              <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-muted flex-shrink-0">
+                <Globe className="h-4 w-4 text-muted-foreground" />
+              </div>
+              <div className="min-w-0">
+                <p className="text-xs text-muted-foreground">Country</p>
+                <p className="text-sm font-medium">{profile.country}</p>
+              </div>
+            </div>
+          )}
+          {profile.city && (
+            <div className="flex items-center gap-3">
+              <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-muted flex-shrink-0">
+                <MapPin className="h-4 w-4 text-muted-foreground" />
+              </div>
+              <div className="min-w-0">
+                <p className="text-xs text-muted-foreground">City</p>
+                <p className="text-sm font-medium">{profile.city}</p>
+              </div>
+            </div>
+          )}
+          {profile.address && (
+            <div className="flex items-start gap-3 sm:col-span-2">
+              <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-muted flex-shrink-0">
+                <Home className="h-4 w-4 text-muted-foreground" />
+              </div>
+              <div className="min-w-0">
+                <p className="text-xs text-muted-foreground">Address</p>
+                <p className="text-sm font-medium">{profile.address}</p>
+              </div>
+            </div>
+          )}
+        </div>
+      </CardContent>
+    </Card>
+  );
+}
+
 // ─── Trainer Professional Info Card ───────────────────────────────────────────
 
 function TrainerProfessionalCard() {
@@ -657,9 +763,10 @@ function TrainerRatingsCard() {
 // ─── Edit Profile Dialog ──────────────────────────────────────────────────────
 
 const GENDER_OPTIONS = [
-  { value: 'male',   label: 'Male'              },
-  { value: 'female', label: 'Female'            },
-  { value: 'other',  label: 'Prefer not to say' },
+  { value: 'male',             label: 'Male'              },
+  { value: 'female',           label: 'Female'            },
+  { value: 'other',            label: 'Other'             },
+  { value: 'prefer_not_to_say', label: 'Prefer not to say' },
 ];
 
 interface EditProfileValues {
@@ -952,6 +1059,11 @@ export default function ProfilePage() {
           )}
         </CardContent>
       </Card>
+
+      {/* Member personal info card */}
+      {user.role === 'member' && myProfile && (
+        <MemberInfoCard profile={myProfile} />
+      )}
 
       {/* Branch Manager details card */}
       {isBranchManager && myProfile && (

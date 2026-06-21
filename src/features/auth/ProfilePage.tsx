@@ -34,6 +34,7 @@ import {
   useMyTrainerProfile,
   useMyTrainerRatings,
 } from '@/features/trainer-portal/hooks/use-trainer-portal';
+import { COUNTRY_BY_NAME } from '@/config/world-countries';
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -390,7 +391,23 @@ function BranchManagerCard({ profile }: { profile: MyProfile }) {
   );
 }
 
-// ─── Member Personal Info Card ────────────────────────────────────────────────
+// ─── Personal Info Card (members, gym owners, staff) ─────────────────────────
+
+function InfoRow({ icon: Icon, label, value, colSpan2 = false }: {
+  icon: React.ElementType; label: string; value: React.ReactNode; colSpan2?: boolean;
+}) {
+  return (
+    <div className={cn('flex items-start gap-3', colSpan2 && 'sm:col-span-2')}>
+      <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-muted flex-shrink-0 mt-0.5">
+        <Icon className="h-4 w-4 text-muted-foreground" />
+      </div>
+      <div className="min-w-0">
+        <p className="text-xs text-muted-foreground">{label}</p>
+        <p className="text-sm font-medium">{value}</p>
+      </div>
+    </div>
+  );
+}
 
 function MemberInfoCard({ profile }: { profile: MyProfile }) {
   const hasExtra = profile.phone || profile.gender || profile.age || profile.dateOfBirth
@@ -408,86 +425,76 @@ function MemberInfoCard({ profile }: { profile: MyProfile }) {
           <CardTitle className="text-base">Personal Information</CardTitle>
         </div>
       </CardHeader>
-      <CardContent className="space-y-3">
+      <CardContent>
         <div className="grid sm:grid-cols-2 gap-3">
-          {profile.phone && (
-            <div className="flex items-center gap-3">
-              <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-muted flex-shrink-0">
-                <Phone className="h-4 w-4 text-muted-foreground" />
-              </div>
-              <div className="min-w-0">
-                <p className="text-xs text-muted-foreground">Phone</p>
-                <p className="text-sm font-medium">{profile.phone}</p>
-              </div>
-            </div>
-          )}
-          {profile.gender && (
-            <div className="flex items-center gap-3">
-              <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-muted flex-shrink-0">
-                <User className="h-4 w-4 text-muted-foreground" />
-              </div>
-              <div className="min-w-0">
-                <p className="text-xs text-muted-foreground">Gender</p>
-                <p className="text-sm font-medium capitalize">{genderLabel(profile.gender)}</p>
-              </div>
-            </div>
-          )}
-          {profile.age != null && (
-            <div className="flex items-center gap-3">
-              <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-muted flex-shrink-0">
-                <Calendar className="h-4 w-4 text-muted-foreground" />
-              </div>
-              <div className="min-w-0">
-                <p className="text-xs text-muted-foreground">Age</p>
-                <p className="text-sm font-medium">{profile.age} years</p>
-              </div>
-            </div>
-          )}
-          {profile.dateOfBirth && (
-            <div className="flex items-center gap-3">
-              <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-muted flex-shrink-0">
-                <Calendar className="h-4 w-4 text-muted-foreground" />
-              </div>
-              <div className="min-w-0">
-                <p className="text-xs text-muted-foreground">Date of Birth</p>
-                <p className="text-sm font-medium">{fmtDate(profile.dateOfBirth)}</p>
-              </div>
-            </div>
-          )}
-          {profile.country && (
-            <div className="flex items-center gap-3">
-              <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-muted flex-shrink-0">
-                <Globe className="h-4 w-4 text-muted-foreground" />
-              </div>
-              <div className="min-w-0">
-                <p className="text-xs text-muted-foreground">Country</p>
-                <p className="text-sm font-medium">{profile.country}</p>
-              </div>
-            </div>
-          )}
-          {profile.city && (
-            <div className="flex items-center gap-3">
-              <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-muted flex-shrink-0">
-                <MapPin className="h-4 w-4 text-muted-foreground" />
-              </div>
-              <div className="min-w-0">
-                <p className="text-xs text-muted-foreground">City</p>
-                <p className="text-sm font-medium">{profile.city}</p>
-              </div>
-            </div>
-          )}
-          {profile.address && (
-            <div className="flex items-start gap-3 sm:col-span-2">
-              <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-muted flex-shrink-0">
-                <Home className="h-4 w-4 text-muted-foreground" />
-              </div>
-              <div className="min-w-0">
-                <p className="text-xs text-muted-foreground">Address</p>
-                <p className="text-sm font-medium">{profile.address}</p>
-              </div>
-            </div>
-          )}
+          {profile.phone      && <InfoRow icon={Phone}    label="Phone"         value={profile.phone} />}
+          {profile.gender     && <InfoRow icon={User}     label="Gender"        value={genderLabel(profile.gender) ?? '—'} />}
+          {profile.age != null && <InfoRow icon={Calendar} label="Age"          value={`${profile.age} years`} />}
+          {profile.dateOfBirth && <InfoRow icon={Calendar} label="Date of Birth" value={fmtDate(profile.dateOfBirth)} />}
+          {profile.country    && <InfoRow icon={Globe}    label="Country"       value={profile.country} />}
+          {profile.city       && <InfoRow icon={MapPin}   label="City"          value={profile.city} />}
+          {profile.address    && <InfoRow icon={Home}     label="Address"       value={profile.address} colSpan2 />}
         </div>
+      </CardContent>
+    </Card>
+  );
+}
+
+// ─── Gym Owner: personal + org info card ──────────────────────────────────────
+
+function GymOwnerInfoCard({ profile }: { profile: MyProfile }) {
+  const { data: tenantData } = useGetMyTenant({ query: { staleTime: 1000 * 60 * 5 } });
+  const tenant    = tenantData?.data as any;
+  const gymName   = tenant?.businessName ?? tenant?.name ?? null;
+  const country   = tenant?.country ?? null;
+  const currency  = tenant?.settings?.currency ?? null;
+  const currSym   = tenant?.settings?.currencySymbol ?? null;
+  const phone     = tenant?.contactPhone ?? null;
+
+  return (
+    <Card>
+      <CardHeader className="pb-3">
+        <div className="flex items-center gap-2">
+          <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary/10">
+            <Building2 className="h-4 w-4 text-primary" />
+          </div>
+          <CardTitle className="text-base">Organisation Details</CardTitle>
+        </div>
+      </CardHeader>
+      <CardContent className="space-y-4">
+
+        {/* Gym name */}
+        {gymName && (
+          <div className="grid sm:grid-cols-2 gap-3">
+            <InfoRow icon={Building2} label="Business Name" value={gymName} />
+            {phone    && <InfoRow icon={Phone}  label="Contact Phone"  value={phone} />}
+            {country  && <InfoRow icon={Globe}  label="Country"        value={country} />}
+            {currency && (
+              <InfoRow
+                icon={CreditCard}
+                label="Default Currency"
+                value={<span>{currSym ? `${currSym} ` : ''}<span className="font-mono">{currency}</span></span>}
+              />
+            )}
+          </div>
+        )}
+
+        {/* Owner's own personal info if any exist */}
+        {(profile.phone || profile.gender || profile.age || profile.country || profile.city || profile.address) && (
+          <>
+            <Separator />
+            <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Your Personal Info</p>
+            <div className="grid sm:grid-cols-2 gap-3">
+              {profile.phone      && <InfoRow icon={Phone}    label="Phone"   value={profile.phone} />}
+              {profile.gender     && <InfoRow icon={User}     label="Gender"  value={genderLabel(profile.gender) ?? '—'} />}
+              {profile.age != null && <InfoRow icon={Calendar} label="Age"   value={`${profile.age} years`} />}
+              {profile.country    && <InfoRow icon={Globe}    label="Country" value={profile.country} />}
+              {profile.city       && <InfoRow icon={MapPin}   label="City"    value={profile.city} />}
+              {profile.address    && <InfoRow icon={Home}     label="Address" value={profile.address} colSpan2 />}
+            </div>
+          </>
+        )}
+
       </CardContent>
     </Card>
   );
@@ -763,11 +770,14 @@ function TrainerRatingsCard() {
 // ─── Edit Profile Dialog ──────────────────────────────────────────────────────
 
 const GENDER_OPTIONS = [
-  { value: 'male',             label: 'Male'              },
-  { value: 'female',           label: 'Female'            },
-  { value: 'other',            label: 'Other'             },
+  { value: 'male',              label: 'Male'              },
+  { value: 'female',            label: 'Female'            },
+  { value: 'other',             label: 'Other'             },
   { value: 'prefer_not_to_say', label: 'Prefer not to say' },
 ];
+
+// Sentinel used inside the Select only — never sent to the server
+const GENDER_NONE = '__none__';
 
 interface EditProfileValues {
   firstName: string;
@@ -793,34 +803,61 @@ function EditProfileDialog({
   const qc = useQueryClient();
   const [saving, setSaving] = useState(false);
 
-  const { register, handleSubmit, reset, control, formState: { errors } } = useForm<EditProfileValues>({
+  // Load enabled countries from /auth/countries — available to all authenticated roles
+  const { data: countriesData, isLoading: countriesLoading } = useQuery({
+    queryKey: ['auth', 'countries'],
+    queryFn: async () => {
+      const res = await api.get('/auth/countries');
+      return res.data?.data as { enabledCountries: { name: string; code: string; currencyCode: string; currencySymbol: string }[] };
+    },
+    staleTime: 10 * 60 * 1000,
+  });
+  const allCountries = countriesData?.enabledCountries ?? [];
+
+  // Phone placeholder from COUNTRY_BY_NAME
+  const [phonePlaceholder, setPhonePlaceholder] = useState('e.g. +92 312-3456789');
+
+  const { register, handleSubmit, reset, control, watch, setValue, formState: { errors } } = useForm<EditProfileValues>({
     defaultValues: {
-      firstName: profile?.firstName ?? '',
-      lastName:  profile?.lastName  ?? '',
-      phone:     profile?.phone     ?? '',
-      gender:    profile?.gender    ?? '',
-      age:       profile?.age ? String(profile.age) : '',
-      country:   profile?.country   ?? '',
-      city:      profile?.city      ?? '',
-      address:   profile?.address   ?? '',
+      firstName: '',
+      lastName:  '',
+      phone:     '',
+      gender:    GENDER_NONE,
+      age:       '',
+      country:   '',
+      city:      '',
+      address:   '',
     },
   });
 
   // Populate form whenever dialog opens or profile data arrives
   useEffect(() => {
     if (open && profile) {
+      const country = profile.country ?? '';
       reset({
         firstName: profile.firstName ?? '',
         lastName:  profile.lastName  ?? '',
         phone:     profile.phone     ?? '',
-        gender:    profile.gender    ?? '',
-        age:       profile.age ? String(profile.age) : '',
-        country:   profile.country   ?? '',
-        city:      profile.city      ?? '',
-        address:   profile.address   ?? '',
+        gender:    profile.gender    ?? GENDER_NONE,
+        age:       profile.age != null ? String(profile.age) : '',
+        country,
+        city:      profile.city    ?? '',
+        address:   profile.address ?? '',
       });
+      // Set phone placeholder from stored country
+      if (country) {
+        const meta = COUNTRY_BY_NAME.get(country);
+        if (meta) setPhonePlaceholder(meta.phoneExample);
+      }
     }
-  }, [open, profile]);
+  }, [open, profile, reset]);
+
+  // Update phone placeholder when country changes
+  function handleCountryChange(countryName: string) {
+    setValue('country', countryName);
+    const meta = COUNTRY_BY_NAME.get(countryName);
+    setPhonePlaceholder(meta?.phoneExample ?? 'e.g. +1 (212) 555-0147');
+  }
 
   function onClose() {
     reset();
@@ -830,41 +867,50 @@ function EditProfileDialog({
   async function onSubmit(data: EditProfileValues) {
     setSaving(true);
     try {
-      const payload: Record<string, any> = {
-        firstName: data.firstName,
-        lastName:  data.lastName,
-        phone:     data.phone   || undefined,
-        gender:    data.gender  || undefined,
-        age:       data.age     ? Number(data.age) : undefined,
-        country:   data.country || undefined,
-        city:      data.city    || undefined,
-        address:   data.address || undefined,
+      // Sanitise before sending:
+      // - GENDER_NONE sentinel → omit from payload (don't clear an existing value by accident)
+      // - empty strings → omit (keeps existing value) except we intentionally clear
+      const genderToSend = (data.gender && data.gender !== GENDER_NONE)
+        ? data.gender
+        : undefined;
+
+      const payload: Record<string, unknown> = {
+        firstName: data.firstName.trim(),
+        lastName:  data.lastName.trim(),
+        ...(data.phone.trim()   && { phone:   data.phone.trim()   }),
+        ...(genderToSend        && { gender:  genderToSend        }),
+        ...(data.age            && { age:     Number(data.age)    }),
+        ...(data.country        && { country: data.country        }),
+        ...(data.city.trim()    && { city:    data.city.trim()    }),
+        ...(data.address.trim() && { address: data.address.trim() }),
       };
 
       const res = await api.patch('/auth/me', payload);
       const updated = res.data?.data;
 
-      // Update auth store name
+      // Keep auth store name in sync
       if (user && accessToken) {
         const newName = `${updated?.firstName ?? data.firstName} ${updated?.lastName ?? data.lastName}`.trim();
         setAuth({ ...user, name: newName }, accessToken);
       }
 
-      // Refresh profile cache
+      // Refresh profile cache so the page re-renders with new data
       await qc.invalidateQueries({ queryKey: ['auth', 'me'] });
 
-      toast({ title: 'Profile updated' });
+      toast({ title: 'Profile updated successfully' });
       onClose();
     } catch (err: any) {
       toast({
         variant: 'destructive',
         title: 'Update failed',
-        description: err?.response?.data?.message || 'Something went wrong.',
+        description: err?.response?.data?.message ?? 'Something went wrong.',
       });
     } finally {
       setSaving(false);
     }
   }
+
+  const watchedCountry = watch('country');
 
   return (
     <Dialog open={open} onOpenChange={onClose}>
@@ -888,10 +934,51 @@ function EditProfileDialog({
             </div>
           </div>
 
-          {/* Phone */}
+          {/* Country — dropdown from enabled list */}
           <div className="space-y-1.5">
-            <Label htmlFor="ep-phone">Phone</Label>
-            <Input id="ep-phone" type="tel" placeholder="+92 300 0000000" {...register('phone')} />
+            <Label>Country</Label>
+            <Controller
+              control={control}
+              name="country"
+              render={({ field }) => (
+                <Select
+                  value={field.value}
+                  onValueChange={(v) => { field.onChange(v); handleCountryChange(v); }}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select country…" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {countriesLoading ? (
+                      <SelectItem value="__loading__" disabled>Loading countries…</SelectItem>
+                    ) : (
+                      allCountries.map((c) => (
+                        <SelectItem key={c.code} value={c.name}>{c.name}</SelectItem>
+                      ))
+                    )}
+                  </SelectContent>
+                </Select>
+              )}
+            />
+          </div>
+
+          {/* Phone — placeholder updates based on country */}
+          <div className="space-y-1.5">
+            <Label htmlFor="ep-phone">
+              Phone
+              {watchedCountry && (
+                <span className="ml-1.5 text-xs text-muted-foreground font-normal">
+                  e.g. {phonePlaceholder}
+                </span>
+              )}
+            </Label>
+            <Input
+              id="ep-phone"
+              type="tel"
+              inputMode="numeric"
+              placeholder={watchedCountry ? phonePlaceholder : 'Select a country first'}
+              {...register('phone')}
+            />
           </div>
 
           {/* Gender + Age */}
@@ -907,7 +994,7 @@ function EditProfileDialog({
                       <SelectValue placeholder="Select…" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="__none__">— Not specified —</SelectItem>
+                      <SelectItem value={GENDER_NONE}>— Not specified —</SelectItem>
                       {GENDER_OPTIONS.map((o) => (
                         <SelectItem key={o.value} value={o.value}>{o.label}</SelectItem>
                       ))}
@@ -920,12 +1007,6 @@ function EditProfileDialog({
               <Label htmlFor="ep-age">Age</Label>
               <Input id="ep-age" type="number" min={16} max={100} placeholder="e.g. 28" {...register('age')} />
             </div>
-          </div>
-
-          {/* Country */}
-          <div className="space-y-1.5">
-            <Label htmlFor="ep-country">Country</Label>
-            <Input id="ep-country" placeholder="e.g. Pakistan" {...register('country')} />
           </div>
 
           {/* City */}
@@ -1063,6 +1144,11 @@ export default function ProfilePage() {
       {/* Member personal info card */}
       {user.role === 'member' && myProfile && (
         <MemberInfoCard profile={myProfile} />
+      )}
+
+      {/* Gym owner: org details + personal info */}
+      {isGymOwner && myProfile && (
+        <GymOwnerInfoCard profile={myProfile} />
       )}
 
       {/* Branch Manager details card */}

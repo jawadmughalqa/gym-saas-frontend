@@ -13,13 +13,13 @@ import {
 } from './ReportsShared';
 import type { DatePreset } from './ReportsShared';
 
-export default function MembersTab() {
+export default function MembersTab({ branchId }: { branchId?: string }) {
   const [preset, setPreset] = useState<DatePreset>('6m');
   const { dateFrom, dateTo } = getDateRange(preset);
   const granularity = granularityForPreset(preset) as GetReportsMembersGranularity;
 
   const { data, isLoading } = useGetReportsMembers(
-    { dateFrom, dateTo, granularity, includeChurn: true },
+    { dateFrom, dateTo, granularity, includeChurn: true, ...(branchId ? { branchId } : {}) },
     { query: { staleTime: 300_000 } },
   );
   const d = data?.data as Record<string, any> | undefined;

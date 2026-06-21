@@ -338,6 +338,7 @@ function PaymentSummaryCard() {
 
 export default function DashboardPage() {
   const user = useAuthStore((s) => s.user);
+  const isBranchManager = user?.role === 'branch_manager';
 
   const today = new Date().toLocaleDateString('en-GB', {
     weekday: 'long',
@@ -348,9 +349,20 @@ export default function DashboardPage() {
 
   const firstName = user?.name?.split(' ')[0] ?? 'there';
 
+  // For branch managers, scope KPI cards to their first branch.
+  // useGetBranches is already scoped server-side to the BM's assigned branches.
+  const { data: bmBranchesData } = useGetBranches(
+    { limit: 10 },
+    { query: { enabled: isBranchManager } },
+  );
+  const bmFirstBranch = isBranchManager ? (bmBranchesData?.data?.[0] ?? null) : null;
+  const bmBranchId    = bmFirstBranch?._id ?? undefined;
+  const bmBranchName  = (bmFirstBranch as any)?.name ?? null;
+
   // Reports dashboard — KPI cards
   const { data: dashData, isLoading: dashLoading } = useGetReportsDashboard(
-    undefined,
+    // Branch managers are scoped to their branch; owners get the whole tenant
+    bmBranchId ? { branchId: bmBranchId } : undefined,
     { query: { staleTime: 0, refetchOnMount: true, refetchOnWindowFocus: true } },
   );
   const d = dashData?.data as Record<string, any> | undefined;
@@ -363,6 +375,10 @@ export default function DashboardPage() {
   const overdueInvoices    = (d?.alerts?.overdueInvoices     ?? 0) as number;
   const expiringSoon       = (d?.subscriptions?.expiringSoon ?? 0) as number;
   const openWorkOrders     = (d?.alerts?.openWorkOrders      ?? 0) as number;
+
+  const membersSubtitle = isBranchManager
+    ? (bmBranchName ? `At ${bmBranchName}` : 'At your branch')
+    : 'Across all branches';
 
   return (
     <PageShell>
@@ -378,7 +394,7 @@ export default function DashboardPage() {
           value={dashLoading ? '—' : String(members.active ?? 0)}
           icon={Users}
           iconClassName="bg-primary/10 text-primary"
-          subtitle="Across all branches"
+          subtitle={membersSubtitle}
         />
         <StatCard
           title="Revenue This Month"

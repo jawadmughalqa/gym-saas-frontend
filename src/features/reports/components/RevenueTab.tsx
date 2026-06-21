@@ -15,13 +15,13 @@ import {
 } from './ReportsShared';
 import type { DatePreset } from './ReportsShared';
 
-export default function RevenueTab() {
+export default function RevenueTab({ branchId }: { branchId?: string }) {
   const [preset, setPreset] = useState<DatePreset>('30d');
   const { dateFrom, dateTo } = getDateRange(preset);
   const granularity = granularityForPreset(preset) as GetReportsRevenueGranularity;
 
   const { data, isLoading } = useGetReportsRevenue(
-    { dateFrom, dateTo, granularity },
+    { dateFrom, dateTo, granularity, ...(branchId ? { branchId } : {}) },
     { query: { staleTime: 300_000 } },
   );
   const d = data?.data as Record<string, any> | undefined;

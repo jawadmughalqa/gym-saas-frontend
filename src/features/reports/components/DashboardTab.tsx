@@ -9,8 +9,8 @@ import { formatCurrencyCompact } from '@/utils/format';
 import { useGetReportsDashboard } from '@/api/generated/reports/reports';
 import { GrowthBadge, SectionTitle } from './ReportsShared';
 
-export default function DashboardTab() {
-  const { data, isLoading } = useGetReportsDashboard(undefined, {
+export default function DashboardTab({ branchId }: { branchId?: string }) {
+  const { data, isLoading } = useGetReportsDashboard(branchId ? { branchId } : undefined, {
     query: { staleTime: 60_000 },
   });
   const d = data?.data as Record<string, any> | undefined;

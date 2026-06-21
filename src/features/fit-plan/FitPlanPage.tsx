@@ -51,7 +51,7 @@ function FitPlanPageContent() {
   const year  = currentDate.getFullYear();
   const calendarParams = { month, year };
 
-  const { data: fitPlanRes, isLoading: loadingPlan, refetch: refetchPlan } = useMyFitPlan();
+  const { data: fitPlanRes, isLoading: loadingPlan } = useMyFitPlan();
   const { data: streakRes,  isLoading: loadingStreak } = useFitPlanStreak();
   const { data: calRes,     isLoading: loadingCal }  = useFitPlanCalendar(calendarParams);
   const useFreeze = useUseFreeze(calendarParams);
@@ -78,7 +78,7 @@ function FitPlanPageContent() {
 
   function handleEditComplete() {
     setEditMode(false);
-    void refetchPlan();
+    // cache already invalidated+awaited inside the mutation hook before onComplete fires
   }
 
   if (loadingPlan) {
@@ -100,7 +100,7 @@ function FitPlanPageContent() {
   if (!hasPlan) {
     return (
       <PageShell>
-        <GoalSetupFlow onComplete={() => refetchPlan()} />
+        <GoalSetupFlow />
       </PageShell>
     );
   }

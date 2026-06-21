@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { format } from 'date-fns';
-import { Plus, Scale, TrendingDown, TrendingUp, Minus } from 'lucide-react';
+import { Plus, Scale, TrendingDown, TrendingUp, Minus, ArrowLeft } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 import {
   LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip,
   ResponsiveContainer,
@@ -45,6 +46,7 @@ function CompletionRing({ pct }: { pct: number }) {
 
 export default function ProgressPage() {
   const [checkInOpen, setCheckInOpen] = useState(false);
+  const navigate = useNavigate();
 
   const { data: planRes  } = useMyFitPlan();
   const { data: statsRes, isLoading: loadingStats } = useFitPlanStats();
@@ -55,15 +57,16 @@ export default function ProgressPage() {
   const checkIns    = checkInsRes?.data ?? [];
   const contribution = stats?.contributionDays ?? [];
 
-  // Build weight chart data — oldest first
-  const weightData = [...checkIns].reverse().map((c) => ({
+  // Backend returns check-ins oldest-first (chronological order).
+  // Build weight chart data directly — already in correct oldest→newest order for the chart.
+  const weightData = checkIns.map((c) => ({
     date:   c.date ? format(new Date(c.date), 'MMM d') : '',
     weight: c.weight,
   }));
 
-  // Weight delta: first vs last
-  const firstWeight = checkIns[checkIns.length - 1]?.weight;
-  const lastWeight  = checkIns[0]?.weight;
+  // firstWeight = oldest check-in, lastWeight = most recent (current)
+  const firstWeight = checkIns[0]?.weight;
+  const lastWeight  = checkIns[checkIns.length - 1]?.weight;
   const delta = firstWeight != null && lastWeight != null
     ? +(lastWeight - firstWeight).toFixed(1)
     : null;
@@ -75,10 +78,16 @@ export default function ProgressPage() {
         title="Progress"
         description="Track your weight and workout consistency"
         actions={
-          <Button size="sm" onClick={() => setCheckInOpen(true)}>
-            <Plus className="h-4 w-4 mr-1.5" />
-            Log Check-In
-          </Button>
+          <div className="flex items-center gap-2">
+            <Button variant="outline" size="sm" onClick={() => navigate('/member/fit-plan')}>
+              <ArrowLeft className="h-4 w-4 mr-1.5" />
+              Back to FitPlan
+            </Button>
+            <Button size="sm" onClick={() => setCheckInOpen(true)}>
+              <Plus className="h-4 w-4 mr-1.5" />
+              Log Check-In
+            </Button>
+          </div>
         }
       />
 

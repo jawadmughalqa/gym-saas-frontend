@@ -60,28 +60,31 @@ export function useFitPlanCheckIns(params?: GetFitPlanCheckInsParams) {
 
 function useInvalidateFitPlan() {
   const qc = useQueryClient();
-  return (date?: string, calendarParams?: GetFitPlanCalendarParams) => {
-    qc.invalidateQueries({ queryKey: getGetMyFitPlanQueryKey() });
-    qc.invalidateQueries({ queryKey: getGetFitPlanStreakQueryKey() });
-    qc.invalidateQueries({ queryKey: getGetFitPlanStatsQueryKey() });
-    if (date) {
-      qc.invalidateQueries({ queryKey: getGetFitPlanDayQueryKey(date) });
-    }
-    if (calendarParams) {
-      qc.invalidateQueries({ queryKey: getGetFitPlanCalendarQueryKey(calendarParams) });
-    }
+  return async (date?: string, _calendarParams?: GetFitPlanCalendarParams) => {
+    await Promise.all([
+      qc.invalidateQueries({ queryKey: getGetMyFitPlanQueryKey() }),
+      qc.invalidateQueries({ queryKey: getGetFitPlanStreakQueryKey() }),
+      qc.invalidateQueries({ queryKey: getGetFitPlanStatsQueryKey() }),
+      // Always invalidate ALL calendar months/years (prefix match — no params = wildcard)
+      qc.invalidateQueries({ queryKey: getGetFitPlanCalendarQueryKey() }),
+      // Invalidate specific day detail if provided
+      date ? qc.invalidateQueries({ queryKey: getGetFitPlanDayQueryKey(date) }) : Promise.resolve(),
+    ]);
   };
 }
 
 // ─── Mutation wrappers ────────────────────────────────────────────────────────
 
-export function useSetupFitPlanMutation() {
+export function useSetupFitPlanMutation(onDone?: () => void) {
   const invalidate = useInvalidateFitPlan();
   return useSetupFitPlan({
     mutation: {
-      onSuccess: () => {
-        invalidate();
+      onSuccess: async () => {
+        await Promise.all([
+          invalidate(),
+        ]);
         toast({ title: 'FitPlan created', description: 'Your fitness plan is ready!' });
+        onDone?.();
       },
       onError: (err) => {
         toast({ variant: 'destructive', title: 'Failed to create FitPlan', description: getErrorMessage(err) });
@@ -90,13 +93,16 @@ export function useSetupFitPlanMutation() {
   });
 }
 
-export function useUpdateFitPlanMutation() {
+export function useUpdateFitPlanMutation(onDone?: () => void) {
   const invalidate = useInvalidateFitPlan();
   return useUpdateFitPlan({
     mutation: {
-      onSuccess: () => {
-        invalidate();
+      onSuccess: async () => {
+        await Promise.all([
+          invalidate(),
+        ]);
         toast({ title: 'FitPlan updated' });
+        onDone?.();
       },
       onError: (err) => {
         toast({ variant: 'destructive', title: 'Update failed', description: getErrorMessage(err) });

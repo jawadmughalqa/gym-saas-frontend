@@ -13,7 +13,11 @@ import { Textarea } from '@/components/ui/textarea';
 import { useCheckInMutation } from '../hooks/use-fit-plan';
 
 const schema = z.object({
-  weight: z.coerce.number().positive('Weight must be positive'),
+  weight: z.coerce
+    .number({ invalid_type_error: 'Enter your weight' })
+    .positive('Weight must be positive')
+    .min(20, 'Weight must be at least 20 kg')
+    .max(400, 'Weight must be at most 400 kg'),
   notes:  z.string().max(500).optional(),
 });
 

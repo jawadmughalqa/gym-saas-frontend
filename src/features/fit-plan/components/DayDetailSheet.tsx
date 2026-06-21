@@ -55,7 +55,9 @@ export default function DayDetailSheet({ date, calendarParams, days, onClose }: 
   const nutrition = detail?.nutrition;
 
   const isSelectedToday = date ? isToday(parseISO(date)) : false;
-  const canComplete     = day?.status === 'planned' && isSelectedToday;
+  const isPastDay       = date ? parseISO(date) < new Date() && !isSelectedToday : false;
+  // Allow completing today's planned day OR any past planned day (retroactive logging)
+  const canComplete     = day?.status === 'planned' && (isSelectedToday || isPastDay);
   const alreadyDone = day?.status === 'completed';
 
   const typeConfig   = DAY_TYPE_CONFIG[day?.dayType ?? ''] ?? DAY_TYPE_CONFIG['full_body'];

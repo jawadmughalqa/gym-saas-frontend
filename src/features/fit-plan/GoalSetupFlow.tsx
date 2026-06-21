@@ -14,7 +14,7 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import { cn } from "@/lib/utils";
-import { useSetupFitPlanMutation } from "./hooks/use-fit-plan";
+import { useSetupFitPlanMutation, useUpdateFitPlanMutation } from "./hooks/use-fit-plan";
 
 // ─── Schema ───────────────────────────────────────────────────────────────────
 
@@ -26,7 +26,13 @@ const schema = z.object({
     .number({ invalid_type_error: "Enter your current weight" })
     .min(20, "Weight must be at least 20 kg")
     .max(400, "Weight must be at most 400 kg"),
-  targetWeight: z.coerce.number().min(20).max(400).optional().or(z.literal("")),
+  targetWeight: z.union([
+    z.literal(""),
+    z.coerce
+      .number({ invalid_type_error: 'Enter a valid weight' })
+      .min(20, 'Must be at least 20 kg')
+      .max(400, 'Must be at most 400 kg'),
+  ]).optional(),
   activityLevel: z.enum(["sedentary", "light", "moderate", "active", "very_active"], {
     required_error: "Please select your activity level",
   }),
@@ -47,7 +53,7 @@ type FormValues = z.infer<typeof schema>;
 
 const STEP_FIELDS: Record<number, (keyof FormValues)[]> = {
   0: ["goal"],
-  1: ["currentWeight", "activityLevel", "fitnessLevel"],
+  1: ["currentWeight", "targetWeight", "activityLevel", "fitnessLevel"],
   2: ["trainingDaysPerWeek"],
 };
 
@@ -117,7 +123,9 @@ interface GoalSetupFlowProps {
 
 export default function GoalSetupFlow({ onComplete, initialValues, mode = 'setup' }: GoalSetupFlowProps) {
   const [step, setStep] = useState(0);
-  const setup = useSetupFitPlanMutation();
+  const setupMutation  = useSetupFitPlanMutation(onComplete);
+  const updateMutation = useUpdateFitPlanMutation(onComplete);
+  const mutation = mode === 'edit' ? updateMutation : setupMutation;
 
   const form = useForm<FormValues>({
     resolver: zodResolver(schema),
@@ -152,7 +160,8 @@ export default function GoalSetupFlow({ onComplete, initialValues, mode = 'setup
         targetWeight:
           values.targetWeight === "" ? undefined : (values.targetWeight as number | undefined),
       };
-      setup.mutate({ data: payload }, { onSuccess: () => onComplete?.() });
+      // onComplete is called inside the mutation hook's onSuccess after awaiting cache invalidation
+      mutation.mutate({ data: payload });
     })();
   }
 
@@ -404,7 +413,7 @@ export default function GoalSetupFlow({ onComplete, initialValues, mode = 'setup
                 type="button"
                 variant="outline"
                 className="flex-1"
-                disabled={setup.isPending}
+                disabled={mutation.isPending}
                 onClick={() => setStep((s) => s - 1)}
               >
                 <ChevronLeft className="h-4 w-4 mr-1" /> Back
@@ -425,10 +434,10 @@ export default function GoalSetupFlow({ onComplete, initialValues, mode = 'setup
               <Button
                 type="button"
                 className="flex-1"
-                disabled={setup.isPending}
+                disabled={mutation.isPending}
                 onClick={handleSubmit}
               >
-                {setup.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                {mutation.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                 {mode === 'edit' ? 'Update My FitPlan 🔄' : 'Create My FitPlan 🚀'}
               </Button>
             )}

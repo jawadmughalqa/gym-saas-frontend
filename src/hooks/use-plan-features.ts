@@ -4,19 +4,21 @@ import type { TenantFeatureFlags } from '@/api/generated/schemas/tenantFeatureFl
 
 // All features ON — used only for super_admin (no tenant) and while loading
 const ALL_FEATURES_ENABLED: Required<TenantFeatureFlags> = {
-  members:       true,
-  trainers:      true,
-  billing:       true,
-  attendance:    true,
-  reports:       true,
-  expenses:      true,
-  branches:      true,
-  equipment:     true,
-  notifications: true,
-  discounts:     true,
-  fitPlan:       true,
-  memberPortal:  true,
-  walkInLeads:   true,
+  members:             true,
+  trainers:            true,
+  billing:             true,
+  attendance:          true,
+  reports:             true,
+  expenses:            true,
+  branches:            true,
+  equipment:           true,
+  notifications:       true,
+  discounts:           true,
+  fitPlan:             true,
+  memberPortal:        true,
+  walkInLeads:         true,
+  trainerPortal:       true,
+  branchManagerPortal: true,
 };
 
 export type PlanFeatureKey = keyof Required<TenantFeatureFlags>;
@@ -80,19 +82,21 @@ export function usePlanFeatures(): UsePlanFeaturesResult {
   const raw = data.data.featureFlags as Record<string, boolean | undefined>;
 
   const features: Required<TenantFeatureFlags> = {
-    members:       raw['members']       ?? true,
-    trainers:      raw['trainers']      ?? true,
-    billing:       raw['billing']       ?? true,
-    attendance:    raw['attendance']    ?? true,
-    reports:       raw['reports']       ?? false,
-    expenses:      raw['expenses']      ?? false,
-    branches:      raw['branches']      ?? false,
-    equipment:     raw['equipment']     ?? false,
-    notifications: raw['notifications'] ?? true,
-    discounts:     raw['discounts']     ?? false,
-    fitPlan:       raw['fitPlan']       ?? false,
-    memberPortal:  raw['memberPortal']  ?? true,
-    walkInLeads:   raw['walkInLeads']   ?? false,
+    members:             raw['members']             ?? true,
+    trainers:            raw['trainers']            ?? true,
+    billing:             raw['billing']             ?? true,
+    attendance:          raw['attendance']          ?? true,
+    reports:             raw['reports']             ?? true,
+    expenses:            raw['expenses']            ?? true,
+    branches:            raw['branches']            ?? false,
+    equipment:           raw['equipment']           ?? false,
+    notifications:       raw['notifications']       ?? true,
+    discounts:           raw['discounts']           ?? false,
+    fitPlan:             raw['fitPlan']             ?? false,
+    memberPortal:        raw['memberPortal']        ?? true,
+    walkInLeads:         raw['walkInLeads']         ?? true,
+    trainerPortal:       raw['trainerPortal']       ?? true,
+    branchManagerPortal: raw['branchManagerPortal'] ?? false,
   };
 
   return {

@@ -7,17 +7,19 @@
  */
 
 export interface TenantFeatureFlags {
-  members?:       boolean;
-  trainers?:      boolean;
-  billing?:       boolean;
-  attendance?:    boolean;
-  reports?:       boolean;
-  expenses?:      boolean;
-  branches?:      boolean;
-  equipment?:     boolean;
-  notifications?: boolean;
-  discounts?:     boolean;
-  fitPlan?:       boolean;
-  memberPortal?:  boolean;
-  walkInLeads?:   boolean;
+  members?:             boolean;
+  trainers?:            boolean;
+  billing?:             boolean;
+  attendance?:          boolean;
+  reports?:             boolean;
+  expenses?:            boolean;
+  branches?:            boolean;
+  equipment?:           boolean;
+  notifications?:       boolean;
+  discounts?:           boolean;
+  fitPlan?:             boolean;
+  memberPortal?:        boolean;
+  walkInLeads?:         boolean;
+  trainerPortal?:       boolean;
+  branchManagerPortal?: boolean;
 }

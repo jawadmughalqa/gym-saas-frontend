@@ -15,11 +15,11 @@ import type { PlanHistoryEntry } from './hooks/use-fit-plan';
 // ─── Config maps ──────────────────────────────────────────────────────────────
 
 const GOAL_CONFIG: Record<string, { label: string; emoji: string; color: string; bg: string }> = {
-  weight_loss: { label: 'Lose Weight',    emoji: '🔥', color: 'text-orange-600', bg: 'bg-orange-50 dark:bg-orange-950/40' },
-  muscle_gain: { label: 'Build Muscle',   emoji: '💪', color: 'text-blue-600',   bg: 'bg-blue-50 dark:bg-blue-950/40'   },
-  maintain:    { label: 'Stay Fit',       emoji: '⚖️', color: 'text-green-600',  bg: 'bg-green-50 dark:bg-green-950/40'  },
-  endurance:   { label: 'Build Endurance',emoji: '🏃', color: 'text-purple-600', bg: 'bg-purple-50 dark:bg-purple-950/40'},
-  recovery:    { label: 'Active Recovery',emoji: '🧘', color: 'text-teal-600',   bg: 'bg-teal-50 dark:bg-teal-950/40'   },
+  weight_loss: { label: 'Lose Weight',    emoji: '🔥', color: 'text-orange-600', bg: 'bg-orange-500/10 dark:bg-orange-950/40' },
+  muscle_gain: { label: 'Build Muscle',   emoji: '💪', color: 'text-blue-600',   bg: 'bg-blue-500/10 dark:bg-blue-950/40'   },
+  maintain:    { label: 'Stay Fit',       emoji: '⚖️', color: 'text-green-600',  bg: 'bg-green-500/10 dark:bg-green-950/40'  },
+  endurance:   { label: 'Build Endurance',emoji: '🏃', color: 'text-purple-600', bg: 'bg-purple-500/10 dark:bg-purple-950/40'},
+  recovery:    { label: 'Active Recovery',emoji: '🧘', color: 'text-teal-600',   bg: 'bg-teal-500/10 dark:bg-teal-950/40'   },
 };
 
 const FITNESS_LABEL: Record<string, string> = {
@@ -174,22 +174,22 @@ function PlanCard({ plan, index, total }: { plan: PlanHistoryEntry; index: numbe
           {/* Achievement badges */}
           <div className="flex flex-wrap gap-1.5">
             {plan.completionRate === 100 && (
-              <div className="flex items-center gap-1 text-[10px] font-semibold text-emerald-600 bg-emerald-50 dark:bg-emerald-950/40 px-2 py-1 rounded-full border border-emerald-200 dark:border-emerald-800">
+              <div className="flex items-center gap-1 text-[10px] font-semibold text-emerald-600 bg-emerald-500/10 dark:bg-emerald-950/40 px-2 py-1 rounded-full border border-emerald-500/25 dark:border-emerald-800">
                 <CheckCircle2 className="h-3 w-3" /> Perfect Completion
               </div>
             )}
             {plan.peakStreak >= 30 && (
-              <div className="flex items-center gap-1 text-[10px] font-semibold text-amber-600 bg-amber-50 dark:bg-amber-950/40 px-2 py-1 rounded-full border border-amber-200 dark:border-amber-800">
+              <div className="flex items-center gap-1 text-[10px] font-semibold text-amber-600 bg-amber-500/10 dark:bg-amber-950/40 px-2 py-1 rounded-full border border-amber-500/25 dark:border-amber-800">
                 <Trophy className="h-3 w-3" /> 30-Day Warrior
               </div>
             )}
             {plan.peakStreak >= 7 && plan.peakStreak < 30 && (
-              <div className="flex items-center gap-1 text-[10px] font-semibold text-yellow-600 bg-yellow-50 dark:bg-yellow-950/40 px-2 py-1 rounded-full border border-yellow-200 dark:border-yellow-800">
+              <div className="flex items-center gap-1 text-[10px] font-semibold text-yellow-600 bg-yellow-500/10 dark:bg-yellow-950/40 px-2 py-1 rounded-full border border-yellow-500/25 dark:border-yellow-800">
                 <Zap className="h-3 w-3" /> One Week Warrior
               </div>
             )}
             {plan.totalWorkouts >= 20 && (
-              <div className="flex items-center gap-1 text-[10px] font-semibold text-blue-600 bg-blue-50 dark:bg-blue-950/40 px-2 py-1 rounded-full border border-blue-200 dark:border-blue-800">
+              <div className="flex items-center gap-1 text-[10px] font-semibold text-blue-600 bg-blue-500/10 dark:bg-blue-950/40 px-2 py-1 rounded-full border border-blue-500/25 dark:border-blue-800">
                 <Dumbbell className="h-3 w-3" /> {plan.totalWorkouts}+ Sessions
               </div>
             )}

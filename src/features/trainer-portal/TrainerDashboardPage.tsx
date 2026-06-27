@@ -95,7 +95,7 @@ function ClientRow({ assignment }: { assignment: TrainerAssignmentItem }) {
             {assignment.sessionFrequencyPerWeek}x / week
           </Badge>
         )}
-        <Badge className="bg-green-100 text-green-700 border-green-200 hover:bg-green-100 text-xs">
+        <Badge className="bg-green-500/15 text-green-500 border-green-500/25 hover:bg-green-500/15 text-xs">
           Active
         </Badge>
       </div>

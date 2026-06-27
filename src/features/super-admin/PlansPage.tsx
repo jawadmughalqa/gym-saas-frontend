@@ -80,7 +80,7 @@ const FEATURE_FLAGS: FeatureFlagDef[] = [
   { key: 'reports',       label: 'Advanced Reports',  description: 'Analytics, revenue & growth reports', icon: BarChart3,   color: 'text-rose-500',   category: 'advanced' },
   { key: 'expenses',      label: 'Expenses',          description: 'Expense tracking & analytics',       icon: Receipt,     color: 'text-orange-500', category: 'advanced' },
   { key: 'branches',      label: 'Multi-Branch',      description: 'Multiple gym locations',             icon: GitBranch,   color: 'text-teal-500',   category: 'advanced' },
-  { key: 'equipment',     label: 'Equipment',         description: 'Equipment & maintenance management', icon: Wrench,      color: 'text-slate-500',  category: 'advanced' },
+  { key: 'equipment',     label: 'Equipment',         description: 'Equipment & maintenance management', icon: Wrench,      color: 'text-muted-foreground',  category: 'advanced' },
   { key: 'discounts',     label: 'Discounts',         description: 'Discount codes & promotions',        icon: Tag,         color: 'text-pink-500',   category: 'advanced' },
   { key: 'fitPlan',       label: 'FitPlan',           description: 'AI-powered personalised fitness plans', icon: Dumbbell, color: 'text-emerald-500', category: 'portal'  },
   { key: 'walkInLeads',   label: 'Walk-in Leads',     description: 'Track walk-in visitors & prospect CRM', icon: UserPlus, color: 'text-fuchsia-500', category: 'advanced' },
@@ -560,9 +560,9 @@ function CreatePlanDialog({
 
 function PlanCard({ plan, onEdit }: { plan: Plan; onEdit: () => void }) {
   const tierStyles: Record<string, { border: string; badge: string; accent: string }> = {
-    starter:    { border: 'border-slate-300',   badge: 'bg-slate-100 text-slate-700',   accent: 'text-slate-700' },
-    pro:        { border: 'border-purple-400',  badge: 'bg-purple-100 text-purple-700', accent: 'text-purple-700' },
-    enterprise: { border: 'border-amber-400',   badge: 'bg-amber-100 text-amber-700',   accent: 'text-amber-700' },
+    starter:    { border: 'border-border',   badge: 'bg-muted text-muted-foreground',   accent: 'text-muted-foreground' },
+    pro:        { border: 'border-purple-400',  badge: 'bg-purple-500/15 text-purple-500', accent: 'text-purple-500' },
+    enterprise: { border: 'border-amber-400',   badge: 'bg-amber-500/15 text-amber-500',   accent: 'text-amber-500' },
   };
 
   const planAny    = plan as Plan & { trialDays?: number; billingCycle?: string };

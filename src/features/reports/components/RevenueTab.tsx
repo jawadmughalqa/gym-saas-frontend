@@ -41,23 +41,23 @@ export default function RevenueTab({ branchId }: { branchId?: string }) {
 
       {/* KPI cards */}
       <div className="grid gap-4 sm:grid-cols-3">
-        <StatCard title="Gross Revenue"   value={formatCurrencyCompact(totals?.grossRevenue  ?? 0)} icon={DollarSign}   iconClassName="bg-emerald-500/10" />
-        <StatCard title="Net Revenue"     value={formatCurrencyCompact(totals?.netRevenue    ?? 0)} icon={DollarSign}   iconClassName="bg-green-500/10" />
-        <StatCard title="Total Refunded"  value={formatCurrencyCompact(totals?.totalRefunded ?? 0)} icon={TrendingDown} iconClassName="bg-amber-500/10" />
+        <StatCard title="Gross Revenue"   value={formatCurrencyCompact(totals?.grossRevenue  ?? 0)} icon={DollarSign}   iconClassName="bg-emerald-500" />
+        <StatCard title="Net Revenue"     value={formatCurrencyCompact(totals?.netRevenue    ?? 0)} icon={DollarSign}   iconClassName="bg-green-500" />
+        <StatCard title="Total Refunded"  value={formatCurrencyCompact(totals?.totalRefunded ?? 0)} icon={TrendingDown} iconClassName="bg-amber-500" />
       </div>
 
       {/* Outstanding / Overdue */}
       {(outstanding || overdue) && (
         <div className="grid gap-4 sm:grid-cols-2">
           {outstanding && outstanding.count > 0 && (
-            <div className="rounded-xl border bg-amber-50 dark:bg-amber-950/20 border-amber-200 dark:border-amber-800 p-5">
-              <p className="text-xs font-semibold text-amber-700 dark:text-amber-400 uppercase tracking-widest mb-1">Outstanding</p>
+            <div className="rounded-xl border bg-amber-500/10 dark:bg-amber-950/20 border-amber-500/25 dark:border-amber-800 p-5">
+              <p className="text-xs font-semibold text-amber-500 dark:text-amber-400 uppercase tracking-widest mb-1">Outstanding</p>
               <p className="text-2xl font-bold tabular-nums">{formatCurrencyCompact(outstanding.totalAmount)}</p>
               <p className="text-sm text-muted-foreground mt-1">{outstanding.count} invoices pending</p>
             </div>
           )}
           {overdue && overdue.count > 0 && (
-            <div className="rounded-xl border bg-red-50 dark:bg-red-950/20 border-red-200 dark:border-red-800 p-5">
+            <div className="rounded-xl border bg-red-500/10 dark:bg-red-950/20 border-red-500/25 dark:border-red-800 p-5">
               <p className="text-xs font-semibold text-red-600 uppercase tracking-widest mb-1">Overdue</p>
               <p className="text-2xl font-bold tabular-nums text-red-600">{formatCurrencyCompact(overdue.totalAmount)}</p>
               <p className="text-sm text-muted-foreground mt-1">{overdue.count} overdue invoices</p>

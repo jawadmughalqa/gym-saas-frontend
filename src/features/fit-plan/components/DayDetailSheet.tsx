@@ -19,18 +19,18 @@ import SwapDaySheet from './SwapDaySheet';
 
 const DAY_TYPE_CONFIG: Record<string, { emoji: string; label: string; color: string; bg: string }> = {
   chest:     { emoji: '💪', label: 'Chest Day',      color: 'text-rose-600',   bg: 'bg-rose-50 dark:bg-rose-950/40' },
-  back:      { emoji: '🏋️', label: 'Back Day',       color: 'text-blue-600',   bg: 'bg-blue-50 dark:bg-blue-950/40' },
-  legs:      { emoji: '🦵', label: 'Legs Day',       color: 'text-orange-600', bg: 'bg-orange-50 dark:bg-orange-950/40' },
-  arms:      { emoji: '🤜', label: 'Arms Day',       color: 'text-purple-600', bg: 'bg-purple-50 dark:bg-purple-950/40' },
-  full_body: { emoji: '⚡', label: 'Full Body',      color: 'text-yellow-600', bg: 'bg-yellow-50 dark:bg-yellow-950/40' },
-  cardio:    { emoji: '🏃', label: 'Cardio Day',     color: 'text-green-600',  bg: 'bg-green-50 dark:bg-green-950/40' },
-  rest:      { emoji: '🧘', label: 'Rest Day',       color: 'text-slate-600',  bg: 'bg-slate-50 dark:bg-slate-950/40' },
+  back:      { emoji: '🏋️', label: 'Back Day',       color: 'text-blue-600',   bg: 'bg-blue-500/10 dark:bg-blue-950/40' },
+  legs:      { emoji: '🦵', label: 'Legs Day',       color: 'text-orange-600', bg: 'bg-orange-500/10 dark:bg-orange-950/40' },
+  arms:      { emoji: '🤜', label: 'Arms Day',       color: 'text-purple-600', bg: 'bg-purple-500/10 dark:bg-purple-950/40' },
+  full_body: { emoji: '⚡', label: 'Full Body',      color: 'text-yellow-600', bg: 'bg-yellow-500/10 dark:bg-yellow-950/40' },
+  cardio:    { emoji: '🏃', label: 'Cardio Day',     color: 'text-green-600',  bg: 'bg-green-500/10 dark:bg-green-950/40' },
+  rest:      { emoji: '🧘', label: 'Rest Day',       color: 'text-muted-foreground',  bg: 'bg-muted/60 dark:bg-slate-950/40' },
 };
 
 const STATUS_CONFIG: Record<string, { label: string; className: string }> = {
-  completed: { label: 'Completed',  className: 'bg-green-100 text-green-700 dark:bg-green-900/40 dark:text-green-400' },
-  planned:   { label: 'Planned',    className: 'bg-blue-100 text-blue-700 dark:bg-blue-900/40 dark:text-blue-400' },
-  missed:    { label: 'Missed',     className: 'bg-red-100 text-red-700 dark:bg-red-900/40 dark:text-red-400' },
+  completed: { label: 'Completed',  className: 'bg-green-500/15 text-green-500 dark:bg-green-900/40 dark:text-green-400' },
+  planned:   { label: 'Planned',    className: 'bg-blue-500/15 text-blue-500 dark:bg-blue-900/40 dark:text-blue-400' },
+  missed:    { label: 'Missed',     className: 'bg-red-500/15 text-red-500 dark:bg-red-900/40 dark:text-red-400' },
   frozen:    { label: 'Frozen ❄️',  className: 'bg-sky-100 text-sky-700 dark:bg-sky-900/40 dark:text-sky-400' },
   rest:      { label: 'Rest Day',   className: 'bg-muted text-muted-foreground' },
 };
@@ -264,7 +264,7 @@ export default function DayDetailSheet({ date, calendarParams, days, onClose }: 
                           <Badge
                             key={f}
                             variant="outline"
-                            className="text-xs rounded-full px-2.5 border-red-200 text-red-600 dark:border-red-800 dark:text-red-400"
+                            className="text-xs rounded-full px-2.5 border-red-500/25 text-red-600 dark:border-red-800 dark:text-red-400"
                           >
                             {f}
                           </Badge>

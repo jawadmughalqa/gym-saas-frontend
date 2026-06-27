@@ -79,9 +79,9 @@ function genderLabel(v?: string) {
 }
 
 const PLAN_TIER_STYLES: Record<string, { badge: string; accent: string; border: string }> = {
-  starter:    { badge: 'bg-slate-100 text-slate-700',   accent: 'text-slate-700',  border: 'border-slate-200'  },
-  pro:        { badge: 'bg-purple-100 text-purple-700', accent: 'text-purple-700', border: 'border-purple-200' },
-  enterprise: { badge: 'bg-amber-100 text-amber-700',   accent: 'text-amber-700',  border: 'border-amber-200'  },
+  starter:    { badge: 'bg-muted text-muted-foreground',   accent: 'text-muted-foreground',  border: 'border-border'  },
+  pro:        { badge: 'bg-purple-500/15 text-purple-500', accent: 'text-purple-500', border: 'border-purple-500/25' },
+  enterprise: { badge: 'bg-amber-500/15 text-amber-500',   accent: 'text-amber-500',  border: 'border-amber-500/25'  },
 };
 
 const FLAG_DISPLAY: Record<string, { label: string; icon: React.ElementType }> = {
@@ -183,9 +183,9 @@ function SubscriptionCard() {
           {tenant.status && (
             <Badge variant="outline" className={cn(
               'text-xs capitalize',
-              tenant.status === 'active'    && 'border-green-200 text-green-700 dark:border-green-800 dark:text-green-400',
-              tenant.status === 'trial'     && 'border-blue-200 text-blue-700 dark:border-blue-800 dark:text-blue-400',
-              tenant.status === 'suspended' && 'border-red-200 text-red-700',
+              tenant.status === 'active'    && 'border-green-500/25 text-green-500 dark:border-green-800 dark:text-green-400',
+              tenant.status === 'trial'     && 'border-blue-500/25 text-blue-500 dark:border-blue-800 dark:text-blue-400',
+              tenant.status === 'suspended' && 'border-red-500/25 text-red-500',
             )}>
               {tenant.status}
             </Badge>
@@ -251,13 +251,13 @@ function BranchManagerCard({ profile }: { profile: MyProfile }) {
     .filter(Boolean);
 
   return (
-    <Card className="border-blue-200 dark:border-blue-800">
+    <Card className="border-blue-500/25 dark:border-blue-800">
       <CardHeader className="pb-3">
         <div className="flex items-center gap-2">
-          <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-blue-100 dark:bg-blue-900/40">
+          <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-blue-500/15 dark:bg-blue-900/40">
             <Shield className="h-4 w-4 text-blue-600" />
           </div>
-          <CardTitle className="text-base text-blue-800 dark:text-blue-300">Branch Manager Details</CardTitle>
+          <CardTitle className="text-base text-blue-500 dark:text-blue-300">Branch Manager Details</CardTitle>
         </div>
       </CardHeader>
 
@@ -288,7 +288,7 @@ function BranchManagerCard({ profile }: { profile: MyProfile }) {
               </p>
               <div className="flex flex-wrap gap-1.5">
                 {branchNames.map((name) => (
-                  <Badge key={name} variant="outline" className="text-xs capitalize border-blue-200 text-blue-700 bg-blue-50 dark:border-blue-800 dark:text-blue-300">
+                  <Badge key={name} variant="outline" className="text-xs capitalize border-blue-500/25 text-blue-500 bg-blue-500/10 dark:border-blue-800 dark:text-blue-300">
                     {name}
                   </Badge>
                 ))}
@@ -603,9 +603,9 @@ function TrainerProfessionalCard() {
           <div className="flex items-center gap-2 flex-wrap">
             <Badge variant="outline" className={cn(
               'text-xs capitalize',
-              profile.status === 'active'      && 'border-green-200 text-green-700',
-              profile.status === 'inactive'    && 'border-slate-200 text-slate-500',
-              profile.status === 'unavailable' && 'border-amber-200 text-amber-700',
+              profile.status === 'active'      && 'border-green-500/25 text-green-500',
+              profile.status === 'inactive'    && 'border-border text-muted-foreground',
+              profile.status === 'unavailable' && 'border-amber-500/25 text-amber-500',
             )}>
               {profile.status}
             </Badge>
@@ -673,7 +673,7 @@ function TrainerRatingsCard() {
       <CardHeader className="pb-3">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-amber-50">
+            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-amber-500/10">
               <Star className="h-4 w-4 text-amber-500" />
             </div>
             <CardTitle className="text-base">My Ratings</CardTitle>

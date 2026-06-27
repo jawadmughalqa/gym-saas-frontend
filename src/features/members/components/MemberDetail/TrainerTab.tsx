@@ -233,7 +233,7 @@ export function TrainerTab({ memberId, branchId }: TrainerTabProps) {
                   ) : null}
                 </div>
               </div>
-              <Badge className="shrink-0 bg-green-100 text-green-700 border-green-200 hover:bg-green-100">
+              <Badge className="shrink-0 bg-green-500/15 text-green-500 border-green-500/25 hover:bg-green-500/15">
                 Active
               </Badge>
             </div>

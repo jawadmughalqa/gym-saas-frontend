@@ -162,7 +162,7 @@ export function MembersTable({
             <Button
               variant="outline"
               size="sm"
-              className="text-green-600 border-green-200 hover:bg-green-50 hover:text-green-700"
+              className="text-green-600 border-green-500/25 hover:bg-green-500/10 hover:text-green-500"
               onClick={(e) => {
                 e.stopPropagation();
                 onStatusClick(row, 'active');

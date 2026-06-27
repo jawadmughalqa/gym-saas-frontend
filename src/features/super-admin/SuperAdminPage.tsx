@@ -61,7 +61,7 @@ function TenantStatusBadge({ status }: { status?: string }) {
 
 function PlanBadge({ plan }: { plan?: string }) {
   const map: Record<string, string> = {
-    starter:    'text-slate-600 border-slate-300',
+    starter:    'text-muted-foreground border-border',
     pro:        'text-purple-600 border-purple-300',
     enterprise: 'text-amber-600 border-amber-300',
   };
@@ -226,25 +226,25 @@ export default function SuperAdminPage() {
             title="Active"
             value={dash.tenants?.active ?? 0}
             icon={Users}
-            iconClassName="bg-green-500/10"
+            iconClassName="bg-green-500"
           />
           <StatCard
             title="On Trial"
             value={dash.tenants?.trial ?? 0}
             icon={FlaskConical}
-            iconClassName="bg-blue-500/10"
+            iconClassName="bg-blue-500"
           />
           <StatCard
             title="Suspended"
             value={dash.tenants?.suspended ?? 0}
             icon={AlertTriangle}
-            iconClassName="bg-yellow-500/10"
+            iconClassName="bg-yellow-500"
           />
           <StatCard
             title="Pending Invoices"
             value={dash.billing?.pendingInvoices ?? 0}
             icon={CreditCard}
-            iconClassName="bg-orange-500/10"
+            iconClassName="bg-orange-500"
           />
         </div>
       )}
@@ -280,7 +280,7 @@ export default function SuperAdminPage() {
                       value={p.count}
                       className={
                         p._id === 'enterprise' ? 'text-amber-600' :
-                        p._id === 'pro' ? 'text-purple-600' : 'text-slate-600'
+                        p._id === 'pro' ? 'text-purple-600' : 'text-muted-foreground'
                       }
                     />
                   ))}

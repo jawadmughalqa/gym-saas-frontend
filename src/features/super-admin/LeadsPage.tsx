@@ -41,7 +41,7 @@ const STATUS_CONFIG: Record<LeadStatus, { label: string; className: string }> = 
   contacted:  { label: 'Contacted',  className: 'bg-yellow-600 hover:bg-yellow-700' },
   qualified:  { label: 'Qualified',  className: 'bg-purple-600 hover:bg-purple-700' },
   converted:  { label: 'Converted',  className: 'bg-green-600 hover:bg-green-700' },
-  closed:     { label: 'Closed',     className: 'bg-gray-500 hover:bg-gray-600' },
+  closed:     { label: 'Closed',     className: 'bg-muted/600 hover:bg-gray-600' },
 };
 
 const FORM_TYPE_LABELS: Record<LeadFormType, string> = {

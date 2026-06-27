@@ -18,19 +18,19 @@ const DAY_TYPE_CONFIG: Record<string, {
   text:    string;     // text colour for planned
 }> = {
   chest:     { emoji: '💪', short: 'Chest',  label: 'Chest Day',   planned: 'bg-rose-50   border-rose-200   dark:bg-rose-950/40  dark:border-rose-800',   text: 'text-rose-700   dark:text-rose-300'   },
-  back:      { emoji: '🏋️', short: 'Back',   label: 'Back Day',    planned: 'bg-blue-50   border-blue-200   dark:bg-blue-950/40  dark:border-blue-800',   text: 'text-blue-700   dark:text-blue-300'   },
-  legs:      { emoji: '🦵', short: 'Legs',   label: 'Legs Day',    planned: 'bg-orange-50 border-orange-200 dark:bg-orange-950/40 dark:border-orange-800', text: 'text-orange-700 dark:text-orange-300' },
-  arms:      { emoji: '🤜', short: 'Arms',   label: 'Arms Day',    planned: 'bg-purple-50 border-purple-200 dark:bg-purple-950/40 dark:border-purple-800', text: 'text-purple-700 dark:text-purple-300' },
-  full_body: { emoji: '⚡', short: 'Full',   label: 'Full Body',   planned: 'bg-amber-50  border-amber-200  dark:bg-amber-950/40  dark:border-amber-800',  text: 'text-amber-700  dark:text-amber-300'  },
-  cardio:    { emoji: '🏃', short: 'Cardio', label: 'Cardio',      planned: 'bg-green-50  border-green-200  dark:bg-green-950/40  dark:border-green-800',  text: 'text-green-700  dark:text-green-300'  },
-  rest:      { emoji: '🧘', short: 'Rest',   label: 'Rest Day',    planned: 'bg-slate-50  border-slate-200  dark:bg-slate-900/40  dark:border-slate-700',  text: 'text-slate-500  dark:text-slate-400'  },
+  back:      { emoji: '🏋️', short: 'Back',   label: 'Back Day',    planned: 'bg-blue-500/10   border-blue-500/25   dark:bg-blue-950/40  dark:border-blue-800',   text: 'text-blue-500   dark:text-blue-300'   },
+  legs:      { emoji: '🦵', short: 'Legs',   label: 'Legs Day',    planned: 'bg-orange-500/10 border-orange-500/25 dark:bg-orange-950/40 dark:border-orange-800', text: 'text-orange-500 dark:text-orange-300' },
+  arms:      { emoji: '🤜', short: 'Arms',   label: 'Arms Day',    planned: 'bg-purple-500/10 border-purple-500/25 dark:bg-purple-950/40 dark:border-purple-800', text: 'text-purple-500 dark:text-purple-300' },
+  full_body: { emoji: '⚡', short: 'Full',   label: 'Full Body',   planned: 'bg-amber-500/10  border-amber-500/25  dark:bg-amber-950/40  dark:border-amber-800',  text: 'text-amber-500  dark:text-amber-300'  },
+  cardio:    { emoji: '🏃', short: 'Cardio', label: 'Cardio',      planned: 'bg-green-500/10  border-green-500/25  dark:bg-green-950/40  dark:border-green-800',  text: 'text-green-500  dark:text-green-300'  },
+  rest:      { emoji: '🧘', short: 'Rest',   label: 'Rest Day',    planned: 'bg-muted/60  border-border  dark:bg-slate-900/40  dark:border-slate-700',  text: 'text-muted-foreground  dark:text-slate-400'  },
 };
 
 // ─── Status-level overrides (applied on top of day-type colour) ───────────────
 
 const STATUS_OVERRIDE: Record<string, string> = {
   completed: 'bg-emerald-500 border-emerald-400 dark:bg-emerald-600 dark:border-emerald-500',
-  missed:    'bg-red-100     border-red-300     dark:bg-red-950/50  dark:border-red-800',
+  missed:    'bg-red-500/15     border-red-300     dark:bg-red-950/50  dark:border-red-800',
   frozen:    'bg-sky-100     border-sky-300     dark:bg-sky-950/40  dark:border-sky-700',
 };
 

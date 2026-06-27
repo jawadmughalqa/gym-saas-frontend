@@ -40,7 +40,7 @@ export function DueDateBadge({ date }: DueDateBadgeProps) {
   const status = getDueDateStatus(date);
 
   const styles: Record<DueDateStatus, string> = {
-    'overdue':  'bg-red-100 text-red-700 border border-red-300',
+    'overdue':  'bg-red-500/15 text-red-500 border border-red-300',
     'due-soon': 'bg-yellow-100 text-yellow-700 border border-yellow-300',
     'ok':       'bg-muted text-muted-foreground border border-border',
   };

@@ -116,7 +116,7 @@ function ModeCard({
     ? accent === 'destructive'
       ? 'border-destructive bg-destructive/5'
       : accent === 'warning'
-        ? 'border-amber-500 bg-amber-50'
+        ? 'border-amber-500 bg-amber-500/10'
         : 'border-primary bg-primary/5'
     : 'border-border hover:border-muted-foreground/40';
 
@@ -139,7 +139,7 @@ function ModeCard({
         </div>
         <div className={`mt-0.5 h-4 w-4 rounded-full border-2 shrink-0 flex items-center justify-center
           ${selected ? 'border-primary bg-primary' : 'border-muted-foreground/40'}`}>
-          {selected && <div className="h-1.5 w-1.5 rounded-full bg-white" />}
+          {selected && <div className="h-1.5 w-1.5 rounded-full bg-card" />}
         </div>
       </div>
     </button>
@@ -252,7 +252,7 @@ export function CancelSubscriptionDialog({
                 accent="warning"
                 badge={
                   proration && proration.refundAmount > 0 ? (
-                    <span className="rounded-full bg-emerald-100 px-2 py-0.5 text-[10px] font-medium text-emerald-700">
+                    <span className="rounded-full bg-emerald-500/15 px-2 py-0.5 text-[10px] font-medium text-emerald-500">
                       +{formatCurrency(proration.refundAmount, CURRENCY)} wallet credit
                     </span>
                   ) : undefined
@@ -273,21 +273,21 @@ export function CancelSubscriptionDialog({
 
           {/* ── Proration preview ─────────────────────────────────────────── */}
           {mode === 'immediate_prorated' && proration && (
-            <div className="rounded-lg border border-amber-200 bg-amber-50/70 p-3.5 space-y-3">
+            <div className="rounded-lg border border-amber-500/25 bg-amber-500/10 p-3.5 space-y-3">
               <p className="text-xs font-semibold text-amber-900 uppercase tracking-wide">
                 Proration Breakdown
               </p>
 
               <div className="grid grid-cols-3 gap-2 text-center">
-                <div className="rounded-md bg-white border border-amber-200 py-2 px-1">
+                <div className="rounded-md bg-card border border-amber-500/25 py-2 px-1">
                   <p className="text-[10px] text-muted-foreground mb-0.5">Billing period</p>
                   <p className="text-sm font-bold">{proration.totalDays}d</p>
                 </div>
-                <div className="rounded-md bg-white border border-destructive/20 py-2 px-1">
+                <div className="rounded-md bg-card border border-destructive/20 py-2 px-1">
                   <p className="text-[10px] text-muted-foreground mb-0.5">Days used</p>
                   <p className="text-sm font-bold text-destructive">{proration.usedDays}d</p>
                 </div>
-                <div className="rounded-md bg-white border border-emerald-200 py-2 px-1">
+                <div className="rounded-md bg-card border border-emerald-500/25 py-2 px-1">
                   <p className="text-[10px] text-muted-foreground mb-0.5">Days remaining</p>
                   <p className="text-sm font-bold text-emerald-600">{proration.remainingDays}d</p>
                 </div>
@@ -311,20 +311,20 @@ export function CancelSubscriptionDialog({
               </div>
 
               {/* Calculation summary */}
-              <div className="rounded-md bg-white border border-amber-200 px-3 py-2 flex items-center justify-between">
+              <div className="rounded-md bg-card border border-amber-500/25 px-3 py-2 flex items-center justify-between">
                 <div className="text-xs text-muted-foreground">
                   {proration.remainingDays}d / {proration.totalDays}d ×{' '}
                   amount paid
                 </div>
-                <div className="text-sm font-bold text-emerald-700">
+                <div className="text-sm font-bold text-emerald-500">
                   ≈ {formatCurrency(proration.refundAmount, CURRENCY)} wallet credit
                 </div>
               </div>
 
               {/* Unpaid invoice notice */}
-              <div className="flex items-start gap-2 rounded-md bg-blue-50 border border-blue-200 px-3 py-2">
+              <div className="flex items-start gap-2 rounded-md bg-blue-500/10 border border-blue-500/25 px-3 py-2">
                 <AlertTriangle className="h-3.5 w-3.5 text-blue-500 mt-0.5 shrink-0" />
-                <p className="text-[11px] text-blue-800 leading-relaxed">
+                <p className="text-[11px] text-blue-500 leading-relaxed">
                   If the current invoice has <strong>not been paid</strong>, it will be
                   voided automatically (removed from Outstanding Fees) — no wallet credit in that case.
                   If it <strong>has been paid</strong>, the unused portion is credited to the wallet.
@@ -334,9 +334,9 @@ export function CancelSubscriptionDialog({
           )}
 
           {mode === 'immediate_prorated' && !proration && (
-            <div className="flex items-start gap-2 rounded-lg border border-amber-200 bg-amber-50 p-3">
+            <div className="flex items-start gap-2 rounded-lg border border-amber-500/25 bg-amber-500/10 p-3">
               <AlertTriangle className="h-4 w-4 text-amber-600 mt-0.5 shrink-0" />
-              <p className="text-xs text-amber-800">
+              <p className="text-xs text-amber-500">
                 Proration preview unavailable — subscription date information is missing.
                 The server will still check the invoice status and handle it correctly.
               </p>

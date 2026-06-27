@@ -3,6 +3,7 @@ import {
   Check, X, ArrowLeft, Sparkles, Mail, MessageCircle,
   Users, UserCheck, CreditCard, ScanLine, BarChart3,
   Receipt, GitBranch, Wrench, Bell, Tag, Dumbbell, Smartphone,
+  UserPlus, ShoppingCart, MessageSquare,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -36,7 +37,12 @@ const FEATURES: FeatureDef[] = [
   { key: 'branches',      label: 'Multi-Branch',      description: 'Multiple gym locations',               icon: GitBranch,   color: 'text-teal-500'   },
   { key: 'equipment',     label: 'Equipment',         description: 'Equipment & maintenance management',   icon: Wrench,      color: 'text-muted-foreground'  },
   { key: 'discounts',     label: 'Discounts',         description: 'Discount codes & promotions',          icon: Tag,         color: 'text-pink-500'   },
-  { key: 'fitPlan',       label: 'FitPlan',           description: 'AI-powered personalised fitness plans', icon: Dumbbell,   color: 'text-emerald-500'},
+  { key: 'fitPlan',             label: 'FitPlan',                description: 'AI-powered personalised fitness plans',         icon: Dumbbell,      color: 'text-emerald-500'  },
+  { key: 'walkInLeads',         label: 'Walk-in Leads',          description: 'Track walk-in visitors & prospect CRM',         icon: UserPlus,      color: 'text-fuchsia-500'  },
+  { key: 'trainerPortal',       label: 'Trainer Portal',         description: 'Trainer self-service login portal',             icon: UserCheck,     color: 'text-teal-500'     },
+  { key: 'branchManagerPortal', label: 'Branch Manager Portal',  description: 'Branch manager dedicated portal',               icon: GitBranch,     color: 'text-violet-500'   },
+  { key: 'pos',                 label: 'Point of Sale',          description: 'Product catalog, orders & receipts',            icon: ShoppingCart,  color: 'text-lime-500'     },
+  { key: 'notificationChannels', label: 'Notification Channels', description: 'SMTP, WhatsApp channels & broadcast messaging', icon: MessageSquare, color: 'text-sky-500'      },
 ];
 
 // ─── Plan tier styles ─────────────────────────────────────────────────────────

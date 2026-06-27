@@ -12,9 +12,11 @@ import FeatureRoute from "@/components/shared/FeatureRoute";
 
 // ─── Lazy pages ───────────────────────────────────────────────────────────────
 
-const ChangePasswordPage  = lazy(() => import("@/features/auth/ChangePasswordPage"));
-const PricingPage         = lazy(() => import("@/features/settings/PricingPage"));
-const BackupPage          = lazy(() => import("@/features/settings/BackupPage"));
+const ChangePasswordPage         = lazy(() => import("@/features/auth/ChangePasswordPage"));
+const PricingPage                = lazy(() => import("@/features/settings/PricingPage"));
+const BackupPage                 = lazy(() => import("@/features/settings/BackupPage"));
+const NotificationSettingsPage   = lazy(() => import("@/features/settings/NotificationSettingsPage"));
+const BroadcastPage              = lazy(() => import("@/features/settings/BroadcastPage"));
 const ProfilePage         = lazy(() => import("@/features/auth/ProfilePage"));
 const MembersPage         = lazy(() => import("@/features/members/MembersPage"));
 const MemberDetailPage    = lazy(() => import("@/features/members/MemberDetailPage"));
@@ -122,6 +124,16 @@ const router = createBrowserRouter([
                 path: "backup",
                 element: <Lazy><BackupPage /></Lazy>,
                 handle: { crumb: "Backup & Restore" },
+              },
+              {
+                path: "notifications",
+                element: <Lazy><NotificationSettingsPage /></Lazy>,
+                handle: { crumb: "Notification Channels" },
+              },
+              {
+                path: "broadcast",
+                element: <Lazy><BroadcastPage /></Lazy>,
+                handle: { crumb: "Send Message" },
               },
             ],
           },

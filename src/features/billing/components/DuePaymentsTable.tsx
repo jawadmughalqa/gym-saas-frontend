@@ -349,7 +349,7 @@ export default function DuePaymentsTable({
                   key={row._id}
                   className={cn(
                     'grid grid-cols-1 md:grid-cols-[1fr_auto_auto_auto_auto] gap-2 md:gap-0 px-4 py-3 hover:bg-muted/30 transition-colors',
-                    overdue && 'bg-red-500 hover:bg-red-500',
+                    overdue && 'bg-red-500/[0.06] dark:bg-red-500/[0.12] hover:bg-red-500/10 dark:hover:bg-red-500/[0.18]',
                   )}
                 >
                   {/* Member info */}

@@ -22,4 +22,6 @@ export interface TenantFeatureFlags {
   walkInLeads?:         boolean;
   trainerPortal?:       boolean;
   branchManagerPortal?: boolean;
+  pos?:                  boolean;
+  notificationChannels?: boolean;
 }

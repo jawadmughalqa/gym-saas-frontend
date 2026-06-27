@@ -18,7 +18,9 @@ const ALL_FEATURES_ENABLED: Required<TenantFeatureFlags> = {
   memberPortal:        true,
   walkInLeads:         true,
   trainerPortal:       true,
-  branchManagerPortal: true,
+  branchManagerPortal:  true,
+  pos:                  true,
+  notificationChannels: true,
 };
 
 export type PlanFeatureKey = keyof Required<TenantFeatureFlags>;
@@ -97,6 +99,8 @@ export function usePlanFeatures(): UsePlanFeaturesResult {
     walkInLeads:         raw['walkInLeads']         ?? true,
     trainerPortal:       raw['trainerPortal']       ?? true,
     branchManagerPortal: raw['branchManagerPortal'] ?? false,
+    pos:                  raw['pos']                  ?? false,
+    notificationChannels: raw['notificationChannels'] ?? false,
   };
 
   return {

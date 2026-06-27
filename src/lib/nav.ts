@@ -26,6 +26,7 @@ import {
   MessageSquare,
   Send,
   UserPlus,
+  ShoppingCart,
   type LucideIcon,
 } from 'lucide-react';
 import type { UserRole } from '@/types/api.types';
@@ -137,6 +138,25 @@ export const NAV_ITEMS: NavItem[] = [
     label: 'Refunds',
     icon: RotateCcw,
     permission: 'payment.refund',
+  },
+  {
+    to: '/pos',
+    label: 'Point of Sale',
+    icon: ShoppingCart,
+    end: true,
+    featureFlag: 'pos' as const,
+  },
+  {
+    to: '/pos/products',
+    label: 'POS Products',
+    icon: Package,
+    featureFlag: 'pos' as const,
+  },
+  {
+    to: '/pos/orders',
+    label: 'Order History',
+    icon: Receipt,
+    featureFlag: 'pos' as const,
   },
   {
     to: '/reports',
@@ -352,6 +372,35 @@ export const NAV_GROUPS: NavGroup[] = [
     ],
   },
 
+  // ── Point of Sale ────────────────────────────────────────────────────────
+  {
+    label: 'Point of Sale',
+    items: [
+      {
+        to: '/pos',
+        label: 'Sell',
+        icon: ShoppingCart,
+        roles: ADMIN_ROLES,
+        end: true,
+        featureFlag: 'pos',
+      },
+      {
+        to: '/pos/products',
+        label: 'Products',
+        icon: Package,
+        roles: ADMIN_ROLES,
+        featureFlag: 'pos',
+      },
+      {
+        to: '/pos/orders',
+        label: 'Order History',
+        icon: Receipt,
+        roles: ADMIN_ROLES,
+        featureFlag: 'pos',
+      },
+    ],
+  },
+
   // ── System (admin roles only) ─────────────────────────────────────────────
   {
     label: 'System',
@@ -368,12 +417,14 @@ export const NAV_GROUPS: NavGroup[] = [
         label: 'Notification Channels',
         icon: MessageSquare,
         roles: ['gym_owner', 'branch_manager'],
+        featureFlag: 'notificationChannels',
       },
       {
         to: '/settings/broadcast',
         label: 'Send Message',
         icon: Send,
         roles: ['gym_owner', 'branch_manager'],
+        featureFlag: 'notificationChannels',
       },
     ],
   },

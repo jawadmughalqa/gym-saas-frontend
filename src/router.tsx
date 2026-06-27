@@ -17,6 +17,9 @@ const PricingPage                = lazy(() => import("@/features/settings/Pricin
 const BackupPage                 = lazy(() => import("@/features/settings/BackupPage"));
 const NotificationSettingsPage   = lazy(() => import("@/features/settings/NotificationSettingsPage"));
 const BroadcastPage              = lazy(() => import("@/features/settings/BroadcastPage"));
+const POSPage                    = lazy(() => import("@/features/pos/POSPage"));
+const ProductsPage               = lazy(() => import("@/features/pos/ProductsPage"));
+const OrderHistoryPage           = lazy(() => import("@/features/pos/OrderHistoryPage"));
 const ProfilePage         = lazy(() => import("@/features/auth/ProfilePage"));
 const MembersPage         = lazy(() => import("@/features/members/MembersPage"));
 const MemberDetailPage    = lazy(() => import("@/features/members/MemberDetailPage"));
@@ -136,6 +139,17 @@ const router = createBrowserRouter([
                 element: <Lazy><BroadcastPage /></Lazy>,
                 handle: { crumb: "Send Message" },
               },
+            ],
+          },
+
+          // ── POS ──────────────────────────────────────────────────────────
+          {
+            path: "pos",
+            handle: { crumb: "Point of Sale" },
+            children: [
+              { index: true,          element: <Lazy><POSPage /></Lazy> },
+              { path: "products",     element: <Lazy><ProductsPage /></Lazy>,    handle: { crumb: "Products" } },
+              { path: "orders",       element: <Lazy><OrderHistoryPage /></Lazy>, handle: { crumb: "Order History" } },
             ],
           },
 

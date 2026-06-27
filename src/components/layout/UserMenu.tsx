@@ -1,6 +1,6 @@
 import { useNavigate } from 'react-router-dom';
 
-import { KeyRound, LogOut, User, HardDrive, Sun, Moon, Monitor } from 'lucide-react';
+import { KeyRound, LogOut, User, HardDrive, Sun, Moon, Monitor, Bell } from 'lucide-react';
 
 
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';

@@ -16,10 +16,10 @@ import { Button } from '@/components/ui/button';
 import { formatCurrency, formatDateTime } from '@/lib/utils';
 import { useInvoicePayments, INVOICE_PAYMENTS_KEY } from '../hooks/use-invoice-payments';
 import { StatusBadge } from './StatusBadge';
-import { CURRENCY } from '@/config/tenant.config';
 import { usePermission } from '@/hooks/use-permission';
 import { RefundDialog } from '@/features/refunds/components/RefundDialog';
 import { useQueryClient } from '@tanstack/react-query';
+import { useTenantCurrency } from '@/hooks/use-tenant-currency';
 
 // ─── Props ────────────────────────────────────────────────────────────────────
 
@@ -41,8 +41,10 @@ const METHOD_LABELS: Record<string, string> = {
 
 // ─── Component ────────────────────────────────────────────────────────────────
 
-export function InvoicePaymentTimeline({ invoiceId, currency = CURRENCY }: InvoicePaymentTimelineProps) {
+export function InvoicePaymentTimeline({ invoiceId, currency: currencyProp }: InvoicePaymentTimelineProps) {
   const { can } = usePermission();
+  const { currency: tenantCurrency } = useTenantCurrency();
+  const currency = currencyProp ?? tenantCurrency;
   const qc = useQueryClient();
   const { data, isLoading, isError } = useInvoicePayments(invoiceId);
 

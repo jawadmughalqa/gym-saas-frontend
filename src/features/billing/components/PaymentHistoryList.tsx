@@ -17,7 +17,7 @@ import { Receipt, ChevronDown, ChevronUp, FileText, RotateCcw } from 'lucide-rea
 import { Skeleton } from '@/components/ui/skeleton';
 import { formatCurrency } from '@/lib/utils';
 import { useGetInvoices } from '@/api/generated/invoices/invoices';
-import { CURRENCY } from '@/config/tenant.config';
+import { useTenantCurrency } from '@/hooks/use-tenant-currency';
 import { useQueryClient } from '@tanstack/react-query';
 import { StatusBadge } from './StatusBadge';
 import { InvoicePaymentTimeline } from './InvoicePaymentTimeline';
@@ -36,6 +36,7 @@ interface PaymentHistoryListProps {
 
 export function PaymentHistoryList({ memberId }: PaymentHistoryListProps) {
   const queryClient = useQueryClient();
+  const { currency: tenantCurrency } = useTenantCurrency();
   const [expandedInvoiceId, setExpandedInvoiceId] = useState<string | null>(null);
 
   // Fetch all invoices for this member (all statuses) so we can show history
@@ -100,7 +101,7 @@ export function PaymentHistoryList({ memberId }: PaymentHistoryListProps) {
         <div className="space-y-1.5">
           {paidInvoices.map((inv: any) => {
             const isExpanded = expandedInvoiceId === inv._id;
-            const currency = inv.currency || CURRENCY;
+            const currency = inv.currency || tenantCurrency;
             const isSettled = inv.amountDue <= 0.01;
 
             // Summarise the invoice: first line item or invoice number

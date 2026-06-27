@@ -52,7 +52,7 @@ import { toast } from "@/hooks/use-toast";
 import { getErrorMessage } from "@/utils/error";
 import type { TrainerProfile, TrainerStatus } from "@/types/trainer.types";
 import { useQueryClient } from "@tanstack/react-query";
-import { CURRENCY, CURRENCIES } from "@/config/tenant.config";
+import { useTenantCurrency } from "@/hooks/use-tenant-currency";
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 
@@ -65,8 +65,6 @@ const DAY_NAMES = [
   "Friday",
   "Saturday",
 ];
-
-// CURRENCIES imported from tenant.config — PKR is the default
 
 const SPECIALIZATION_SUGGESTIONS = [
   "weight loss",
@@ -302,6 +300,7 @@ export default function TrainerForm({
   trainer,
 }: TrainerFormProps) {
   const isEdit = !!trainer;
+  const { currency: tenantCurrency } = useTenantCurrency();
   const [credentials, setCredentials] = useState<{ email: string; tempPassword: string } | null>(null);
   const [copied, setCopied] = useState(false);
 
@@ -387,7 +386,7 @@ export default function TrainerForm({
       experienceYears: "",
       maxClients: "",
       monthlyRate: "",
-      currency: CURRENCY,
+      currency: tenantCurrency,
       status: "active",
       availability: [],
     },
@@ -420,7 +419,7 @@ export default function TrainerForm({
           trainer.hourlyRate !== undefined
             ? String(trainer.hourlyRate)
             : "",
-        currency: trainer.currency ?? CURRENCY,
+        currency: trainer.currency ?? tenantCurrency,
         status: trainer.status ?? "active",
         availability: trainer.availability ?? [],
       });
@@ -437,7 +436,7 @@ export default function TrainerForm({
         experienceYears: "",
         maxClients: "",
         monthlyRate: "",
-        currency: CURRENCY,
+        currency: tenantCurrency,
         status: "active",
         availability: [],
       });
@@ -483,7 +482,7 @@ export default function TrainerForm({
           experienceYears: values.experienceYears as number | undefined,
           maxClients: values.maxClients as number | undefined,
           monthlyRate: values.monthlyRate as number | undefined,
-          currency: values.currency || CURRENCY,
+          currency: values.currency || tenantCurrency,
           availability: values.availability,
         },
       });
@@ -717,18 +716,14 @@ export default function TrainerForm({
             <div className="space-y-1.5">
               <Label>Currency</Label>
               <Select
-                value={watch("currency") ?? CURRENCY}
+                value={watch("currency") ?? tenantCurrency}
                 onValueChange={(v) => setValue("currency", v)}
               >
                 <SelectTrigger>
-                  <SelectValue placeholder={CURRENCY} />
+                  <SelectValue placeholder={tenantCurrency} />
                 </SelectTrigger>
                 <SelectContent>
-                  {CURRENCIES.map((c) => (
-                    <SelectItem key={c.value} value={c.value}>
-                      {c.value}
-                    </SelectItem>
-                  ))}
+                  <SelectItem value={tenantCurrency}>{tenantCurrency}</SelectItem>
                 </SelectContent>
               </Select>
             </div>

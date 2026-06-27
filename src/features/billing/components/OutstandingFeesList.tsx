@@ -2,7 +2,7 @@ import { CheckCircle2, CreditCard, ChevronDown, ChevronUp, Ban } from 'lucide-re
 import { useState } from 'react';
 import { formatCurrency, formatDate } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
-import { CURRENCY } from '@/config/tenant.config';
+import { useTenantCurrency } from '@/hooks/use-tenant-currency';
 import { Checkbox } from '@/components/ui/checkbox';
 import { StatusBadge } from './StatusBadge';
 import { cn } from '@/lib/utils';
@@ -56,6 +56,7 @@ export function OutstandingFeesList({
   onPaySelected,
   onVoid,
 }: OutstandingFeesListProps) {
+  const { currency: tenantCurrency } = useTenantCurrency();
   const [expandedIds, setExpandedIds] = useState<Set<string>>(new Set());
 
   if (invoices.length === 0) {
@@ -96,7 +97,7 @@ export function OutstandingFeesList({
             onClick={() => onPaySelected(Array.from(selectedIds!))}
           >
             <CreditCard className="h-3 w-3 mr-1.5" />
-            Pay {selectedCount} Selected ({formatCurrency(selectedTotal, invoices[0]?.currency || CURRENCY)})
+            Pay {selectedCount} Selected ({formatCurrency(selectedTotal, invoices[0]?.currency || tenantCurrency)})
           </Button>
         )}
       </div>
@@ -152,13 +153,13 @@ export function OutstandingFeesList({
                 </p>
                 {(invoice.discountTotal ?? 0) > 0 && (
                   <p className="text-xs text-emerald-600 font-medium mt-0.5">
-                    Discount: −{formatCurrency(invoice.discountTotal!, invoice.currency || CURRENCY)}
+                    Discount: −{formatCurrency(invoice.discountTotal!, invoice.currency || tenantCurrency)}
                   </p>
                 )}
                 {isPartiallyPaid && (
                   <p className="text-xs text-orange-600 mt-0.5">
-                    Paid: {formatCurrency(invoice.amountPaid, invoice.currency || CURRENCY)} —{' '}
-                    Remaining: {formatCurrency(invoice.amountDue, invoice.currency || CURRENCY)}
+                    Paid: {formatCurrency(invoice.amountPaid, invoice.currency || tenantCurrency)} —{' '}
+                    Remaining: {formatCurrency(invoice.amountDue, invoice.currency || tenantCurrency)}
                   </p>
                 )}
               </div>
@@ -168,11 +169,11 @@ export function OutstandingFeesList({
                 {/* Show original price struck through when a discount was applied */}
                 {(invoice.discountTotal ?? 0) > 0 && (
                   <p className="text-xs text-muted-foreground line-through">
-                    {formatCurrency(invoice.subtotal ?? (invoice.total + (invoice.discountTotal ?? 0)), invoice.currency || CURRENCY)}
+                    {formatCurrency(invoice.subtotal ?? (invoice.total + (invoice.discountTotal ?? 0)), invoice.currency || tenantCurrency)}
                   </p>
                 )}
                 <p className="font-semibold text-red-600">
-                  {formatCurrency(invoice.amountDue, invoice.currency || CURRENCY)}
+                  {formatCurrency(invoice.amountDue, invoice.currency || tenantCurrency)}
                 </p>
                 <div className="flex items-center gap-1">
                   {hasMultipleItems && (
@@ -234,7 +235,7 @@ export function OutstandingFeesList({
                           </span>
                           <div className="flex items-center gap-1.5 shrink-0">
                             <span className="font-medium">
-                              {formatCurrency(lineTotal, invoice.currency || CURRENCY)}
+                              {formatCurrency(lineTotal, invoice.currency || tenantCurrency)}
                             </span>
                           </div>
                         </div>
@@ -246,7 +247,7 @@ export function OutstandingFeesList({
                     <div className="flex items-center justify-between text-xs pt-1 border-t border-dashed">
                       <span className="text-emerald-600 font-medium">Total Discount</span>
                       <span className="text-emerald-600 font-medium">
-                        −{formatCurrency(invoice.discountTotal!, invoice.currency || CURRENCY)}
+                        −{formatCurrency(invoice.discountTotal!, invoice.currency || tenantCurrency)}
                       </span>
                     </div>
                   )}

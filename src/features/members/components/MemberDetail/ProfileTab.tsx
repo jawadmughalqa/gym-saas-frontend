@@ -6,7 +6,7 @@ import { Separator } from '@/components/ui/separator';
 import { Skeleton } from '@/components/ui/skeleton';
 import { MemberStatusPanel } from '@/features/members/components/MemberStatusPanel';
 import { formatDate, formatCurrency } from '@/utils/format';
-import { CURRENCY } from '@/config/tenant.config';
+import { useTenantCurrency } from '@/hooks/use-tenant-currency';
 import { useToast }   from '@/hooks/use-toast';
 import { api }        from '@/lib/axios';
 import { useQuery, useQueryClient }   from '@tanstack/react-query';
@@ -73,6 +73,7 @@ export function ProfileTab({ memberId }: ProfileTabProps) {
   const { toast } = useToast();
   const { can } = usePermission();
   const queryClient = useQueryClient();
+  const { currency } = useTenantCurrency();
 
   const [resending,  setResending]  = useState(false);
   const [revealed,   setRevealed]   = useState(false);
@@ -139,7 +140,7 @@ export function ProfileTab({ memberId }: ProfileTabProps) {
                 <p className="text-lg font-bold text-emerald-500 leading-tight">
                   {formatCurrency(
                     (member as typeof member & { walletBalance?: number }).walletBalance!,
-                    CURRENCY,
+                    currency,
                   )}
                 </p>
               </div>

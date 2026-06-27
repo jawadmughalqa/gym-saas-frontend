@@ -29,7 +29,7 @@ import DiscountForm from "./components/DiscountForm";
 import { EditDiscountSheet } from "./components/EditDiscountSheet";
 import type { Discount } from "@/types/billing.types";
 import { toast } from "@/hooks/use-toast";
-import { CURRENCY } from "@/config/tenant.config";
+import { useTenantCurrency } from "@/hooks/use-tenant-currency";
 
 // ─── Status helper ────────────────────────────────────────────────────────────
 
@@ -183,6 +183,7 @@ function DiscountStats({ discounts }: { discounts: Discount[] }) {
 export default function DiscountsPage() {
   const { can } = usePermission();
   const queryClient = useQueryClient();
+  const { currency } = useTenantCurrency();
   const { data: discountsRes, isLoading } = useGetDiscounts();
 
   const [formOpen, setFormOpen] = useState(false);
@@ -243,7 +244,7 @@ export default function DiscountsPage() {
         <span className="font-semibold text-sm">
           {row.discountType === "percentage"
             ? `${row.value}%`
-            : formatCurrency(row.value ?? 0, CURRENCY)}
+            : formatCurrency(row.value ?? 0, currency)}
         </span>
       ),
     },

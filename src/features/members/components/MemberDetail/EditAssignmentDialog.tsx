@@ -27,14 +27,14 @@ import {
 } from '@/components/ui/select';
 import { toast } from '@/hooks/use-toast';
 import { usePatchTrainersTrainerIdAssignmentsAssignmentId } from '@/api/generated/trainers/trainers';
-import { CURRENCY, CURRENCIES } from '@/config/tenant.config';
+import { useTenantCurrency } from '@/hooks/use-tenant-currency';
 import type { TrainerAssignment } from './TrainerTab';
 
 // ─── Schema ───────────────────────────────────────────────────────────────────
 
 const schema = z.object({
   monthlyCharge:           z.coerce.number().min(0).optional(),
-  currency:                z.string().default(CURRENCY),
+  currency:                z.string(),
   goal:                    z.string().max(300).optional(),
   sessionFrequencyPerWeek: z.coerce.number().min(1).max(7).optional(),
   notes:                   z.string().max(500).optional(),
@@ -65,6 +65,7 @@ function getTrainerDefaultRate(assignment: TrainerAssignment): number | undefine
 // ─── Component ────────────────────────────────────────────────────────────────
 
 export function EditAssignmentDialog({ open, onOpenChange, assignment, onSuccess }: Props) {
+  const { currency: tenantCurrency } = useTenantCurrency();
   const defaultCharge = assignment.monthlyCharge ?? getTrainerDefaultRate(assignment);
 
   // Trainer's availability — from the populated trainerId object if present
@@ -106,7 +107,7 @@ export function EditAssignmentDialog({ open, onOpenChange, assignment, onSuccess
     resolver: zodResolver(schema),
     defaultValues: {
       monthlyCharge:           defaultCharge,
-      currency:                assignment.currency ?? CURRENCY,
+      currency:                assignment.currency ?? tenantCurrency,
       goal:                    assignment.goal ?? '',
       sessionFrequencyPerWeek: assignment.sessionFrequencyPerWeek,
       notes:                   assignment.notes ?? '',
@@ -138,7 +139,7 @@ export function EditAssignmentDialog({ open, onOpenChange, assignment, onSuccess
       const charge = assignment.monthlyCharge ?? getTrainerDefaultRate(assignment);
       reset({
         monthlyCharge:           charge,
-        currency:                assignment.currency ?? CURRENCY,
+        currency:                assignment.currency ?? tenantCurrency,
         goal:                    assignment.goal ?? '',
         sessionFrequencyPerWeek: assignment.sessionFrequencyPerWeek,
         notes:                   assignment.notes ?? '',
@@ -202,7 +203,7 @@ export function EditAssignmentDialog({ open, onOpenChange, assignment, onSuccess
             <div className="space-y-1.5">
               <Label>Currency</Label>
               <Select
-                value={watch('currency') ?? CURRENCY}
+                value={watch('currency') ?? tenantCurrency}
                 onValueChange={(v) => setValue('currency', v)}
                 disabled={updateMutation.isPending}
               >
@@ -210,9 +211,7 @@ export function EditAssignmentDialog({ open, onOpenChange, assignment, onSuccess
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  {CURRENCIES.map((c) => (
-                    <SelectItem key={c.value} value={c.value}>{c.value}</SelectItem>
-                  ))}
+                  <SelectItem key={tenantCurrency} value={tenantCurrency}>{tenantCurrency}</SelectItem>
                 </SelectContent>
               </Select>
             </div>

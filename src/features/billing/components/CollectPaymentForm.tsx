@@ -16,7 +16,7 @@ import {
 } from '@/components/ui/select';
 import { formatCurrency } from '@/lib/utils';
 import { usePostPayments } from '@/api/generated/payments/payments';
-import { CURRENCY } from '@/config/tenant.config';
+import { useTenantCurrency } from '@/hooks/use-tenant-currency';
 import { getGetInvoicesQueryKey } from '@/api/generated/invoices/invoices';
 import { getGetBillingDashboardQueryKey } from '@/api/generated/billing/billing';
 import { getGetReportsDashboardQueryKey } from '@/api/generated/reports/reports';
@@ -44,9 +44,11 @@ interface CollectPaymentFormProps {
 export function CollectPaymentForm({
   invoiceId,
   amountDue,
-  currency = CURRENCY,
+  currency: currencyProp,
   onSuccess,
 }: CollectPaymentFormProps) {
+  const { currency: tenantCurrency } = useTenantCurrency();
+  const currency = currencyProp ?? tenantCurrency;
   const queryClient = useQueryClient();
 
   const form = useForm<FormValues>({

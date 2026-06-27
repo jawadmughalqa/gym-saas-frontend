@@ -206,6 +206,9 @@ export default function SuperAdminPage() {
             <Button variant="outline" size="sm" onClick={() => navigate('/super-admin/plans')}>
               Manage Plans
             </Button>
+            <Button variant="outline" size="sm" onClick={() => navigate('/super-admin/countries')}>
+              Countries
+            </Button>
             <Button size="sm" onClick={() => setCreateOpen(true)}>
               <Plus className="mr-1.5 h-3.5 w-3.5" />
               New Tenant

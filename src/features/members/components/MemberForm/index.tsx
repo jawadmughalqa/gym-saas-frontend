@@ -44,7 +44,7 @@ import {
 } from '@/api/generated/notifications/notifications';
 import { useToast }        from '@/hooks/use-toast';
 import type { Member }     from '@/types/member.types';
-import { CURRENCY } from '@/config/tenant.config';
+import { useTenantCurrency } from '@/hooks/use-tenant-currency';
 
 import { memberFormSchema, memberFormDefaults, type MemberFormValues } from './types';
 import { PersonalInfoSection }      from './PersonalInfoSection';
@@ -73,6 +73,7 @@ export default function MemberForm({
   const isEdit      = !!member;
   const queryClient = useQueryClient();
   const { toast }   = useToast();
+  const { currency } = useTenantCurrency();
 
   // ── Credentials dialog state (shown after create) ─────────────────────────
   const [credentials, setCredentials] = useState<{
@@ -243,7 +244,7 @@ export default function MemberForm({
                   customLabel:            m.customLabel!,
                   customPrice:            Number(m.customPrice),
                   customBillingFrequency: (m.customBillingFrequency as 'monthly') ?? 'monthly',
-                  currency:               CURRENCY,
+                  currency:               currency,
                   discountAmount:         Number(m.discountAmount) || 0,
                   startDate:              m.startDate || undefined,
                   autoCreateInvoice:      true,
@@ -291,7 +292,7 @@ export default function MemberForm({
               goal:                    t.goal                    || undefined,
               sessionFrequencyPerWeek: t.sessionFrequencyPerWeek || undefined,
               monthlyCharge:           t.monthlyCharge            || undefined,
-              currency:                CURRENCY,
+              currency:                currency,
             },
           });
         } catch {

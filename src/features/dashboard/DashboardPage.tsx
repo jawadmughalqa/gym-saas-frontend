@@ -23,7 +23,7 @@ import { useGetReportsDashboard } from '@/api/generated/reports/reports';
 import { useGetBillingDashboard } from '@/api/generated/billing/billing';
 import { useGetReportsRevenue } from '@/api/generated/reports/reports';
 import { useGetBranches } from '@/api/generated/branches/branches';
-import { CURRENCY } from '@/config/tenant.config';
+import { useTenantCurrency } from '@/hooks/use-tenant-currency';
 import { formatApiDate, formatCurrencyCompact } from '@/utils/format';
 
 // ─── Constants ────────────────────────────────────────────────────────────────
@@ -75,6 +75,7 @@ function getDateRange(year: number, month: number): { dateFrom: string; dateTo: 
 function PaymentSummaryCard() {
   const user = useAuthStore((s) => s.user);
   const isBranchManager = user?.role === 'branch_manager';
+  const { currency } = useTenantCurrency();
 
   const [year, setYear]       = useState<number>(CURRENT_YEAR);
   const [month, setMonth]     = useState<string>(String(CURRENT_MONTH));
@@ -322,7 +323,7 @@ function PaymentSummaryCard() {
                 width={72}
               />
               <Tooltip
-                formatter={(v: number) => [`${CURRENCY} ${v.toLocaleString()}`, 'Collected']}
+                formatter={(v: number) => [`${currency} ${v.toLocaleString()}`, 'Collected']}
                 contentStyle={{ borderRadius: '8px', fontSize: '12px' }}
               />
               <Bar dataKey="total" fill="#10b981" radius={[4, 4, 0, 0]} />

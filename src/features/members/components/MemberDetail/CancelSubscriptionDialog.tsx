@@ -23,7 +23,7 @@ import { Label }    from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { toast }    from '@/hooks/use-toast';
 import { usePostMembersMemberIdSubscriptionsSubscriptionIdCancel } from '@/api/generated/members/members';
-import { CURRENCY } from '@/config/tenant.config';
+import { useTenantCurrency } from '@/hooks/use-tenant-currency';
 import { formatCurrency } from '@/utils/format';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -151,6 +151,7 @@ function ModeCard({
 export function CancelSubscriptionDialog({
   open, onOpenChange, memberId, subscriptionId, planName, subscription, onSuccess,
 }: Props) {
+  const { currency } = useTenantCurrency();
   const [mode,   setMode]   = useState<CancelMode>('end_of_period');
   const [reason, setReason] = useState('');
 
@@ -166,7 +167,7 @@ export function CancelSubscriptionDialog({
           m === 'end_of_period'
             ? `${planName} will be cancelled at the end of the current billing period.`
             : m === 'immediate_prorated' && refundAmt > 0
-              ? `${planName} has been cancelled. ${formatCurrency(refundAmt, CURRENCY)} credited to wallet.`
+              ? `${planName} has been cancelled. ${formatCurrency(refundAmt, currency)} credited to wallet.`
               : `${planName} has been cancelled immediately.`;
 
         toast({ title: 'Done', description: desc });

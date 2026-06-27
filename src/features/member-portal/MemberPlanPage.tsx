@@ -7,7 +7,7 @@ import PageShell from '@/components/layout/PageShell';
 import PageHeader from '@/components/layout/PageHeader';
 import { useMySubscriptions, useMyProfile } from './hooks/use-member-portal';
 import { formatDate, formatCurrency } from '@/utils/format';
-import { CURRENCY } from '@/config/tenant.config';
+import { useTenantCurrency } from '@/hooks/use-tenant-currency';
 import type { Subscription } from '@/types/member.types';
 
 // ─── Status badge helper ──────────────────────────────────────────────────────
@@ -25,6 +25,7 @@ function statusVariant(status: string): 'default' | 'secondary' | 'destructive' 
 // ─── Wallet balance banner ────────────────────────────────────────────────────
 
 function WalletBanner({ balance }: { balance: number }) {
+  const { currency } = useTenantCurrency();
   if (balance <= 0) return null;
   return (
     <Card className="border-emerald-500/25 bg-emerald-500/10">
@@ -33,9 +34,9 @@ function WalletBanner({ balance }: { balance: number }) {
           <Wallet className="h-5 w-5 text-emerald-600" />
         </div>
         <div className="flex-1 min-w-0">
-          <p className="text-xs text-emerald-500 font-medium">Wallet Credit</p>
-          <p className="text-lg font-bold text-emerald-500 leading-tight">
-            {formatCurrency(balance, CURRENCY)}
+          <p className="text-xs text-emerald-700 font-medium">Wallet Credit</p>
+          <p className="text-lg font-bold text-emerald-800 leading-tight">
+            {formatCurrency(balance, currency)}
           </p>
         </div>
         <p className="text-[11px] text-emerald-600 text-right max-w-[140px] leading-snug">
@@ -49,6 +50,7 @@ function WalletBanner({ balance }: { balance: number }) {
 // ─── Subscription card ────────────────────────────────────────────────────────
 
 function SubscriptionCard({ sub, isActive }: { sub: Subscription; isActive: boolean }) {
+  const { currency } = useTenantCurrency();
   const planName    = sub.planSnapshot?.name ?? sub.customLabel ?? 'Custom Plan';
   const billingFreq = sub.planSnapshot?.billingFrequency ?? sub.customBillingFrequency ?? '—';
   const price       = sub.finalPrice ?? sub.planSnapshot?.price ?? sub.customPrice ?? 0;
@@ -110,7 +112,7 @@ function SubscriptionCard({ sub, isActive }: { sub: Subscription; isActive: bool
 
         <div className="flex justify-between">
           <span>Price</span>
-          <span className="text-foreground font-semibold">{formatCurrency(price, CURRENCY)}</span>
+          <span className="text-foreground font-semibold">{formatCurrency(price, currency)}</span>
         </div>
 
         {/* Proration refund detail — only shown on cancelled + refund > 0 */}
@@ -121,7 +123,7 @@ function SubscriptionCard({ sub, isActive }: { sub: Subscription; isActive: bool
             <span className="text-emerald-500 font-semibold">
               +{formatCurrency(
                 (sub as Subscription & { prorationRefundAmount?: number }).prorationRefundAmount ?? 0,
-                CURRENCY,
+                currency,
               )}
             </span>
           </div>

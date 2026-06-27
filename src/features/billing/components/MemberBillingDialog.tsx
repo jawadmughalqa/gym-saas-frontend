@@ -31,7 +31,7 @@ import { OutstandingFeesList } from './OutstandingFeesList';
 import { CollectPaymentForm } from './CollectPaymentForm';
 import { PaymentHistoryList } from './PaymentHistoryList';
 import InvoiceForm from './InvoiceForm';
-import { CURRENCY } from '@/config/tenant.config';
+import { useTenantCurrency } from '@/hooks/use-tenant-currency';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -65,6 +65,7 @@ export function MemberBillingDialog({
   onOpenChange,
 }: MemberBillingDialogProps) {
   const { can } = usePermission();
+  const { currency } = useTenantCurrency();
 
   // Track which invoice the payment form is open for
   const [activeInvoiceId, setActiveInvoiceId] = useState<string | null>(null);
@@ -160,7 +161,7 @@ export function MemberBillingDialog({
                         totalOutstanding > 0 ? 'text-red-600' : 'text-emerald-600',
                       )}
                     >
-                      {formatCurrency(totalOutstanding, CURRENCY)}
+                      {formatCurrency(totalOutstanding, currency)}
                     </p>
                     {outstandingInvoices.length > 0 && (
                       <p className="text-xs text-muted-foreground mt-0.5">
@@ -193,7 +194,7 @@ export function MemberBillingDialog({
                         <CollectPaymentForm
                           invoiceId={activeInvoice._id}
                           amountDue={activeInvoice.amountDue}
-                          currency={activeInvoice.currency || CURRENCY}
+                          currency={activeInvoice.currency || currency}
                           onSuccess={handlePaymentSuccess}
                         />
                       </div>

@@ -23,6 +23,8 @@ import {
   ClipboardCheck,
   Flame,
   Inbox,
+  MessageSquare,
+  Send,
   UserPlus,
   type LucideIcon,
 } from 'lucide-react';
@@ -360,6 +362,18 @@ export const NAV_GROUPS: NavGroup[] = [
         icon: Bell,
         permission: 'notification.read',
         roles: ADMIN_ROLES,
+      },
+      {
+        to: '/settings/notifications',
+        label: 'Notification Channels',
+        icon: MessageSquare,
+        roles: ['gym_owner', 'branch_manager'],
+      },
+      {
+        to: '/settings/broadcast',
+        label: 'Send Message',
+        icon: Send,
+        roles: ['gym_owner', 'branch_manager'],
       },
     ],
   },

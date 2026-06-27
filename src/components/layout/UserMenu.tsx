@@ -1,5 +1,8 @@
 import { useNavigate } from 'react-router-dom';
+
 import { KeyRound, LogOut, User, HardDrive, Sun, Moon, Monitor } from 'lucide-react';
+
+
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import {
   DropdownMenu,
@@ -15,7 +18,8 @@ import { useLogout } from '@/features/auth/hooks/use-auth';
 import { useTheme, type Theme } from '@/hooks/use-theme';
 import { cn } from '@/lib/utils';
 
-const BACKUP_ROLES = ['gym_owner', 'branch_manager', 'super_admin'];
+const BACKUP_ROLES         = ['gym_owner', 'branch_manager', 'super_admin'];
+const NOTIFICATION_ROLES   = ['gym_owner', 'branch_manager'];
 
 // ─── Theme toggle row ─────────────────────────────────────────────────────────
 
@@ -61,7 +65,8 @@ export default function UserMenu() {
   const navigate = useNavigate();
   const { resolvedTheme } = useTheme();
 
-  const canAccessBackup = BACKUP_ROLES.includes(user?.role ?? '');
+  const canAccessBackup        = BACKUP_ROLES.includes(user?.role ?? '');
+  const canAccessNotifications = NOTIFICATION_ROLES.includes(user?.role ?? '');
 
   const initials = user?.name
     ? user.name.split(' ').map((n) => n[0]).join('').toUpperCase().slice(0, 2)
@@ -108,6 +113,12 @@ export default function UserMenu() {
             <KeyRound className="mr-2 h-4 w-4" />
             Change password
           </DropdownMenuItem>
+          {canAccessNotifications && (
+            <DropdownMenuItem onClick={() => navigate('/settings/notifications')}>
+              <Bell className="mr-2 h-4 w-4" />
+              Notification Channels
+            </DropdownMenuItem>
+          )}
           {canAccessBackup && (
             <DropdownMenuItem onClick={() => navigate('/settings/backup')}>
               <HardDrive className="mr-2 h-4 w-4" />

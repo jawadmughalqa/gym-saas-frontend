@@ -67,8 +67,8 @@ const STATUS_LABELS: Record<string, string> = {
 };
 
 const ROLE_BADGE_CLASS: Record<string, string> = {
-  branch_manager: "border-blue-200 text-blue-700 bg-blue-50 dark:border-blue-800 dark:text-blue-300",
-  staff:          "border-slate-200 text-slate-700 dark:border-slate-700 dark:text-slate-300",
+  branch_manager: "border-blue-500/25 text-blue-500 bg-blue-500/10 dark:border-blue-800 dark:text-blue-300",
+  staff:          "border-border text-muted-foreground dark:border-slate-700 dark:text-muted-foreground/60",
 };
 
 function jobTitleLabel(value?: string) {

@@ -1,5 +1,5 @@
 import { useNavigate } from 'react-router-dom';
-import { Lock, Sparkles } from 'lucide-react';
+import { Lock, Sparkles, LogOut } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { usePlanFeatures, type PlanFeatureKey } from '@/hooks/use-plan-features';
 import { useAuthStore } from '@/stores/auth.store';
@@ -23,8 +23,10 @@ interface FeatureGateProps {
  * Only super_admin is exempt (they have no tenant plan restriction).
  */
 export default function FeatureGate({ feature, featureName, children }: FeatureGateProps) {
-  const navigate           = useNavigate();
-  const role               = useAuthStore((s) => s.user?.role);
+  // All hooks must be called unconditionally before any early returns
+  const navigate    = useNavigate();
+  const role        = useAuthStore((s) => s.user?.role);
+  const clearAuth   = useAuthStore((s) => s.clearAuth);
   const { hasFeature, isLoading } = usePlanFeatures();
 
   // Super admin has no tenant — always see everything
@@ -39,11 +41,16 @@ export default function FeatureGate({ feature, featureName, children }: FeatureG
   // ── Feature is disabled: show upgrade prompt ──────────────────────────────
   const displayName = featureName ?? feature;
 
-  // For members: direct them to contact their gym, not to upgrade themselves
   const isMemberOrTrainer = role === 'member' || role === 'trainer';
 
+  // When the blocked feature IS the member/trainer's portal itself, "Go Back"
+  // has nowhere to go — show logout instead so they don't land on admin pages.
+  const isPortalRoot =
+    (role === 'member'  && feature === 'memberPortal') ||
+    (role === 'trainer' && feature === 'trainerPortal');
+
   return (
-    <div className="flex flex-col items-center justify-center min-h-[400px] text-center px-4 py-12">
+    <div className="flex flex-col items-center justify-center min-h-screen text-center px-4 py-12">
       <div className="rounded-full bg-muted p-4 mb-4">
         <Lock className="h-8 w-8 text-muted-foreground" />
       </div>
@@ -54,7 +61,7 @@ export default function FeatureGate({ feature, featureName, children }: FeatureG
         {isMemberOrTrainer
           ? <>
               <strong>{displayName}</strong> is not enabled on your gym's current plan.
-              Contact your gym administrator to enable this feature.
+              Please contact your gym administrator to enable this feature.
             </>
           : <>
               Upgrade your subscription to unlock <strong>{displayName}</strong> and
@@ -69,9 +76,16 @@ export default function FeatureGate({ feature, featureName, children }: FeatureG
             View Plans & Upgrade
           </Button>
         )}
-        <Button variant="outline" onClick={() => navigate(-1)}>
-          Go Back
-        </Button>
+        {isPortalRoot ? (
+          <Button variant="outline" className="gap-2" onClick={() => { clearAuth(); navigate('/login', { replace: true }); }}>
+            <LogOut className="h-4 w-4" />
+            Sign Out
+          </Button>
+        ) : (
+          <Button variant="outline" onClick={() => navigate(-1)}>
+            Go Back
+          </Button>
+        )}
       </div>
     </div>
   );

@@ -147,10 +147,10 @@ export default function ApplyDiscountDialog({
           <DialogHeader>
             <DialogTitle>Discount Applied</DialogTitle>
           </DialogHeader>
-          <div className="rounded-lg border border-green-200 bg-green-50 px-4 py-3 flex items-center gap-3">
+          <div className="rounded-lg border border-green-500/25 bg-green-500/10 px-4 py-3 flex items-center gap-3">
             <Tag className="h-4 w-4 text-green-600 shrink-0" />
             <div className="flex-1 min-w-0">
-              <p className="text-sm font-medium text-green-800">Active discount</p>
+              <p className="text-sm font-medium text-green-500">Active discount</p>
               <p className="font-mono text-sm font-bold text-green-900">{appliedCode}</p>
             </div>
           </div>
@@ -309,7 +309,7 @@ export default function ApplyDiscountDialog({
                 {manualAmount && parseFloat(manualAmount) > 0 && (
                   <p className="text-xs text-muted-foreground">
                     Discount:{' '}
-                    <span className="font-medium text-green-700">
+                    <span className="font-medium text-green-500">
                       {manualType === 'percent'
                         ? `${currency} ${((invoiceTotal * parseFloat(manualAmount)) / 100).toFixed(2)}`
                         : `${currency} ${parseFloat(manualAmount).toFixed(2)}`}

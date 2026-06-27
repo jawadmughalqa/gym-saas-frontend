@@ -918,9 +918,9 @@ export default function InvoiceForm({
 
               {/* Show discount details if valid */}
               {discountValidation?.isValid && (
-                <div className="p-2 mt-2 space-y-1 text-xs rounded-md bg-green-50 dark:bg-green-950/20">
+                <div className="p-2 mt-2 space-y-1 text-xs rounded-md bg-green-500/10 dark:bg-green-950/20">
                   <div className="flex items-center justify-between">
-                    <p className="font-medium text-green-700 dark:text-green-400">✨ Discount Applied!</p>
+                    <p className="font-medium text-green-500 dark:text-green-400">✨ Discount Applied!</p>
                     <button
                       type="button"
                       onClick={() => setValue("discountCode", "")}
@@ -943,7 +943,7 @@ export default function InvoiceForm({
                       )}
                     </span>
                   </div>
-                  <div className="flex justify-between pt-1 font-semibold text-green-700 border-t border-green-200 dark:text-green-400 dark:border-green-800">
+                  <div className="flex justify-between pt-1 font-semibold text-green-500 border-t border-green-500/25 dark:text-green-400 dark:border-green-800">
                     <span>Final after discount:</span>
                     <span>
                       {formatCurrency(
@@ -1026,7 +1026,7 @@ export default function InvoiceForm({
               {/* Savings highlight */}
               {discountValidation?.isValid &&
                 discountValidation.discountAmount && (
-                  <div className="pt-2 mt-2 border-t border-green-200 dark:border-green-800">
+                  <div className="pt-2 mt-2 border-t border-green-500/25 dark:border-green-800">
                     <p className="text-xs text-center text-green-600 dark:text-green-400">
                       🎉 You're saving{" "}
                       {formatCurrency(

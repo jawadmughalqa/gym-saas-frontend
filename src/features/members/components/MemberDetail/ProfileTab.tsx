@@ -130,14 +130,14 @@ export function ProfileTab({ memberId }: ProfileTabProps) {
       {/* Wallet credit balance */}
       {((member as typeof member & { walletBalance?: number }).walletBalance ?? 0) > 0 && (
         <div className="md:col-span-2">
-          <Card className="border-emerald-200 bg-emerald-50/50">
+          <Card className="border-emerald-500/25 bg-emerald-500/10">
             <CardContent className="flex flex-wrap items-center gap-3 py-3 px-4">
-              <div className="flex h-9 w-9 items-center justify-center rounded-full bg-emerald-100 shrink-0">
+              <div className="flex h-9 w-9 items-center justify-center rounded-full bg-emerald-500/15 shrink-0">
                 <Wallet className="h-5 w-5 text-emerald-600" />
               </div>
               <div className="min-w-0">
-                <p className="text-xs text-emerald-700 font-medium uppercase tracking-wide">Wallet Credit</p>
-                <p className="text-lg font-bold text-emerald-800 leading-tight">
+                <p className="text-xs text-emerald-500 font-medium uppercase tracking-wide">Wallet Credit</p>
+                <p className="text-lg font-bold text-emerald-500 leading-tight">
                   {formatCurrency(
                     (member as typeof member & { walletBalance?: number }).walletBalance!,
                     currency,
@@ -151,7 +151,7 @@ export function ProfileTab({ memberId }: ProfileTabProps) {
                 <Button
                   size="sm"
                   variant="outline"
-                  className="shrink-0 border-emerald-300 text-emerald-700 hover:bg-emerald-100 hover:text-emerald-800"
+                  className="shrink-0 border-emerald-300 text-emerald-500 hover:bg-emerald-500/15 hover:text-emerald-500"
                   onClick={() => setPayoutOpen(true)}
                 >
                   <ArrowDownToLine className="h-3.5 w-3.5 mr-1.5" />

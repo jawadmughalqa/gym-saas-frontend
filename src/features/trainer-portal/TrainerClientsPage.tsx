@@ -76,7 +76,7 @@ function ClientCard({
             <Badge
               className={
                 assignment.status === 'active'
-                  ? 'bg-green-100 text-green-700 border-green-200 hover:bg-green-100 shrink-0'
+                  ? 'bg-green-500/15 text-green-500 border-green-500/25 hover:bg-green-500/15 shrink-0'
                   : 'shrink-0'
               }
               variant={assignment.status === 'active' ? 'outline' : 'secondary'}

@@ -82,7 +82,7 @@ export function MemberCredentialsDialog({
           />
         </div>
 
-        <p className="text-xs text-muted-foreground bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800 rounded-lg px-3 py-2">
+        <p className="text-xs text-muted-foreground bg-amber-500/10 dark:bg-amber-950/30 border border-amber-500/25 dark:border-amber-800 rounded-lg px-3 py-2">
           ⚠️ Save these credentials now — the password cannot be retrieved again. If lost, use
           <strong> Resend Credentials</strong> on the member's profile to generate a new one.
         </p>

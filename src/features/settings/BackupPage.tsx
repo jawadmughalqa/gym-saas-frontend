@@ -179,9 +179,9 @@ export default function BackupPage() {
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
-            <div className="flex items-start gap-3 rounded-md border border-amber-200 bg-amber-50 p-3 dark:border-amber-800 dark:bg-amber-950/30">
+            <div className="flex items-start gap-3 rounded-md border border-amber-500/25 bg-amber-500/10 p-3 dark:border-amber-800 dark:bg-amber-950/30">
               <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-amber-600 dark:text-amber-400" />
-              <p className="text-sm text-amber-700 dark:text-amber-300">
+              <p className="text-sm text-amber-500 dark:text-amber-300">
                 Restoring will overwrite existing records with the data from the backup file.
                 This action cannot be undone.
               </p>
@@ -210,14 +210,14 @@ export default function BackupPage() {
             </div>
 
             {importResult && (
-              <div className="rounded-md border border-green-200 bg-green-50 p-3 dark:border-green-800 dark:bg-green-950/30">
+              <div className="rounded-md border border-green-500/25 bg-green-500/10 p-3 dark:border-green-800 dark:bg-green-950/30">
                 <div className="flex items-center gap-2 mb-2">
                   <CheckCircle2 className="h-4 w-4 text-green-600 dark:text-green-400" />
-                  <p className="text-sm font-medium text-green-700 dark:text-green-300">Restore complete</p>
+                  <p className="text-sm font-medium text-green-500 dark:text-green-300">Restore complete</p>
                 </div>
                 <div className="grid grid-cols-2 gap-x-8 gap-y-1">
                   {Object.entries(importResult).map(([collection, count]) => (
-                    <div key={collection} className="flex justify-between text-xs text-green-700 dark:text-green-400">
+                    <div key={collection} className="flex justify-between text-xs text-green-500 dark:text-green-400">
                       <span className="capitalize">{collection.replace(/([A-Z])/g, ' $1')}</span>
                       <span className="font-medium">{count}</span>
                     </div>

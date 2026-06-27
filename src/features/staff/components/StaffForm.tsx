@@ -128,14 +128,14 @@ function BranchManagerInfo() {
   const [expanded, setExpanded] = useState(false);
 
   return (
-    <div className="rounded-lg border border-blue-200 bg-blue-50 dark:bg-blue-950/30 dark:border-blue-800 overflow-hidden">
+    <div className="rounded-lg border border-blue-500/25 bg-blue-500/10 dark:bg-blue-950/30 dark:border-blue-800 overflow-hidden">
       <button
         type="button"
         className="flex w-full items-center gap-2 px-3 py-2.5 text-left"
         onClick={() => setExpanded((v) => !v)}
       >
         <ShieldCheck className="h-4 w-4 text-blue-600 flex-shrink-0" />
-        <span className="flex-1 text-sm font-semibold text-blue-800 dark:text-blue-300">
+        <span className="flex-1 text-sm font-semibold text-blue-500 dark:text-blue-300">
           Branch Manager — what they can do
         </span>
         {expanded
@@ -145,9 +145,9 @@ function BranchManagerInfo() {
       </button>
 
       {expanded && (
-        <div className="px-3 pb-3 space-y-3 border-t border-blue-200 dark:border-blue-800 pt-3">
+        <div className="px-3 pb-3 space-y-3 border-t border-blue-500/25 dark:border-blue-800 pt-3">
           <div className="space-y-2">
-            <p className="text-xs font-semibold text-blue-700 dark:text-blue-400 uppercase tracking-wide">
+            <p className="text-xs font-semibold text-blue-500 dark:text-blue-400 uppercase tracking-wide">
               ✓ Can do
             </p>
             <div className="grid gap-2">
@@ -155,7 +155,7 @@ function BranchManagerInfo() {
                 <div key={label} className="flex gap-2">
                   <Icon className="h-3.5 w-3.5 text-blue-500 flex-shrink-0 mt-0.5" />
                   <div>
-                    <p className="text-xs font-medium text-blue-800 dark:text-blue-200">{label}</p>
+                    <p className="text-xs font-medium text-blue-500 dark:text-blue-200">{label}</p>
                     <p className="text-xs text-blue-600 dark:text-blue-400">{detail}</p>
                   </div>
                 </div>
@@ -172,15 +172,15 @@ function BranchManagerInfo() {
             {BM_CANNOT.map((item) => (
               <div key={item} className="flex gap-2 items-start">
                 <span className="text-red-400 text-xs mt-px">✕</span>
-                <p className="text-xs text-red-700 dark:text-red-400">{item}</p>
+                <p className="text-xs text-red-500 dark:text-red-400">{item}</p>
               </div>
             ))}
           </div>
 
-          <div className="rounded bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-800 px-2.5 py-2">
+          <div className="rounded bg-amber-500/10 dark:bg-amber-950/40 border border-amber-500/25 dark:border-amber-800 px-2.5 py-2">
             <div className="flex gap-1.5 items-start">
               <Info className="h-3.5 w-3.5 text-amber-600 flex-shrink-0 mt-px" />
-              <p className="text-xs text-amber-700 dark:text-amber-400">
+              <p className="text-xs text-amber-500 dark:text-amber-400">
                 A Branch Manager only sees data from branches they are assigned to.
                 Assigning to multiple branches gives access to all of them.
               </p>
@@ -499,7 +499,7 @@ export default function StaffForm({ open, onClose, staff }: StaffFormProps) {
           {/* ── Credentials shown after creation ── */}
           {credentials && (
             <div className="space-y-4">
-              <div className="rounded-lg border border-green-500 bg-green-50 dark:bg-green-950 p-3 text-sm text-green-700 dark:text-green-300 font-medium">
+              <div className="rounded-lg border border-green-500 bg-green-500/10 dark:bg-green-950 p-3 text-sm text-green-500 dark:text-green-300 font-medium">
                 ✓ Account created successfully!
               </div>
               <div className="rounded-lg border p-4 space-y-3">

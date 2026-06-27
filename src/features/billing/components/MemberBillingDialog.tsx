@@ -150,8 +150,8 @@ export function MemberBillingDialog({
                     className={cn(
                       'rounded-lg p-3 border',
                       totalOutstanding > 0
-                        ? 'bg-red-50 border-red-100'
-                        : 'bg-emerald-50 border-emerald-100',
+                        ? 'bg-red-500/10 border-red-100'
+                        : 'bg-emerald-500/10 border-emerald-100',
                     )}
                   >
                     <p className="text-xs text-muted-foreground mb-1">Total Outstanding</p>

@@ -233,8 +233,8 @@ export function BillingTab({ memberId, branchId, memberName }: BillingTabProps) 
             className={cn(
               'rounded-lg p-4 border',
               totalOutstanding > 0
-                ? 'bg-red-50 border-red-100'
-                : 'bg-emerald-50 border-emerald-100',
+                ? 'bg-red-500/10 border-red-100'
+                : 'bg-emerald-500/10 border-emerald-100',
             )}
           >
             <p className="text-xs text-muted-foreground mb-1">Total Outstanding</p>
@@ -320,18 +320,18 @@ export function BillingTab({ memberId, branchId, memberName }: BillingTabProps) 
                   {walletPayouts.map((payout) => (
                     <div
                       key={payout._id}
-                      className="flex items-center gap-3 rounded-lg border border-emerald-100 bg-emerald-50/40 px-3 py-2.5"
+                      className="flex items-center gap-3 rounded-lg border border-emerald-100 bg-emerald-500/10 px-3 py-2.5"
                     >
-                      <div className="flex h-7 w-7 items-center justify-center rounded-full bg-emerald-100 shrink-0">
+                      <div className="flex h-7 w-7 items-center justify-center rounded-full bg-emerald-500/15 shrink-0">
                         {payout.medium === 'cash'
-                          ? <Banknote className="h-3.5 w-3.5 text-emerald-700" />
-                          : <Landmark  className="h-3.5 w-3.5 text-emerald-700" />}
+                          ? <Banknote className="h-3.5 w-3.5 text-emerald-500" />
+                          : <Landmark  className="h-3.5 w-3.5 text-emerald-500" />}
                       </div>
                       <div className="flex-1 min-w-0">
-                        <p className="text-sm font-medium text-emerald-800 leading-tight">
-                          {formatCurrency(payout.amount, tenantCurrency)} paid out
+                        <p className="text-sm font-medium text-emerald-500 leading-tight">
+                          {formatCurrency(payout.amount, payout.medium === 'cash' ? CURRENCY : CURRENCY)} paid out
                           {' '}
-                          <span className="font-normal text-emerald-700">
+                          <span className="font-normal text-emerald-500">
                             via {payout.medium === 'cash' ? 'Cash' : 'Bank Transfer'}
                           </span>
                         </p>

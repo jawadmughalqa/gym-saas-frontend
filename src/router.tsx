@@ -8,12 +8,15 @@ import UnauthorizedPage from "@/components/shared/UnauthorizedPage";
 import LoginPage from "@/features/auth/LoginPage";
 import RootRedirect from "@/features/auth/RootRedirect";
 import DashboardPage from "@/features/dashboard/DashboardPage";
+import FeatureRoute from "@/components/shared/FeatureRoute";
 
 // ─── Lazy pages ───────────────────────────────────────────────────────────────
 
-const ChangePasswordPage  = lazy(() => import("@/features/auth/ChangePasswordPage"));
-const PricingPage         = lazy(() => import("@/features/settings/PricingPage"));
-const BackupPage          = lazy(() => import("@/features/settings/BackupPage"));
+const ChangePasswordPage         = lazy(() => import("@/features/auth/ChangePasswordPage"));
+const PricingPage                = lazy(() => import("@/features/settings/PricingPage"));
+const BackupPage                 = lazy(() => import("@/features/settings/BackupPage"));
+const NotificationSettingsPage   = lazy(() => import("@/features/settings/NotificationSettingsPage"));
+const BroadcastPage              = lazy(() => import("@/features/settings/BroadcastPage"));
 const ProfilePage         = lazy(() => import("@/features/auth/ProfilePage"));
 const MembersPage         = lazy(() => import("@/features/members/MembersPage"));
 const MemberDetailPage    = lazy(() => import("@/features/members/MemberDetailPage"));
@@ -123,6 +126,16 @@ const router = createBrowserRouter([
                 element: <Lazy><BackupPage /></Lazy>,
                 handle: { crumb: "Backup & Restore" },
               },
+              {
+                path: "notifications",
+                element: <Lazy><NotificationSettingsPage /></Lazy>,
+                handle: { crumb: "Notification Channels" },
+              },
+              {
+                path: "broadcast",
+                element: <Lazy><BroadcastPage /></Lazy>,
+                handle: { crumb: "Send Message" },
+              },
             ],
           },
 
@@ -160,22 +173,22 @@ const router = createBrowserRouter([
               { index: true, element: <Navigate to="/billing/dashboard" replace /> }, // ← Redirect to dashboard
               {
                 path: "dashboard",
-                element: <Lazy><BillingDashboard /></Lazy>,
+                element: <FeatureRoute feature="billing" featureName="Billing"><Lazy><BillingDashboard /></Lazy></FeatureRoute>,
                 handle: { crumb: "Dashboard" },
               },
               {
                 path: "invoices",
-                element: <Lazy><InvoicesPage /></Lazy>,
+                element: <FeatureRoute feature="billing" featureName="Billing"><Lazy><InvoicesPage /></Lazy></FeatureRoute>,
                 handle: { crumb: "Invoices" },
               },
               {
                 path: "invoices/:invoiceId",
-                element: <Lazy><InvoiceDetailPage /></Lazy>,
+                element: <FeatureRoute feature="billing" featureName="Billing"><Lazy><InvoiceDetailPage /></Lazy></FeatureRoute>,
                 handle: { crumb: "Invoice" },
               },
               {
                 path: "discounts",
-                element: <Lazy><DiscountsPage /></Lazy>,
+                element: <FeatureRoute feature="discounts" featureName="Discounts"><Lazy><DiscountsPage /></Lazy></FeatureRoute>,
                 handle: { crumb: "Discounts" },
               },
             ],
@@ -184,26 +197,26 @@ const router = createBrowserRouter([
           // ── Expenses ─────────────────────────────────────────────────
           {
             path: "expenses",
-            element: <Lazy><ExpensesPage /></Lazy>,
+            element: <FeatureRoute feature="expenses" featureName="Expenses"><Lazy><ExpensesPage /></Lazy></FeatureRoute>,
             handle: { crumb: "Expenses" },
           },
           {
             path: "expense-analytics",
-            element: <Lazy><ExpenseAnalyticsPage /></Lazy>,
+            element: <FeatureRoute feature="expenses" featureName="Expenses"><Lazy><ExpenseAnalyticsPage /></Lazy></FeatureRoute>,
             handle: { crumb: "Expense Analytics" },
           },
 
           // ── Refunds ──────────────────────────────────────────────────
           {
             path: "refunds",
-            element: <Lazy><RefundsPage /></Lazy>,
+            element: <FeatureRoute feature="billing" featureName="Billing"><Lazy><RefundsPage /></Lazy></FeatureRoute>,
             handle: { crumb: "Refunds" },
           },
 
           // ── Walk-in Leads ────────────────────────────────────────────
           {
             path: "walk-in-leads",
-            element: <Lazy><WalkInLeadsPage /></Lazy>,
+            element: <FeatureRoute feature="walkInLeads" featureName="Walk-in Leads"><Lazy><WalkInLeadsPage /></Lazy></FeatureRoute>,
             handle: { crumb: "Walk-in Leads" },
           },
 
@@ -240,10 +253,10 @@ const router = createBrowserRouter([
             path: "equipment",
             handle: { crumb: "Equipment" },
             children: [
-              { index: true, element: <Lazy><EquipmentPage /></Lazy> },
+              { index: true, element: <FeatureRoute feature="equipment" featureName="Equipment"><Lazy><EquipmentPage /></Lazy></FeatureRoute> },
               {
                 path: ":equipmentId",
-                element: <Lazy><EquipmentDetailPage /></Lazy>,
+                element: <FeatureRoute feature="equipment" featureName="Equipment"><Lazy><EquipmentDetailPage /></Lazy></FeatureRoute>,
                 handle: { crumb: "Equipment Detail" },
               },
             ],
@@ -259,7 +272,7 @@ const router = createBrowserRouter([
           // ── Reports ───────────────────────────────────────────────────
           {
             path: "reports",
-            element: <Lazy><ReportsPage /></Lazy>,
+            element: <FeatureRoute feature="reports" featureName="Reports"><Lazy><ReportsPage /></Lazy></FeatureRoute>,
             handle: { crumb: "Reports" },
           },
 
@@ -275,10 +288,10 @@ const router = createBrowserRouter([
             path: "branches",
             handle: { crumb: "Branches" },
             children: [
-              { index: true, element: <Lazy><BranchesPage /></Lazy> },
+              { index: true, element: <FeatureRoute feature="branches" featureName="Multi-Branch"><Lazy><BranchesPage /></Lazy></FeatureRoute> },
               {
                 path: ":branchId",
-                element: <Lazy><BranchDetailPage /></Lazy>,
+                element: <FeatureRoute feature="branches" featureName="Multi-Branch"><Lazy><BranchDetailPage /></Lazy></FeatureRoute>,
                 handle: { crumb: "Branch Detail" },
               },
             ],
@@ -295,37 +308,37 @@ const router = createBrowserRouter([
               { index: true, element: <Navigate to="/member/home" replace /> },
               {
                 path: "home",
-                element: <Lazy><MemberHomePage /></Lazy>,
+                element: <FeatureRoute feature="memberPortal" featureName="Member Portal"><Lazy><MemberHomePage /></Lazy></FeatureRoute>,
                 handle: { crumb: "Home" },
               },
               {
                 path: "plan",
-                element: <Lazy><MemberPlanPage /></Lazy>,
+                element: <FeatureRoute feature="memberPortal" featureName="Member Portal"><Lazy><MemberPlanPage /></Lazy></FeatureRoute>,
                 handle: { crumb: "My Plan" },
               },
               {
                 path: "invoices",
-                element: <Lazy><MemberInvoicesPage /></Lazy>,
+                element: <FeatureRoute feature="memberPortal" featureName="Member Portal"><Lazy><MemberInvoicesPage /></Lazy></FeatureRoute>,
                 handle: { crumb: "My Invoices" },
               },
               {
                 path: "trainer",
-                element: <Lazy><MemberTrainerPage /></Lazy>,
+                element: <FeatureRoute feature="memberPortal" featureName="Member Portal"><Lazy><MemberTrainerPage /></Lazy></FeatureRoute>,
                 handle: { crumb: "My Trainer" },
               },
               {
                 path: "fit-plan",
                 handle: { crumb: "FitPlan" },
                 children: [
-                  { index: true, element: <Lazy><FitPlanPage /></Lazy> },
+                  { index: true, element: <FeatureRoute feature="fitPlan" featureName="FitPlan"><Lazy><FitPlanPage /></Lazy></FeatureRoute> },
                   {
                     path: "progress",
-                    element: <Lazy><FitPlanProgressPage /></Lazy>,
+                    element: <FeatureRoute feature="fitPlan" featureName="FitPlan"><Lazy><FitPlanProgressPage /></Lazy></FeatureRoute>,
                     handle: { crumb: "Progress" },
                   },
                   {
                     path: "history",
-                    element: <Lazy><FitPlanHistoryPage /></Lazy>,
+                    element: <FeatureRoute feature="fitPlan" featureName="FitPlan"><Lazy><FitPlanHistoryPage /></Lazy></FeatureRoute>,
                     handle: { crumb: "Plan History" },
                   },
                 ],
@@ -343,17 +356,17 @@ const router = createBrowserRouter([
               { index: true, element: <Navigate to="/trainer/dashboard" replace /> },
               {
                 path: "dashboard",
-                element: <Lazy><TrainerDashboardPage /></Lazy>,
+                element: <FeatureRoute feature="trainerPortal" featureName="Trainer Portal"><Lazy><TrainerDashboardPage /></Lazy></FeatureRoute>,
                 handle: { crumb: "Dashboard" },
               },
               {
                 path: "clients",
-                element: <Lazy><TrainerClientsPage /></Lazy>,
+                element: <FeatureRoute feature="trainerPortal" featureName="Trainer Portal"><Lazy><TrainerClientsPage /></Lazy></FeatureRoute>,
                 handle: { crumb: "My Clients" },
               },
               {
                 path: "notes",
-                element: <Lazy><TrainerNotesPage /></Lazy>,
+                element: <FeatureRoute feature="trainerPortal" featureName="Trainer Portal"><Lazy><TrainerNotesPage /></Lazy></FeatureRoute>,
                 handle: { crumb: "Training Notes" },
               },
             ],

@@ -281,8 +281,8 @@ function WalletPayoutsTab() {
       key: 'amount',
       header: 'Amount',
       cell: (row) => (
-        <span className="font-semibold text-emerald-700">
-          {formatCurrency(row.amount, tenantCurrency)}
+        <span className="font-semibold text-emerald-500">
+          {formatCurrency(row.amount, CURRENCY)}
         </span>
       ),
     },
@@ -337,13 +337,13 @@ function WalletPayoutsTab() {
             { label: 'Cash Payouts',      value: totalCash, icon: <Banknote className="h-4 w-4 text-emerald-600" /> },
             { label: 'Bank Transfers',    value: totalBank, icon: <Landmark  className="h-4 w-4 text-emerald-600" /> },
           ].map(({ label, value, icon }) => (
-            <div key={label} className="rounded-lg border border-emerald-100 bg-emerald-50/40 px-4 py-3">
+            <div key={label} className="rounded-lg border border-emerald-100 bg-emerald-500/10 px-4 py-3">
               <div className="flex items-center gap-1.5 mb-1">
                 {icon}
-                <p className="text-xs text-emerald-700 font-medium">{label}</p>
+                <p className="text-xs text-emerald-500 font-medium">{label}</p>
               </div>
-              <p className="text-lg font-bold text-emerald-800">
-                {formatCurrency(value, tenantCurrency)}
+              <p className="text-lg font-bold text-emerald-500">
+                {formatCurrency(value, CURRENCY)}
               </p>
             </div>
           ))}

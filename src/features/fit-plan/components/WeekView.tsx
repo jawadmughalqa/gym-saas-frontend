@@ -13,12 +13,12 @@ const DAY_TYPE_CONFIG: Record<string, {
   border:  string;
 }> = {
   chest:     { emoji: '💪', label: 'Chest',  dateBg: 'bg-rose-500',   dateText: 'text-white', cardBg: 'bg-rose-50   dark:bg-rose-950/40',   border: 'border-rose-200   dark:border-rose-800'   },
-  back:      { emoji: '🏋️', label: 'Back',   dateBg: 'bg-blue-500',   dateText: 'text-white', cardBg: 'bg-blue-50   dark:bg-blue-950/40',   border: 'border-blue-200   dark:border-blue-800'   },
-  legs:      { emoji: '🦵', label: 'Legs',   dateBg: 'bg-orange-500', dateText: 'text-white', cardBg: 'bg-orange-50 dark:bg-orange-950/40', border: 'border-orange-200 dark:border-orange-800' },
-  arms:      { emoji: '🤜', label: 'Arms',   dateBg: 'bg-purple-500', dateText: 'text-white', cardBg: 'bg-purple-50 dark:bg-purple-950/40', border: 'border-purple-200 dark:border-purple-800' },
-  full_body: { emoji: '⚡', label: 'Full',   dateBg: 'bg-amber-500',  dateText: 'text-white', cardBg: 'bg-amber-50  dark:bg-amber-950/40',  border: 'border-amber-200  dark:border-amber-800'  },
-  cardio:    { emoji: '🏃', label: 'Cardio', dateBg: 'bg-green-500',  dateText: 'text-white', cardBg: 'bg-green-50  dark:bg-green-950/40',  border: 'border-green-200  dark:border-green-800'  },
-  rest:      { emoji: '🧘', label: 'Rest',   dateBg: 'bg-slate-400',  dateText: 'text-white', cardBg: 'bg-slate-50  dark:bg-slate-900/40',  border: 'border-slate-200  dark:border-slate-700'  },
+  back:      { emoji: '🏋️', label: 'Back',   dateBg: 'bg-blue-500',   dateText: 'text-white', cardBg: 'bg-blue-500/10   dark:bg-blue-950/40',   border: 'border-blue-500/25   dark:border-blue-800'   },
+  legs:      { emoji: '🦵', label: 'Legs',   dateBg: 'bg-orange-500', dateText: 'text-white', cardBg: 'bg-orange-500/10 dark:bg-orange-950/40', border: 'border-orange-500/25 dark:border-orange-800' },
+  arms:      { emoji: '🤜', label: 'Arms',   dateBg: 'bg-purple-500', dateText: 'text-white', cardBg: 'bg-purple-500/10 dark:bg-purple-950/40', border: 'border-purple-500/25 dark:border-purple-800' },
+  full_body: { emoji: '⚡', label: 'Full',   dateBg: 'bg-amber-500',  dateText: 'text-white', cardBg: 'bg-amber-500/10  dark:bg-amber-950/40',  border: 'border-amber-500/25  dark:border-amber-800'  },
+  cardio:    { emoji: '🏃', label: 'Cardio', dateBg: 'bg-green-500',  dateText: 'text-white', cardBg: 'bg-green-500/10  dark:bg-green-950/40',  border: 'border-green-500/25  dark:border-green-800'  },
+  rest:      { emoji: '🧘', label: 'Rest',   dateBg: 'bg-slate-400',  dateText: 'text-white', cardBg: 'bg-muted/60  dark:bg-slate-900/40',  border: 'border-border  dark:border-slate-700'  },
 };
 
 // ─── Status overrides ─────────────────────────────────────────────────────────

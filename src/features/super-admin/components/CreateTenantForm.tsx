@@ -313,8 +313,8 @@ export default function CreateTenantForm({ open, onOpenChange, onSuccess }: Crea
         {/* ── Success state ── */}
         {created ? (
           <div className="space-y-4">
-            <Alert className="border-green-500 bg-green-50 dark:bg-green-950">
-              <AlertDescription className="text-green-700 dark:text-green-300 font-medium">
+            <Alert className="border-green-500 bg-green-500/10 dark:bg-green-950">
+              <AlertDescription className="text-green-500 dark:text-green-300 font-medium">
                 ✓ Tenant provisioned successfully!
               </AlertDescription>
             </Alert>

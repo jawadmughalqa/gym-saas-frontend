@@ -58,7 +58,7 @@ function MediumCard({
             selected ? 'border-primary bg-primary' : 'border-muted-foreground/40'
           }`}
         >
-          {selected && <div className="h-1.5 w-1.5 rounded-full bg-white" />}
+          {selected && <div className="h-1.5 w-1.5 rounded-full bg-card" />}
         </div>
       </div>
       <p className="text-[11px] text-muted-foreground leading-snug">{description}</p>
@@ -140,8 +140,8 @@ export function WalletPayoutDialog({ open, onOpenChange, memberId, walletBalance
           <DialogDescription>
             Record cash or bank transfer returned to the member.
             Available balance:{' '}
-            <strong className="text-emerald-700">
-              {formatCurrency(walletBalance, currency)}
+            <strong className="text-emerald-500">
+              {formatCurrency(walletBalance, CURRENCY)}
             </strong>
           </DialogDescription>
         </DialogHeader>

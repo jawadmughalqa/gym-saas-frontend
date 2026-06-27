@@ -84,21 +84,21 @@ function StatCardSkeleton() {
 function TxSettlementBadge({ status }: { status?: string }) {
   if (status === 'fully_paid') {
     return (
-      <span className="inline-flex items-center gap-1 text-[10px] font-semibold text-green-700 bg-green-50 border border-green-200 rounded-full px-2 py-0.5">
+      <span className="inline-flex items-center gap-1 text-[10px] font-semibold text-green-500 bg-green-500/10 border border-green-500/25 rounded-full px-2 py-0.5">
         <CheckCircle2 className="h-2.5 w-2.5" /> Fully Paid
       </span>
     );
   }
   if (status === 'partial_paid') {
     return (
-      <span className="inline-flex items-center gap-1 text-[10px] font-semibold text-orange-700 bg-orange-50 border border-orange-200 rounded-full px-2 py-0.5">
+      <span className="inline-flex items-center gap-1 text-[10px] font-semibold text-orange-500 bg-orange-500/10 border border-orange-500/25 rounded-full px-2 py-0.5">
         <MinusCircle className="h-2.5 w-2.5" /> Partial Paid
       </span>
     );
   }
   if (status === 'refunded') {
     return (
-      <span className="inline-flex items-center gap-1 text-[10px] font-semibold text-red-600 bg-red-50 border border-red-200 rounded-full px-2 py-0.5">
+      <span className="inline-flex items-center gap-1 text-[10px] font-semibold text-red-600 bg-red-500/10 border border-red-500/25 rounded-full px-2 py-0.5">
         <RotateCcw className="h-2.5 w-2.5" /> Refunded
       </span>
     );
@@ -111,7 +111,7 @@ function TxSettlementBadge({ status }: { status?: string }) {
     );
   }
   return (
-    <span className="inline-flex items-center gap-1 text-[10px] font-semibold text-red-700 bg-red-50 border border-red-200 rounded-full px-2 py-0.5">
+    <span className="inline-flex items-center gap-1 text-[10px] font-semibold text-red-500 bg-red-500/10 border border-red-500/25 rounded-full px-2 py-0.5">
       <XCircle className="h-2.5 w-2.5" /> Pending
     </span>
   );
@@ -324,28 +324,28 @@ export default function BillingDashboard() {
                 title="Total Revenue"
                 value={formatCurrency(stats?.totalRevenue ?? 0, currency)}
                 icon={TrendingUp}
-                iconClassName="bg-green-100 text-green-700"
+                iconClassName="bg-green-500/15 text-green-500"
                 subtitle="Net after refunds"
               />
               <StatCard
                 title="Total Refunds"
                 value={formatCurrency((stats as any)?.totalRefunds ?? 0, currency)}
                 icon={RotateCcw}
-                iconClassName={(stats as any)?.totalRefunds > 0 ? 'bg-red-100 text-red-600' : 'bg-muted text-muted-foreground'}
+                iconClassName={(stats as any)?.totalRefunds > 0 ? 'bg-red-500/15 text-red-600' : 'bg-muted text-muted-foreground'}
                 subtitle="Refunded to members"
               />
               <StatCard
                 title="Pending Fees"
                 value={formatCurrency(stats?.pendingFees ?? 0, currency)}
                 icon={Clock}
-                iconClassName={(stats?.pendingFees ?? 0) > 0 ? 'bg-orange-100 text-orange-600' : 'bg-muted text-muted-foreground'}
+                iconClassName={(stats?.pendingFees ?? 0) > 0 ? 'bg-orange-500/15 text-orange-600' : 'bg-muted text-muted-foreground'}
                 subtitle="Outstanding invoices"
               />
               <StatCard
                 title="Today's Collection"
                 value={formatCurrency(stats?.todayCollection ?? 0, currency)}
                 icon={Wallet}
-                iconClassName="bg-blue-100 text-blue-700"
+                iconClassName="bg-blue-500/15 text-blue-500"
                 subtitle="Received today"
               />
             </>
@@ -357,13 +357,13 @@ export default function BillingDashboard() {
       {!loadingStats && stats && (stats as any).byMethod && Object.keys((stats as any).byMethod).length > 0 && (() => {
         type MethodMeta = { label: string; icon: React.ReactNode; iconCls: string };
         const METHOD_META: Record<string, MethodMeta> = {
-          cash:          { label: 'Cash',          icon: <Banknote className="h-4 w-4" />,   iconCls: 'bg-green-100 text-green-600' },
-          card:          { label: 'Card',          icon: <CreditCard className="h-4 w-4" />, iconCls: 'bg-blue-100 text-blue-600' },
-          bank_transfer: { label: 'Bank Transfer', icon: <Building2 className="h-4 w-4" />,  iconCls: 'bg-purple-100 text-purple-600' },
-          cheque:        { label: 'Cheque',        icon: <FileText className="h-4 w-4" />,   iconCls: 'bg-orange-100 text-orange-600' },
+          cash:          { label: 'Cash',          icon: <Banknote className="h-4 w-4" />,   iconCls: 'bg-green-500/15 text-green-600' },
+          card:          { label: 'Card',          icon: <CreditCard className="h-4 w-4" />, iconCls: 'bg-blue-500/15 text-blue-600' },
+          bank_transfer: { label: 'Bank Transfer', icon: <Building2 className="h-4 w-4" />,  iconCls: 'bg-purple-500/15 text-purple-600' },
+          cheque:        { label: 'Cheque',        icon: <FileText className="h-4 w-4" />,   iconCls: 'bg-orange-500/15 text-orange-600' },
           online:        { label: 'Online',        icon: <Globe className="h-4 w-4" />,      iconCls: 'bg-cyan-100 text-cyan-600' },
-          jazzcash:      { label: 'JazzCash',      icon: <Smartphone className="h-4 w-4" />, iconCls: 'bg-red-100 text-red-600' },
-          easypaisa:     { label: 'EasyPaisa',     icon: <Smartphone className="h-4 w-4" />, iconCls: 'bg-emerald-100 text-emerald-600' },
+          jazzcash:      { label: 'JazzCash',      icon: <Smartphone className="h-4 w-4" />, iconCls: 'bg-red-500/15 text-red-600' },
+          easypaisa:     { label: 'EasyPaisa',     icon: <Smartphone className="h-4 w-4" />, iconCls: 'bg-emerald-500/15 text-emerald-600' },
           other:         { label: 'Other',         icon: <Wallet className="h-4 w-4" />,     iconCls: 'bg-muted text-muted-foreground' },
         };
         const byMethod = (stats as any).byMethod as Record<string, { total: number; count: number }>;
@@ -477,11 +477,11 @@ export default function BillingDashboard() {
                         <div className="flex items-center gap-2">
                           <div className={cn(
                             'h-7 w-7 rounded-full flex items-center justify-center text-[10px] font-bold shrink-0 uppercase',
-                            tx.invoiceStatus === 'fully_paid'   ? 'bg-green-100 text-green-700' :
-                            tx.invoiceStatus === 'partial_paid' ? 'bg-orange-100 text-orange-700' :
-                            tx.invoiceStatus === 'refunded'     ? 'bg-red-100 text-red-600' :
+                            tx.invoiceStatus === 'fully_paid'   ? 'bg-green-500/15 text-green-500' :
+                            tx.invoiceStatus === 'partial_paid' ? 'bg-orange-500/15 text-orange-500' :
+                            tx.invoiceStatus === 'refunded'     ? 'bg-red-500/15 text-red-600' :
                             tx.invoiceStatus === 'void'         ? 'bg-muted text-muted-foreground' :
-                                                                  'bg-red-100 text-red-700',
+                                                                  'bg-red-500/15 text-red-500',
                           )}>
                             {(tx.memberName ?? '?').charAt(0)}
                           </div>
@@ -522,7 +522,7 @@ export default function BillingDashboard() {
                             </div>
                             <div className="text-center border-x border-border/50">
                               <p className="text-[9px] text-muted-foreground uppercase tracking-wide">Paid</p>
-                              <p className="text-[10px] font-semibold tabular-nums text-green-700">
+                              <p className="text-[10px] font-semibold tabular-nums text-green-500">
                                 {formatCurrency(tx.invoiceAmountPaid ?? 0, txCurrency)}
                               </p>
                             </div>
@@ -530,7 +530,7 @@ export default function BillingDashboard() {
                               <p className="text-[9px] text-muted-foreground uppercase tracking-wide">Remaining</p>
                               <p className={cn(
                                 'text-[10px] font-semibold tabular-nums',
-                                (tx.invoiceAmountDue ?? 0) > 0 ? 'text-red-600' : 'text-green-700',
+                                (tx.invoiceAmountDue ?? 0) > 0 ? 'text-red-600' : 'text-green-500',
                               )}>
                                 {formatCurrency(tx.invoiceAmountDue ?? 0, txCurrency)}
                               </p>

@@ -74,11 +74,13 @@ const FEATURE_FLAGS: FeatureFlagDef[] = [
   { key: 'attendance',    label: 'Attendance',        description: 'Check-in & attendance tracking',     icon: ScanLine,    color: 'text-cyan-500',   category: 'core'     },
   { key: 'notifications', label: 'Notifications',     description: 'In-app & push notifications',        icon: Bell,        color: 'text-amber-500',  category: 'core'     },
   { key: 'memberPortal',  label: 'Member Portal',     description: 'Member self-service portal',         icon: Smartphone,  color: 'text-indigo-500', category: 'portal'   },
+  { key: 'trainerPortal',       label: 'Trainer Portal',        description: 'Trainer self-service login portal',       icon: UserCheck,   color: 'text-teal-500',   category: 'portal'   },
+  { key: 'branchManagerPortal', label: 'Branch Manager Portal', description: 'Branch manager dedicated portal',         icon: GitBranch,   color: 'text-violet-500', category: 'portal'   },
   // Advanced features
   { key: 'reports',       label: 'Advanced Reports',  description: 'Analytics, revenue & growth reports', icon: BarChart3,   color: 'text-rose-500',   category: 'advanced' },
   { key: 'expenses',      label: 'Expenses',          description: 'Expense tracking & analytics',       icon: Receipt,     color: 'text-orange-500', category: 'advanced' },
   { key: 'branches',      label: 'Multi-Branch',      description: 'Multiple gym locations',             icon: GitBranch,   color: 'text-teal-500',   category: 'advanced' },
-  { key: 'equipment',     label: 'Equipment',         description: 'Equipment & maintenance management', icon: Wrench,      color: 'text-slate-500',  category: 'advanced' },
+  { key: 'equipment',     label: 'Equipment',         description: 'Equipment & maintenance management', icon: Wrench,      color: 'text-muted-foreground',  category: 'advanced' },
   { key: 'discounts',     label: 'Discounts',         description: 'Discount codes & promotions',        icon: Tag,         color: 'text-pink-500',   category: 'advanced' },
   { key: 'fitPlan',       label: 'FitPlan',           description: 'AI-powered personalised fitness plans', icon: Dumbbell, color: 'text-emerald-500', category: 'portal'  },
   { key: 'walkInLeads',   label: 'Walk-in Leads',     description: 'Track walk-in visitors & prospect CRM', icon: UserPlus, color: 'text-fuchsia-500', category: 'advanced' },
@@ -99,9 +101,11 @@ const featureFlagsSchema = z.object({
   equipment:     z.boolean(),
   notifications: z.boolean(),
   discounts:     z.boolean(),
-  fitPlan:       z.boolean(),
-  memberPortal:  z.boolean(),
-  walkInLeads:   z.boolean(),
+  fitPlan:             z.boolean(),
+  memberPortal:        z.boolean(),
+  walkInLeads:         z.boolean(),
+  trainerPortal:       z.boolean(),
+  branchManagerPortal: z.boolean(),
 });
 
 const planFormSchema = z.object({
@@ -124,7 +128,7 @@ const DEFAULT_FEATURE_VALUES: z.infer<typeof featureFlagsSchema> = {
   members: true, trainers: true, billing: true, attendance: true,
   reports: false, expenses: false, branches: false, equipment: false,
   notifications: true, discounts: false, fitPlan: false, memberPortal: true,
-  walkInLeads: false,
+  walkInLeads: false, trainerPortal: true, branchManagerPortal: false,
 };
 
 function toQuota(v: string): number {
@@ -145,8 +149,10 @@ function buildFeatureFlags(values: PlanFormValues) {
     notifications: values.notifications,
     discounts:     values.discounts,
     fitPlan:       values.fitPlan,
-    memberPortal:  values.memberPortal,
-    walkInLeads:   values.walkInLeads,
+    memberPortal:        values.memberPortal,
+    walkInLeads:         values.walkInLeads,
+    trainerPortal:       values.trainerPortal,
+    branchManagerPortal: values.branchManagerPortal,
   };
 }
 
@@ -164,8 +170,10 @@ function extractFeatureFlags(plan: Plan): z.infer<typeof featureFlagsSchema> {
     notifications: ff?.notifications ?? true,
     discounts:     ff?.discounts     ?? false,
     fitPlan:       ff?.fitPlan       ?? false,
-    memberPortal:  ff?.memberPortal  ?? true,
-    walkInLeads:   ff?.walkInLeads   ?? false,
+    memberPortal:        ff?.memberPortal        ?? true,
+    walkInLeads:         ff?.walkInLeads         ?? false,
+    trainerPortal:       ff?.trainerPortal       ?? true,
+    branchManagerPortal: ff?.branchManagerPortal ?? false,
   };
 }
 
@@ -552,9 +560,9 @@ function CreatePlanDialog({
 
 function PlanCard({ plan, onEdit }: { plan: Plan; onEdit: () => void }) {
   const tierStyles: Record<string, { border: string; badge: string; accent: string }> = {
-    starter:    { border: 'border-slate-300',   badge: 'bg-slate-100 text-slate-700',   accent: 'text-slate-700' },
-    pro:        { border: 'border-purple-400',  badge: 'bg-purple-100 text-purple-700', accent: 'text-purple-700' },
-    enterprise: { border: 'border-amber-400',   badge: 'bg-amber-100 text-amber-700',   accent: 'text-amber-700' },
+    starter:    { border: 'border-border',   badge: 'bg-muted text-muted-foreground',   accent: 'text-muted-foreground' },
+    pro:        { border: 'border-purple-400',  badge: 'bg-purple-500/15 text-purple-500', accent: 'text-purple-500' },
+    enterprise: { border: 'border-amber-400',   badge: 'bg-amber-500/15 text-amber-500',   accent: 'text-amber-500' },
   };
 
   const planAny    = plan as Plan & { trialDays?: number; billingCycle?: string };

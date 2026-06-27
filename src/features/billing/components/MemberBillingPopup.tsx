@@ -49,7 +49,7 @@ export function MemberBillingPopup({ open, onOpenChange, memberId, memberName }:
         </DialogHeader>
 
         {/* Total Pending Amount */}
-        <div className="p-4 text-center rounded-lg bg-orange-50 dark:bg-orange-950/20">
+        <div className="p-4 text-center rounded-lg bg-orange-500/10 dark:bg-orange-950/20">
           <p className="text-sm text-muted-foreground">Total Pending Amount</p>
           <p className="text-2xl font-bold text-orange-600">{formatCurrency(pendingTotal, currency)}</p>
         </div>

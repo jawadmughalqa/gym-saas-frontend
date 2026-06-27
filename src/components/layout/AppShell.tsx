@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Outlet, useNavigate } from 'react-router-dom';
-import { Bell, Menu, PanelLeftClose, PanelLeftOpen } from 'lucide-react';
+import { Bell, Menu, PanelLeftClose, PanelLeftOpen, Sun, Moon } from 'lucide-react';
+import { useTheme } from '@/hooks/use-theme';
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Separator } from '@/components/ui/separator';
@@ -118,6 +119,7 @@ function MobileSidebar({ open, onClose }: { open: boolean; onClose: () => void }
 function TopBar({ onMobileMenuOpen }: { onMobileMenuOpen: () => void }) {
   const navigate = useNavigate();
   const unreadCount = useNotificationStore((s) => s.unreadCount);
+  const { resolvedTheme, setTheme } = useTheme();
 
   return (
     <header className="flex h-14 items-center gap-3 border-b bg-card/80 backdrop-blur-sm px-4 shrink-0">
@@ -141,6 +143,19 @@ function TopBar({ onMobileMenuOpen }: { onMobileMenuOpen: () => void }) {
 
       {/* Right side controls */}
       <div className="flex items-center gap-1">
+        {/* Theme quick-toggle */}
+        <Button
+          variant="ghost"
+          size="icon"
+          className="h-8 w-8"
+          onClick={() => setTheme(resolvedTheme === 'dark' ? 'light' : 'dark')}
+          aria-label="Toggle theme"
+        >
+          {resolvedTheme === 'dark'
+            ? <Sun className="h-4 w-4" />
+            : <Moon className="h-4 w-4" />}
+        </Button>
+
         {/* Notification bell */}
         <Button
           variant="ghost"

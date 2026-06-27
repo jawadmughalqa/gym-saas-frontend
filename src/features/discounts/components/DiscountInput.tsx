@@ -129,11 +129,11 @@ export function DiscountInput({
           </Button>
         </div>
       ) : (
-        <div className="flex items-center justify-between rounded-lg border border-green-200 bg-green-50 p-3">
+        <div className="flex items-center justify-between rounded-lg border border-green-500/25 bg-green-500/10 p-3">
           <div className="flex items-center gap-2">
             <Tag className="h-4 w-4 text-green-600" />
             <span className="font-mono font-semibold">{validatedDiscount.code}</span>
-            <Badge variant="outline" className="text-green-700">
+            <Badge variant="outline" className="text-green-500">
               {validatedDiscount.discountType === 'percentage'
                 ? `${validatedDiscount.value}% OFF`
                 : `${currency} ${validatedDiscount.discountAmount} OFF`}

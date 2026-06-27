@@ -255,42 +255,42 @@ function PaymentSummaryCard() {
         {/* ── Stat numbers ── */}
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
           {/* Total Collected */}
-          <div className="rounded-lg border bg-emerald-50 dark:bg-emerald-950/20 border-emerald-200 dark:border-emerald-800 p-4">
+          <div className="rounded-lg border bg-emerald-500/10 dark:bg-emerald-950/20 border-emerald-500/25 dark:border-emerald-800 p-4">
             <div className="flex items-center gap-2 mb-1">
               <CheckCircle2 className="h-4 w-4 text-emerald-600 shrink-0" />
-              <span className="text-xs font-medium text-emerald-700 dark:text-emerald-400">
+              <span className="text-xs font-medium text-emerald-500 dark:text-emerald-400">
                 Total Collected
               </span>
             </div>
-            <p className="text-2xl font-bold tabular-nums text-emerald-700 dark:text-emerald-300">
+            <p className="text-2xl font-bold tabular-nums text-emerald-500 dark:text-emerald-300">
               {billingLoading ? '—' : formatCurrencyCompact(billing?.totalRevenue ?? 0)}
             </p>
             <p className="text-xs text-muted-foreground mt-0.5">Payments received</p>
           </div>
 
           {/* Total Due */}
-          <div className="rounded-lg border bg-red-50 dark:bg-red-950/20 border-red-200 dark:border-red-800 p-4">
+          <div className="rounded-lg border bg-red-500/10 dark:bg-red-950/20 border-red-500/25 dark:border-red-800 p-4">
             <div className="flex items-center gap-2 mb-1">
               <AlertCircle className="h-4 w-4 text-red-600 shrink-0" />
-              <span className="text-xs font-medium text-red-700 dark:text-red-400">
+              <span className="text-xs font-medium text-red-500 dark:text-red-400">
                 Total Due
               </span>
             </div>
-            <p className="text-2xl font-bold tabular-nums text-red-700 dark:text-red-300">
+            <p className="text-2xl font-bold tabular-nums text-red-500 dark:text-red-300">
               {billingLoading ? '—' : formatCurrencyCompact(billing?.pendingFees ?? 0)}
             </p>
             <p className="text-xs text-muted-foreground mt-0.5">Outstanding invoices</p>
           </div>
 
           {/* Today's Collection */}
-          <div className="rounded-lg border bg-blue-50 dark:bg-blue-950/20 border-blue-200 dark:border-blue-800 p-4">
+          <div className="rounded-lg border bg-blue-500/10 dark:bg-blue-950/20 border-blue-500/25 dark:border-blue-800 p-4">
             <div className="flex items-center gap-2 mb-1">
               <CalendarDays className="h-4 w-4 text-blue-600 shrink-0" />
-              <span className="text-xs font-medium text-blue-700 dark:text-blue-400">
+              <span className="text-xs font-medium text-blue-500 dark:text-blue-400">
                 Today's Collection
               </span>
             </div>
-            <p className="text-2xl font-bold tabular-nums text-blue-700 dark:text-blue-300">
+            <p className="text-2xl font-bold tabular-nums text-blue-500 dark:text-blue-300">
               {billingLoading ? '—' : formatCurrencyCompact(billing?.todayCollection ?? 0)}
             </p>
             <p className="text-xs text-muted-foreground mt-0.5">Received today</p>
@@ -401,21 +401,21 @@ export default function DashboardPage() {
           title="Revenue This Month"
           value={dashLoading ? '—' : formatCurrencyCompact(revenue.thisMonth ?? 0)}
           icon={CreditCard}
-          iconClassName="bg-emerald-500/10 text-emerald-600"
+          iconClassName="bg-emerald-500 text-emerald-600"
           subtitle="Invoices paid"
         />
         <StatCard
           title="Active Trainers"
           value={dashLoading ? '—' : String(trainers.active ?? 0)}
           icon={Dumbbell}
-          iconClassName="bg-purple-500/10 text-purple-600"
+          iconClassName="bg-purple-500 text-purple-600"
           subtitle="Currently assigned"
         />
         <StatCard
           title="New This Month"
           value={dashLoading ? '—' : String(members.newThisMonth ?? 0)}
           icon={TrendingUp}
-          iconClassName="bg-amber-500/10 text-amber-600"
+          iconClassName="bg-amber-500 text-amber-600"
           subtitle="New members"
         />
       </div>
@@ -462,7 +462,7 @@ export default function DashboardPage() {
                 {expiringSoon > 0 && (
                   <div className="flex items-center justify-between text-sm">
                     <span className="text-muted-foreground">Expiring soon</span>
-                    <Badge variant="secondary" className="text-xs bg-amber-100 text-amber-700">
+                    <Badge variant="secondary" className="text-xs bg-amber-500/15 text-amber-500">
                       {expiringSoon}
                     </Badge>
                   </div>

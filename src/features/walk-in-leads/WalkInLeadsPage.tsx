@@ -264,7 +264,7 @@ export default function WalkInLeadsPage() {
             </div>
           </div>
           <div className="flex items-center gap-3 rounded-lg border p-4">
-            <div className="rounded-full bg-green-100 p-2 text-green-700">
+            <div className="rounded-full bg-green-500/15 p-2 text-green-500">
               <CheckCircle2 className="h-5 w-5" />
             </div>
             <div>
@@ -273,7 +273,7 @@ export default function WalkInLeadsPage() {
             </div>
           </div>
           <div className="flex items-center gap-3 rounded-lg border p-4">
-            <div className="rounded-full bg-blue-100 p-2 text-blue-700">
+            <div className="rounded-full bg-blue-500/15 p-2 text-blue-500">
               <TrendingUp className="h-5 w-5" />
             </div>
             <div>

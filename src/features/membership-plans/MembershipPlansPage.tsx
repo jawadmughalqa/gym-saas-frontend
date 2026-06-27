@@ -62,13 +62,13 @@ const FREQUENCY_LABELS: Record<string, string> = {
 };
 
 const FREQUENCY_COLORS: Record<string, string> = {
-  daily: "bg-purple-100 text-purple-700",
-  weekly: "bg-blue-100 text-blue-700",
-  monthly: "bg-green-100 text-green-700",
-  quarterly: "bg-yellow-100 text-yellow-700",
-  semi_annual: "bg-orange-100 text-orange-700",
-  annual: "bg-red-100 text-red-700",
-  one_time: "bg-gray-100 text-gray-700",
+  daily: "bg-purple-500/15 text-purple-500",
+  weekly: "bg-blue-500/15 text-blue-500",
+  monthly: "bg-green-500/15 text-green-500",
+  quarterly: "bg-yellow-500/15 text-yellow-500",
+  semi_annual: "bg-orange-500/15 text-orange-500",
+  annual: "bg-red-500/15 text-red-500",
+  one_time: "bg-muted text-muted-foreground",
 };
 
 // ─── Plan Card Component ──────────────────────────────────────────────────────
@@ -98,7 +98,7 @@ function PlanCard({
   const { currency: tenantCurrency } = useTenantCurrency();
   const freq = plan.billingFrequency ?? "";
   const label = FREQUENCY_LABELS[freq] ?? freq;
-  const color = FREQUENCY_COLORS[freq] ?? "bg-gray-100 text-gray-700";
+  const color = FREQUENCY_COLORS[freq] ?? "bg-muted text-muted-foreground";
   const isArchived = plan.isArchived;
   const activeCount = plan.activeSubscriptionCount ?? 0;
   const [featuresExpanded, setFeaturesExpanded] = useState(false);
@@ -179,7 +179,7 @@ function PlanCard({
           </span>
 
           {plan.durationDays && (
-            <span className="inline-flex items-center rounded-full bg-slate-100 text-slate-700 px-2.5 py-0.5 text-xs font-medium">
+            <span className="inline-flex items-center rounded-full bg-muted text-muted-foreground px-2.5 py-0.5 text-xs font-medium">
               {plan.durationDays}d duration
             </span>
           )}

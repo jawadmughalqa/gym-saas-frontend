@@ -4,7 +4,7 @@ import {
   ArrowLeft, Pencil, Plus, CalendarDays, Clock,
   Users, UserCheck, CreditCard, ScanLine, BarChart3,
   Receipt, GitBranch, Wrench, Bell, Tag, Dumbbell, Smartphone, UserPlus,
-  ShoppingCart, MessageSquare,
+  ShoppingCart, MessageSquare, Fingerprint,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -57,7 +57,7 @@ type FeatureFlagKey =
   | 'members' | 'trainers' | 'billing' | 'attendance' | 'reports'
   | 'expenses' | 'branches' | 'equipment' | 'notifications'
   | 'discounts' | 'fitPlan' | 'memberPortal' | 'walkInLeads'
-  | 'pos' | 'notificationChannels';
+  | 'pos' | 'notificationChannels' | 'biometricAccess';
 
 interface FeatureFlagDef {
   key:         FeatureFlagKey;
@@ -88,6 +88,7 @@ const FEATURE_FLAGS: FeatureFlagDef[] = [
   { key: 'walkInLeads',   label: 'Walk-in Leads',     description: 'Track walk-in visitors & prospect CRM', icon: UserPlus,      color: 'text-fuchsia-500', category: 'advanced' },
   { key: 'pos',                  label: 'Point of Sale',        description: 'Product catalog, orders & receipts',       icon: ShoppingCart,  color: 'text-lime-500',    category: 'advanced' },
   { key: 'notificationChannels', label: 'Notification Channels', description: 'SMTP, WhatsApp & broadcast messaging',    icon: MessageSquare, color: 'text-sky-500',     category: 'advanced' },
+  { key: 'biometricAccess',     label: 'Biometric Access',      description: 'Fingerprint / WebAuthn door access control', icon: Fingerprint,  color: 'text-violet-500',  category: 'advanced' },
 ];
 
 const FEATURE_FLAG_KEYS = FEATURE_FLAGS.map((f) => f.key);
@@ -112,6 +113,7 @@ const featureFlagsSchema = z.object({
   branchManagerPortal: z.boolean(),
   pos:                  z.boolean(),
   notificationChannels: z.boolean(),
+  biometricAccess:      z.boolean(),
 });
 
 const planFormSchema = z.object({
@@ -135,7 +137,7 @@ const DEFAULT_FEATURE_VALUES: z.infer<typeof featureFlagsSchema> = {
   reports: false, expenses: false, branches: false, equipment: false,
   notifications: true, discounts: false, fitPlan: false, memberPortal: true,
   walkInLeads: false, trainerPortal: true, branchManagerPortal: false,
-  pos: false, notificationChannels: false,
+  pos: false, notificationChannels: false, biometricAccess: false,
 };
 
 function toQuota(v: string): number {
@@ -162,6 +164,7 @@ function buildFeatureFlags(values: PlanFormValues) {
     branchManagerPortal: values.branchManagerPortal,
     pos:                  values.pos,
     notificationChannels: values.notificationChannels,
+    biometricAccess:      values.biometricAccess,
   };
 }
 
@@ -185,6 +188,7 @@ function extractFeatureFlags(plan: Plan): z.infer<typeof featureFlagsSchema> {
     branchManagerPortal: ff?.branchManagerPortal ?? false,
     pos:                  ff?.pos                  ?? false,
     notificationChannels: ff?.notificationChannels ?? false,
+    biometricAccess:      ff?.biometricAccess      ?? false,
   };
 }
 

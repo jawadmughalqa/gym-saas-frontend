@@ -20,6 +20,7 @@ const BroadcastPage              = lazy(() => import("@/features/settings/Broadc
 const POSPage                    = lazy(() => import("@/features/pos/POSPage"));
 const ProductsPage               = lazy(() => import("@/features/pos/ProductsPage"));
 const OrderHistoryPage           = lazy(() => import("@/features/pos/OrderHistoryPage"));
+const AttendancePage             = lazy(() => import("@/features/attendance/AttendancePage"));
 const ProfilePage         = lazy(() => import("@/features/auth/ProfilePage"));
 const MembersPage         = lazy(() => import("@/features/members/MembersPage"));
 const MemberDetailPage    = lazy(() => import("@/features/members/MemberDetailPage"));
@@ -53,6 +54,7 @@ const MemberHomePage          = lazy(() => import("@/features/member-portal/Memb
 const MemberPlanPage          = lazy(() => import("@/features/member-portal/MemberPlanPage"));
 const MemberInvoicesPage      = lazy(() => import("@/features/member-portal/MemberInvoicesPage"));
 const MemberTrainerPage       = lazy(() => import("@/features/member-portal/MemberTrainerPage"));
+const MemberAttendancePage    = lazy(() => import("@/features/member-portal/MemberAttendancePage"));
 const FitPlanPage             = lazy(() => import("@/features/fit-plan/FitPlanPage"));
 const FitPlanProgressPage     = lazy(() => import("@/features/fit-plan/ProgressPage"));
 const FitPlanHistoryPage      = lazy(() => import("@/features/fit-plan/PlanHistoryPage"));
@@ -227,6 +229,13 @@ const router = createBrowserRouter([
             handle: { crumb: "Refunds" },
           },
 
+          // ── Attendance ───────────────────────────────────────────────
+          {
+            path: "attendance",
+            element: <FeatureRoute feature="attendance" featureName="Attendance"><Lazy><AttendancePage /></Lazy></FeatureRoute>,
+            handle: { crumb: "Attendance" },
+          },
+
           // ── Walk-in Leads ────────────────────────────────────────────
           {
             path: "walk-in-leads",
@@ -339,6 +348,11 @@ const router = createBrowserRouter([
                 path: "trainer",
                 element: <FeatureRoute feature="memberPortal" featureName="Member Portal"><Lazy><MemberTrainerPage /></Lazy></FeatureRoute>,
                 handle: { crumb: "My Trainer" },
+              },
+              {
+                path: "attendance",
+                element: <FeatureRoute feature="attendance" featureName="Attendance"><Lazy><MemberAttendancePage /></Lazy></FeatureRoute>,
+                handle: { crumb: "My Attendance" },
               },
               {
                 path: "fit-plan",

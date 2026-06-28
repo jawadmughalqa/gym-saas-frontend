@@ -21,6 +21,7 @@ const ALL_FEATURES_ENABLED: Required<TenantFeatureFlags> = {
   branchManagerPortal:  true,
   pos:                  true,
   notificationChannels: true,
+  biometricAccess:      true,
 };
 
 export type PlanFeatureKey = keyof Required<TenantFeatureFlags>;
@@ -101,6 +102,7 @@ export function usePlanFeatures(): UsePlanFeaturesResult {
     branchManagerPortal: raw['branchManagerPortal'] ?? false,
     pos:                  raw['pos']                  ?? false,
     notificationChannels: raw['notificationChannels'] ?? false,
+    biometricAccess:      raw['biometricAccess']      ?? false,
   };
 
   return {

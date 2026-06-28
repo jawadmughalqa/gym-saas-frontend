@@ -24,4 +24,5 @@ export interface TenantFeatureFlags {
   branchManagerPortal?: boolean;
   pos?:                  boolean;
   notificationChannels?: boolean;
+  biometricAccess?:      boolean;
 }

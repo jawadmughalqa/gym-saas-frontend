@@ -23,6 +23,7 @@ const OrderHistoryPage           = lazy(() => import("@/features/pos/OrderHistor
 const AttendancePage             = lazy(() => import("@/features/attendance/AttendancePage"));
 const ProfilePage         = lazy(() => import("@/features/auth/ProfilePage"));
 const MembersPage         = lazy(() => import("@/features/members/MembersPage"));
+const MemberImportPage    = lazy(() => import("@/features/members/MemberImportPage"));
 const MemberDetailPage    = lazy(() => import("@/features/members/MemberDetailPage"));
 const InvoicesPage        = lazy(() => import("@/features/billing/InvoicesPage"));
 const InvoiceDetailPage   = lazy(() => import("@/features/billing/InvoiceDetailPage"));
@@ -166,6 +167,11 @@ const router = createBrowserRouter([
             handle: { crumb: "Members" },
             children: [
               { index: true, element: <Lazy><MembersPage /></Lazy> },
+              {
+                path: "import",
+                element: <Lazy><MemberImportPage /></Lazy>,
+                handle: { crumb: "Import Members" },
+              },
               {
                 path: ":memberId",
                 element: <Lazy><MemberDetailPage /></Lazy>,

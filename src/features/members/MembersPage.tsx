@@ -1,5 +1,6 @@
 import { useState }        from 'react';
-import { UserPlus }        from 'lucide-react';
+import { useNavigate }     from 'react-router-dom';
+import { UserPlus, Upload } from 'lucide-react';
 import { useQueryClient }  from '@tanstack/react-query';
 import { Button }          from '@/components/ui/button';
 import PageHeader          from '@/components/layout/PageHeader';
@@ -70,6 +71,7 @@ function useChangeMemberStatus() {
 
 export default function MembersPage() {
   const { can }      = usePermission();
+  const navigate     = useNavigate();
   const table        = useTableState({ defaultLimit: 20 });
   const { confirm, confirmProps } = useConfirm();
   const archive      = useArchiveMember();
@@ -130,10 +132,16 @@ export default function MembersPage() {
         subtitle="Manage gym members and their subscriptions"
         actions={
           can('member.create') && (
-            <Button onClick={handleAddMember}>
-              <UserPlus className="mr-2 h-4 w-4" />
-              Add Member
-            </Button>
+            <div className="flex gap-2">
+              <Button variant="outline" onClick={() => navigate('/members/import')}>
+                <Upload className="mr-2 h-4 w-4" />
+                Import
+              </Button>
+              <Button onClick={handleAddMember}>
+                <UserPlus className="mr-2 h-4 w-4" />
+                Add Member
+              </Button>
+            </div>
           )
         }
       />

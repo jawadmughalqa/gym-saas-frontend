@@ -27,6 +27,7 @@ import {
   Send,
   UserPlus,
   ShoppingCart,
+  ScanLine,
   type LucideIcon,
 } from 'lucide-react';
 import type { UserRole } from '@/types/api.types';
@@ -193,7 +194,8 @@ export const NAV_GROUPS: NavGroup[] = [
       { to: '/member/plan',         label: 'My Plan',    icon: BadgeCheck, roles: ['member'], featureFlag: 'memberPortal' },
       { to: '/member/fit-plan',     label: 'FitPlan',    icon: Flame,      roles: ['member'], featureFlag: 'fitPlan'      },
       { to: '/member/invoices',     label: 'Invoices',   icon: Receipt,    roles: ['member'], featureFlag: 'memberPortal' },
-      { to: '/member/trainer',      label: 'My Trainer', icon: Dumbbell,   roles: ['member'], featureFlag: 'memberPortal' },
+      { to: '/member/trainer',      label: 'My Trainer',  icon: Dumbbell,  roles: ['member'], featureFlag: 'memberPortal' },
+      { to: '/member/attendance',   label: 'Attendance',  icon: ScanLine,  roles: ['member'], featureFlag: 'attendance'   },
     ],
   },
 
@@ -257,6 +259,14 @@ export const NAV_GROUPS: NavGroup[] = [
         permission: 'member.read',
         roles: ADMIN_ROLES,
         featureFlag: 'members',
+      },
+      {
+        to: '/attendance',
+        label: 'Attendance',
+        icon: ScanLine,
+        permission: 'checkin.read',
+        roles: ADMIN_ROLES,
+        featureFlag: 'attendance',
       },
       {
         to: '/trainers',

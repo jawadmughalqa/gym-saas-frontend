@@ -10,7 +10,7 @@ export type BillingFrequency =
   | 'semi_annual' | 'annual' | 'one_time';
 export type SubscriptionStatus  = 'active' | 'cancelled' | 'frozen' | 'expired' | 'pending_payment';
 export type SubscriptionPricingType = 'plan' | 'custom';
-export type CheckInMethod = 'qr' | 'rfid' | 'manual' | 'app';
+export type CheckInMethod = 'qr' | 'rfid' | 'manual' | 'app' | 'biometric';
 
 // ─── Sub-objects ──────────────────────────────────────────────────────────────
 
@@ -171,13 +171,16 @@ export interface Subscription {
 // ─── Check-in ─────────────────────────────────────────────────────────────────
 
 export interface CheckIn {
-  _id:         string;
-  tenantId:    string;
-  memberId:    string;
-  branchId:    string;
-  method:      CheckInMethod;
-  checkedInAt: string;
-  notes?:      string;
+  _id:          string;
+  tenantId:     string;
+  memberId:     string;
+  branchId:     string;
+  method:       CheckInMethod;
+  result?:      'allowed' | 'blocked';
+  blockReason?: string;
+  timestamp?:   string;
+  checkedInAt?: string;
+  notes?:       string;
 }
 
 export interface CheckInListResponse {

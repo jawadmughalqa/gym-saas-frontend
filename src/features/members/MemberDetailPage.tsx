@@ -10,6 +10,7 @@ import {
   AlertCircle,
   Dumbbell,
   Wallet,
+  Fingerprint,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
@@ -29,6 +30,8 @@ import { MeasurementsTab } from "./components/MemberDetail/MeasurementsTab";
 import MemberForm from "./components/MemberForm";
 import { TrainerTab } from "./components/MemberDetail/TrainerTab";
 import { BillingTab } from "./components/MemberDetail/BillingTab";
+import { FingerprintTab } from "./components/MemberDetail/FingerprintTab";
+import { usePlanFeatures } from "@/hooks/use-plan-features";
 
 // ─── Helper ───────────────────────────────────────────────────────────────────
 // branchId may arrive as a populated object { _id, name, code } or a plain string
@@ -46,6 +49,7 @@ export default function MemberDetailPage() {
   const { memberId } = useParams<{ memberId: string }>();
   const navigate = useNavigate();
   const { can } = usePermission();
+  const { hasFeature } = usePlanFeatures();
   const [editOpen, setEditOpen] = useState(false);
 
   const { data: response, isLoading } = useGetMembersMemberId(memberId ?? "", {
@@ -174,6 +178,12 @@ export default function MemberDetailPage() {
             <Wallet className="h-4 w-4" />
             <span className="hidden sm:inline">Billing</span>
           </TabsTrigger>
+          {hasFeature('biometricAccess') && (
+            <TabsTrigger value="fingerprint" className="flex items-center gap-1.5">
+              <Fingerprint className="h-4 w-4" />
+              <span className="hidden sm:inline">Fingerprint</span>
+            </TabsTrigger>
+          )}
         </TabsList>
 
         <TabsContent value="profile" className="mt-4">
@@ -208,6 +218,12 @@ export default function MemberDetailPage() {
             memberName={fullName}
           />
         </TabsContent>
+
+        {hasFeature('biometricAccess') && (
+          <TabsContent value="fingerprint" className="mt-4">
+            <FingerprintTab memberId={member._id ?? ""} />
+          </TabsContent>
+        )}
       </Tabs>
 
       {/* ── Edit profile sheet ─────────────────────────────────────────────── */}

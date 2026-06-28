@@ -107,14 +107,14 @@ export function useMyInvoices(status?: string) {
   });
 }
 
-export function useMyCheckIns() {
+export function useMyCheckIns(page = 1, limit = 20) {
   return useQuery({
-    queryKey: ['member-portal', 'checkins'],
+    queryKey: ['member-portal', 'checkins', page],
     queryFn: async () => {
-      const res = await api.get<MyCheckInsResponse>('/members/me/checkins');
-      return res.data.data ?? { checkIns: [], total: 0, page: 1, limit: 20 };
+      const res = await api.get<MyCheckInsResponse>(`/members/me/checkins?page=${page}&limit=${limit}`);
+      return res.data.data ?? { checkIns: [], total: 0, page: 1, limit };
     },
-    staleTime: 1000 * 60 * 5,
+    staleTime: 1000 * 30, // 30s — attendance changes frequently
   });
 }
 

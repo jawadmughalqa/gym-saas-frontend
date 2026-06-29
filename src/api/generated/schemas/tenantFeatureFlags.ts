@@ -25,4 +25,5 @@ export interface TenantFeatureFlags {
   pos?:                  boolean;
   notificationChannels?: boolean;
   biometricAccess?:      boolean;
+  automatedCampaigns?:   boolean;
 }

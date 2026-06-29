@@ -17,6 +17,7 @@ const PricingPage                = lazy(() => import("@/features/settings/Pricin
 const BackupPage                 = lazy(() => import("@/features/settings/BackupPage"));
 const NotificationSettingsPage   = lazy(() => import("@/features/settings/NotificationSettingsPage"));
 const BroadcastPage              = lazy(() => import("@/features/settings/BroadcastPage"));
+const CampaignsPage              = lazy(() => import("@/features/settings/CampaignsPage"));
 const POSPage                    = lazy(() => import("@/features/pos/POSPage"));
 const ProductsPage               = lazy(() => import("@/features/pos/ProductsPage"));
 const OrderHistoryPage           = lazy(() => import("@/features/pos/OrderHistoryPage"));
@@ -141,6 +142,11 @@ const router = createBrowserRouter([
                 path: "broadcast",
                 element: <Lazy><BroadcastPage /></Lazy>,
                 handle: { crumb: "Send Message" },
+              },
+              {
+                path: "campaigns",
+                element: <FeatureRoute feature="automatedCampaigns" featureName="Automated Campaigns"><Lazy><CampaignsPage /></Lazy></FeatureRoute>,
+                handle: { crumb: "Automated Campaigns" },
               },
             ],
           },

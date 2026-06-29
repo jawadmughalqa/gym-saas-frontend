@@ -28,6 +28,7 @@ import {
   UserPlus,
   ShoppingCart,
   ScanLine,
+  Zap,
   type LucideIcon,
 } from 'lucide-react';
 import type { UserRole } from '@/types/api.types';
@@ -435,6 +436,13 @@ export const NAV_GROUPS: NavGroup[] = [
         icon: Send,
         roles: ['gym_owner', 'branch_manager'],
         featureFlag: 'notificationChannels',
+      },
+      {
+        to: '/settings/campaigns',
+        label: 'Automated Campaigns',
+        icon: Zap,
+        roles: ['gym_owner', 'branch_manager'],
+        featureFlag: 'automatedCampaigns',
       },
     ],
   },

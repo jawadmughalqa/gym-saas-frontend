@@ -1,9 +1,9 @@
 import { useNavigate } from 'react-router-dom';
 import {
-  Check, X, ArrowLeft, Sparkles, Mail, MessageCircle,
+  Check, X, ArrowLeft, Sparkles,
   Users, UserCheck, CreditCard, ScanLine, BarChart3,
   Receipt, GitBranch, Wrench, Bell, Tag, Dumbbell, Smartphone,
-  UserPlus, ShoppingCart, MessageSquare, Fingerprint,
+  UserPlus, ShoppingCart, MessageSquare, Fingerprint, Zap,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -43,7 +43,8 @@ const FEATURES: FeatureDef[] = [
   { key: 'branchManagerPortal', label: 'Branch Manager Portal',  description: 'Branch manager dedicated portal',               icon: GitBranch,     color: 'text-violet-500'   },
   { key: 'pos',                 label: 'Point of Sale',          description: 'Product catalog, orders & receipts',            icon: ShoppingCart,  color: 'text-lime-500'     },
   { key: 'notificationChannels', label: 'Notification Channels', description: 'SMTP, WhatsApp channels & broadcast messaging', icon: MessageSquare, color: 'text-sky-500'      },
-  { key: 'biometricAccess',     label: 'Biometric Access',      description: 'Fingerprint door access control',               icon: Fingerprint,  color: 'text-violet-500'   },
+  { key: 'biometricAccess',     label: 'Biometric Access',       description: 'Fingerprint door access control',               icon: Fingerprint,  color: 'text-violet-500'   },
+  { key: 'automatedCampaigns', label: 'Automated Campaigns',    description: 'Re-engagement, expiry & birthday auto-messaging', icon: Zap,          color: 'text-orange-500'   },
 ];
 
 // ─── Plan tier styles ─────────────────────────────────────────────────────────

@@ -211,10 +211,9 @@ function PaymentFilterDropdown({ value, onChange }: {
 // ─── Main page ────────────────────────────────────────────────────────────────
 
 export default function OrderHistoryPage() {
-  const { symbol }    = useTenantCurrency();
-  const { currency }  = useTenantCurrency();
+  const { currencySymbol, currency } = useTenantCurrency();
 
-  const fmt = (n: number) => `${symbol}${n.toFixed(2)}`;
+  const fmt = (n: number) => `${currencySymbol}${n.toFixed(2)}`;
 
   const [page,          setPage]          = useState(1);
   const [from,          setFrom]          = useState('');
@@ -237,7 +236,7 @@ export default function OrderHistoryPage() {
   const meta   = data?.meta;
 
   return (
-    <div className="p-6 max-w-5xl mx-auto space-y-6">
+    <div className="space-y-6">
       {/* Header */}
       <div>
         <h1 className="text-2xl font-bold">Order History</h1>
@@ -369,7 +368,7 @@ export default function OrderHistoryPage() {
         <OrderDetailModal
           orderId={selectedId}
           currency={currency}
-          symbol={symbol}
+          symbol={currencySymbol}
           onClose={() => setSelectedId(null)}
         />
       )}

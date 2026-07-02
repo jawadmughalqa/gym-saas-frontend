@@ -40,7 +40,8 @@ import { toast } from '@/hooks/use-toast';
 import { getErrorMessage } from '@/utils/error';
 import { usePostSuperTenants } from '@/api/generated/super-admin/super-admin';
 import { orvalMutator } from '@/lib/orval-mutator';
-import { COUNTRY_BY_NAME, applyPhoneMask, maskDigitCount } from '@/config/world-countries';
+import { COUNTRY_BY_NAME } from '@/config/world-countries';
+import { isValidPhoneNumber, isPossiblePhoneNumber, type CountryCode } from 'libphonenumber-js';
 import type { CreateTenantResponseData } from '@/api/generated/schemas/createTenantResponseData';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -122,11 +123,13 @@ export default function CreateTenantForm({ open, onOpenChange, onSuccess }: Crea
   const [created, setCreated] = useState<CreateTenantResponseData | null>(null);
 
   // Phone state
-  const [phoneChecking, setPhoneChecking]   = useState(false);
-  const [phoneDuplicate, setPhoneDuplicate] = useState(false);
+  const [phoneChecking, setPhoneChecking]       = useState(false);
+  const [phoneDuplicate, setPhoneDuplicate]     = useState(false);
   const [phoneFormatError, setPhoneFormatError] = useState('');
-  const [phoneMask, setPhoneMask]           = useState('');
-  const [phoneExample, setPhoneExample]     = useState('');
+  const [phoneCountryCode, setPhoneCountryCode] = useState('');   // ISO alpha-2 e.g. "PK"
+  const [phoneCallingCode, setPhoneCallingCode] = useState('');   // e.g. "+92"
+  const [phoneExample, setPhoneExample]         = useState('');
+  const [phoneMask, setPhoneMask]               = useState('');   // for maxLength only
 
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -172,20 +175,27 @@ export default function CreateTenantForm({ open, onOpenChange, onSuccess }: Crea
 
     const meta = COUNTRY_BY_NAME.get(countryName);
     if (meta) {
-      setPhoneMask(meta.phoneMask);
+      setPhoneCountryCode(meta.code);
+      setPhoneCallingCode(meta.callingCode);
       setPhoneExample(meta.phoneExample);
+      setPhoneMask(meta.phoneMask);
+      form.setValue('contactPhone', meta.callingCode + ' ');
     } else {
-      setPhoneMask('');
+      setPhoneCountryCode('');
+      setPhoneCallingCode('');
       setPhoneExample('');
+      setPhoneMask('');
     }
   }
 
-  // ── Validate masked value ─────────────────────────────────────────────────
-  function isMaskComplete(maskedValue: string): boolean {
-    if (!phoneMask) return true;
-    const expected = maskDigitCount(phoneMask);
-    const actual   = (maskedValue.replace(/\D/g, '')).length;
-    return actual >= expected;
+  // ── Validate phone with libphonenumber-js ─────────────────────────────────
+  function isPhoneValid(value: string): boolean {
+    if (!phoneCountryCode || !value || value.trim() === phoneCallingCode || value.trim() === phoneCallingCode + ' ') return false;
+    try {
+      return isValidPhoneNumber(value, phoneCountryCode as CountryCode);
+    } catch {
+      return false;
+    }
   }
 
   // ── Debounced uniqueness check ────────────────────────────────────────────
@@ -205,35 +215,42 @@ export default function CreateTenantForm({ open, onOpenChange, onSuccess }: Crea
     }
   }, []);
 
-  // ── Masked phone input handler ─────────────────────────────────────────────
+  // ── Free-text phone input handler ────────────────────────────────────────
   function handlePhoneChange(raw: string) {
-    let masked = raw;
-
-    if (phoneMask) {
-      // Strip everything non-digit from user input, then re-apply mask
-      const digits = raw.replace(/\D/g, '');
-      masked = applyPhoneMask(digits, phoneMask);
-    }
-
-    form.setValue('contactPhone', masked);
+    form.setValue('contactPhone', raw);
     setPhoneDuplicate(false);
 
-    // Format error: only shown after user has started typing
-    if (masked && phoneMask && !isMaskComplete(masked)) {
-      setPhoneFormatError(`Expected: ${phoneExample}`);
+    const stripped = raw.replace(/\D/g, '');
+    const hasContent = raw.trim() !== '' && raw.trim() !== phoneCallingCode && raw.trim() !== phoneCallingCode + ' ';
+
+    if (hasContent && phoneCountryCode) {
+      const valid = isPhoneValid(raw);
+
+      if (valid) {
+        setPhoneFormatError('');
+      } else {
+        // Only show error once there are enough digits to form a complete national number
+        // isPossiblePhoneNumber returns true when digit count is in the valid range for the country
+        let possible = false;
+        try { possible = isPossiblePhoneNumber(raw, phoneCountryCode as CountryCode); } catch { /* ignore */ }
+
+        // Show error if: number is "possible" length but format is wrong, OR clearly too long (> mask length)
+        const tooLong = phoneMask ? stripped.length > phoneMask.replace(/\D/g, '').length : stripped.length > 15;
+        if (possible || tooLong) {
+          setPhoneFormatError(`Invalid number. Example: ${phoneExample}`);
+        } else {
+          setPhoneFormatError(''); // Still typing — don't interrupt yet
+        }
+      }
     } else {
       setPhoneFormatError('');
     }
 
-    // Debounce uniqueness check — only when mask is fully filled
+    // Debounce uniqueness check — only when number is fully valid
     if (debounceRef.current) clearTimeout(debounceRef.current);
-    if (phoneMask && isMaskComplete(masked)) {
+    if (hasContent && isPhoneValid(raw)) {
       debounceRef.current = setTimeout(() => {
-        void checkPhoneUniqueness(masked);
-      }, 600);
-    } else if (!phoneMask && masked.replace(/\D/g, '').length >= 7) {
-      debounceRef.current = setTimeout(() => {
-        void checkPhoneUniqueness(masked);
+        void checkPhoneUniqueness(raw);
       }, 600);
     }
   }
@@ -250,8 +267,10 @@ export default function CreateTenantForm({ open, onOpenChange, onSuccess }: Crea
         form.reset();
         setPhoneDuplicate(false);
         setPhoneFormatError('');
-        setPhoneMask('');
+        setPhoneCountryCode('');
+        setPhoneCallingCode('');
         setPhoneExample('');
+        setPhoneMask('');
       },
       onError: (err) => toast({ variant: 'destructive', title: 'Failed to provision tenant', description: getErrorMessage(err) }),
     },
@@ -262,8 +281,8 @@ export default function CreateTenantForm({ open, onOpenChange, onSuccess }: Crea
       toast({ variant: 'destructive', title: 'Phone number already registered' });
       return;
     }
-    if (values.contactPhone && phoneMask && !isMaskComplete(values.contactPhone)) {
-      toast({ variant: 'destructive', title: 'Incomplete phone number', description: `Expected: ${phoneExample}` });
+    if (values.contactPhone && phoneCountryCode && !isPhoneValid(values.contactPhone)) {
+      toast({ variant: 'destructive', title: 'Invalid phone number', description: `Expected: ${phoneExample}` });
       return;
     }
 
@@ -290,8 +309,10 @@ export default function CreateTenantForm({ open, onOpenChange, onSuccess }: Crea
       setCreated(null);
       setPhoneDuplicate(false);
       setPhoneFormatError('');
-      setPhoneMask('');
+      setPhoneCountryCode('');
+      setPhoneCallingCode('');
       setPhoneExample('');
+      setPhoneMask('');
       form.reset();
     }
     onOpenChange(v);
@@ -447,9 +468,6 @@ export default function CreateTenantForm({ open, onOpenChange, onSuccess }: Crea
                             <TooltipContent side="right" className="text-xs max-w-[220px]">
                               <p className="font-medium mb-0.5">Phone format for {form.watch('country')}</p>
                               <p className="font-mono text-primary">{phoneExample}</p>
-                              <p className="text-muted-foreground mt-1">
-                                Digits fill in automatically as you type.
-                              </p>
                             </TooltipContent>
                           </Tooltip>
                         )}
@@ -457,15 +475,14 @@ export default function CreateTenantForm({ open, onOpenChange, onSuccess }: Crea
 
                       <FormControl>
                         <Input
-                          placeholder={phoneMask
-                            ? phoneMask.replace(/#/g, '0')
-                            : 'Select a country first'}
+                          placeholder={phoneExample || 'Select a country first'}
                           disabled={!form.watch('country')}
                           {...field}
                           value={phoneValue}
                           onChange={(e) => handlePhoneChange(e.target.value)}
                           className={hasPhoneError ? 'border-destructive focus-visible:ring-destructive' : ''}
-                          inputMode="numeric"
+                          inputMode="tel"
+                          maxLength={phoneMask ? phoneMask.length + 1 : undefined}
                         />
                       </FormControl>
 
@@ -485,8 +502,8 @@ export default function CreateTenantForm({ open, onOpenChange, onSuccess }: Crea
                         </p>
                       )}
 
-                      {/* Success tick when mask complete + unique */}
-                      {!hasPhoneError && !phoneChecking && phoneValue && phoneMask && isMaskComplete(phoneValue) && (
+                      {/* Success tick when number is valid + unique */}
+                      {!hasPhoneError && !phoneChecking && phoneValue && isPhoneValid(phoneValue) && (
                         <p className="flex items-center gap-1 text-xs text-green-600 mt-1">
                           <Check className="h-3 w-3 shrink-0" />
                           Phone looks good

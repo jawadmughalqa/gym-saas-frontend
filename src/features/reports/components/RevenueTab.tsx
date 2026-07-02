@@ -41,9 +41,9 @@ export default function RevenueTab({ branchId }: { branchId?: string }) {
 
       {/* KPI cards */}
       <div className="grid gap-4 sm:grid-cols-3">
-        <StatCard title="Gross Revenue"   value={formatCurrencyCompact(totals?.grossRevenue  ?? 0)} icon={DollarSign}   iconClassName="bg-emerald-500" />
-        <StatCard title="Net Revenue"     value={formatCurrencyCompact(totals?.netRevenue    ?? 0)} icon={DollarSign}   iconClassName="bg-green-500" />
-        <StatCard title="Total Refunded"  value={formatCurrencyCompact(totals?.totalRefunded ?? 0)} icon={TrendingDown} iconClassName="bg-amber-500" />
+        <StatCard title="Gross Revenue"   value={formatCurrencyCompact(totals?.grossRevenue  ?? 0)} icon={DollarSign}   iconClassName="bg-emerald-500/10 text-emerald-600 dark:text-emerald-400" />
+        <StatCard title="Net Revenue"     value={formatCurrencyCompact(totals?.netRevenue    ?? 0)} icon={DollarSign}   iconClassName="bg-green-500/10 text-green-600 dark:text-green-400" />
+        <StatCard title="Total Refunded"  value={formatCurrencyCompact(totals?.totalRefunded ?? 0)} icon={TrendingDown} iconClassName="bg-amber-500/10 text-amber-600 dark:text-amber-400" />
       </div>
 
       {/* Outstanding / Overdue */}

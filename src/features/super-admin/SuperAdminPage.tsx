@@ -229,25 +229,25 @@ export default function SuperAdminPage() {
             title="Active"
             value={dash.tenants?.active ?? 0}
             icon={Users}
-            iconClassName="bg-green-500"
+            iconClassName="bg-emerald-500/10 text-emerald-600 dark:text-emerald-400"
           />
           <StatCard
             title="On Trial"
             value={dash.tenants?.trial ?? 0}
             icon={FlaskConical}
-            iconClassName="bg-blue-500"
+            iconClassName="bg-blue-500/10 text-blue-600 dark:text-blue-400"
           />
           <StatCard
             title="Suspended"
             value={dash.tenants?.suspended ?? 0}
             icon={AlertTriangle}
-            iconClassName="bg-yellow-500"
+            iconClassName="bg-amber-500/10 text-amber-600 dark:text-amber-400"
           />
           <StatCard
             title="Pending Invoices"
             value={dash.billing?.pendingInvoices ?? 0}
             icon={CreditCard}
-            iconClassName="bg-orange-500"
+            iconClassName="bg-orange-500/10 text-orange-600 dark:text-orange-400"
           />
         </div>
       )}

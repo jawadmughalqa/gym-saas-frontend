@@ -196,8 +196,8 @@ function extractFeatureFlags(plan: Plan): z.infer<typeof featureFlagsSchema> {
   };
 }
 
-const PLAN_NAMES = ['starter', 'pro', 'enterprise'] as const;
-type PlanName = (typeof PLAN_NAMES)[number];
+// Plan name slug pattern
+const PLAN_SLUG_REGEX = /^[a-z0-9-]+$/;
 
 // ─── Feature Flag Section ─────────────────────────────────────────────────────
 
@@ -402,7 +402,7 @@ function EditPlanDialog({
 
   function onSubmit(values: PlanFormValues) {
     upsert.mutate({
-      planName: plan.name as PlanName,
+      planName: plan.name as string,
       data: {
         displayName:  values.displayName,
         description:  values.description || undefined,
@@ -456,17 +456,21 @@ function CreatePlanDialog({
   existingPlanNames: string[];
 }) {
   const qc = useQueryClient();
-  const availableNames = PLAN_NAMES.filter((n) => !existingPlanNames.includes(n));
 
   const createSchema = planFormSchema.extend({
-    name: z.enum(PLAN_NAMES, { required_error: 'Plan name is required' }),
+    name: z
+      .string()
+      .min(2, 'At least 2 characters')
+      .max(30, 'Max 30 characters')
+      .regex(PLAN_SLUG_REGEX, 'Lowercase letters, numbers, and hyphens only')
+      .refine((v) => !existingPlanNames.includes(v), { message: 'A plan with this name already exists' }),
   });
   type CreateFormValues = z.infer<typeof createSchema>;
 
   const form = useForm<CreateFormValues>({
     resolver: zodResolver(createSchema),
     defaultValues: {
-      name:                  availableNames[0] ?? 'starter',
+      name:                  '',
       displayName:           '',
       description:           '',
       price:                 '0',
@@ -487,6 +491,7 @@ function CreatePlanDialog({
       onSuccess: () => {
         void qc.invalidateQueries({ queryKey: getGetSuperPlansQueryKey() });
         toast({ title: 'Plan created', description: 'New plan is now available for tenants.' });
+        form.reset();
         onOpenChange(false);
       },
       onError: (err) => toast({ variant: 'destructive', title: 'Failed to create plan', description: getErrorMessage(err) }),
@@ -515,47 +520,26 @@ function CreatePlanDialog({
     });
   }
 
-  if (availableNames.length === 0) {
-    return (
-      <Dialog open={open} onOpenChange={onOpenChange}>
-        <DialogContent className="sm:max-w-sm">
-          <DialogHeader><DialogTitle>All Plans Exist</DialogTitle></DialogHeader>
-          <p className="text-sm text-muted-foreground">
-            All three plan tiers (Starter, Pro, Enterprise) have already been created.
-            Use the edit button on each plan card to update them.
-          </p>
-          <DialogFooter>
-            <Button onClick={() => onOpenChange(false)}>Close</Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-    );
-  }
-
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
+    <Dialog open={open} onOpenChange={(v) => { if (!v) form.reset(); onOpenChange(v); }}>
       <DialogContent className="sm:max-w-lg max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>Create New Plan</DialogTitle>
         </DialogHeader>
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-            {/* Plan tier selector */}
+            {/* Plan name slug */}
             <FormField control={form.control} name="name" render={({ field }) => (
               <FormItem>
-                <FormLabel>Plan Tier *</FormLabel>
-                <Select onValueChange={field.onChange} value={field.value}>
-                  <FormControl>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select tier" />
-                    </SelectTrigger>
-                  </FormControl>
-                  <SelectContent>
-                    {availableNames.map((n) => (
-                      <SelectItem key={n} value={n} className="capitalize">{n}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                <FormLabel>Plan Name (slug) *</FormLabel>
+                <FormControl>
+                  <Input
+                    placeholder="e.g. starter, custom-pro, enterprise-plus"
+                    {...field}
+                    onChange={(e) => field.onChange(e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, ''))}
+                  />
+                </FormControl>
+                <p className="text-xs text-muted-foreground">Lowercase letters, numbers, hyphens. This is the internal identifier.</p>
                 <FormMessage />
               </FormItem>
             )} />
@@ -563,7 +547,7 @@ function CreatePlanDialog({
             <PlanFormFields form={form as ReturnType<typeof useForm<PlanFormValues>>} />
 
             <DialogFooter className="pt-2">
-              <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>Cancel</Button>
+              <Button type="button" variant="outline" onClick={() => { form.reset(); onOpenChange(false); }}>Cancel</Button>
               <Button type="submit" disabled={create.isPending}>
                 {create.isPending ? 'Creating…' : 'Create Plan'}
               </Button>
@@ -579,16 +563,17 @@ function CreatePlanDialog({
 
 function PlanCard({ plan, onEdit }: { plan: Plan; onEdit: () => void }) {
   const tierStyles: Record<string, { border: string; badge: string; accent: string }> = {
-    starter:    { border: 'border-border',   badge: 'bg-muted text-muted-foreground',   accent: 'text-muted-foreground' },
-    pro:        { border: 'border-purple-400',  badge: 'bg-purple-500/15 text-purple-500', accent: 'text-purple-500' },
-    enterprise: { border: 'border-amber-400',   badge: 'bg-amber-500/15 text-amber-500',   accent: 'text-amber-500' },
+    starter:    { border: 'border-border',      badge: 'bg-muted text-muted-foreground',     accent: 'text-muted-foreground' },
+    pro:        { border: 'border-purple-400',  badge: 'bg-purple-500/15 text-purple-500',   accent: 'text-purple-500' },
+    enterprise: { border: 'border-amber-400',   badge: 'bg-amber-500/15 text-amber-500',     accent: 'text-amber-500' },
   };
+  const customStyle = { border: 'border-sky-400', badge: 'bg-sky-500/15 text-sky-600 dark:text-sky-400', accent: 'text-sky-600 dark:text-sky-400' };
 
   const planAny    = plan as Plan & { trialDays?: number; billingCycle?: string };
   const currency   = plan.currency ?? 'PKR';
   const billing    = planAny.billingCycle ?? 'monthly';
   const trialDays  = planAny.trialDays ?? 0;
-  const styles     = tierStyles[plan.name ?? ''] ?? tierStyles['starter'];
+  const styles     = tierStyles[plan.name ?? ''] ?? customStyle;
   const flags      = plan.featureFlags as Record<string, boolean> | undefined ?? {};
 
   const enabledFlags  = FEATURE_FLAGS.filter((f) => flags[f.key]);

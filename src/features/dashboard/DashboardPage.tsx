@@ -433,21 +433,21 @@ export default function DashboardPage() {
               title="Revenue This Month"
               value={formatCurrencyCompact(revenue.thisMonth ?? 0)}
               icon={CreditCard}
-              iconClassName="bg-emerald-500 text-emerald-600"
+              iconClassName="bg-emerald-500/10 text-emerald-600 dark:text-emerald-400"
               subtitle="Invoices paid"
             />
             <StatCard
               title="Active Trainers"
               value={String(trainers.active ?? 0)}
               icon={Dumbbell}
-              iconClassName="bg-purple-500 text-purple-600"
+              iconClassName="bg-purple-500/10 text-purple-600 dark:text-purple-400"
               subtitle="Currently assigned"
             />
             <StatCard
               title="New This Month"
               value={String(members.newThisMonth ?? 0)}
               icon={TrendingUp}
-              iconClassName="bg-amber-500 text-amber-600"
+              iconClassName="bg-amber-500/10 text-amber-600 dark:text-amber-400"
               subtitle="New members"
             />
           </>

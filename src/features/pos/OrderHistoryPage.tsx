@@ -6,6 +6,7 @@ import {
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { DatePicker } from '@/components/ui/date-picker';
 import { Badge } from '@/components/ui/badge';
 import { useTenantCurrency } from '@/hooks/use-tenant-currency';
 import { listOrders, getOrder, type PosOrder, type PaymentMethod } from '@/api/pos.api';
@@ -247,11 +248,11 @@ export default function OrderHistoryPage() {
       <div className="flex flex-wrap gap-3 items-center">
         <div className="flex items-center gap-2">
           <span className="text-sm text-muted-foreground">From</span>
-          <Input type="date" value={from} onChange={e => { setFrom(e.target.value); setPage(1); }} className="w-36 h-9 text-sm" />
+          <DatePicker value={from} onChange={(v) => { setFrom(v ?? ''); setPage(1); }} className="w-36 h-9 text-sm" />
         </div>
         <div className="flex items-center gap-2">
           <span className="text-sm text-muted-foreground">To</span>
-          <Input type="date" value={to} onChange={e => { setTo(e.target.value); setPage(1); }} className="w-36 h-9 text-sm" />
+          <DatePicker value={to} onChange={(v) => { setTo(v ?? ''); setPage(1); }} className="w-36 h-9 text-sm" />
         </div>
         <PaymentFilterDropdown value={paymentFilter} onChange={v => { setPaymentFilter(v); setPage(1); }} />
         {(from || to || paymentFilter !== 'all') && (

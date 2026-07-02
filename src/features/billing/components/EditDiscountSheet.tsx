@@ -6,6 +6,7 @@ import { z } from "zod";
 import { Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { DatePicker } from "@/components/ui/date-picker";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
@@ -207,20 +208,18 @@ export function EditDiscountSheet({
           <div className="grid grid-cols-2 gap-3">
             <div className="space-y-1.5">
               <Label htmlFor="validFrom">Valid From</Label>
-              <Input
+              <DatePicker
                 id="validFrom"
-                type="date"
-                disabled={isPending}
-                {...register("validFrom")}
+                value={watch("validFrom") ?? ''}
+                onChange={(v) => setValue("validFrom", v ?? '')}
               />
             </div>
             <div className="space-y-1.5">
               <Label htmlFor="validUntil">Valid Until</Label>
-              <Input
+              <DatePicker
                 id="validUntil"
-                type="date"
-                disabled={isPending}
-                {...register("validUntil")}
+                value={watch("validUntil") ?? ''}
+                onChange={(v) => setValue("validUntil", v ?? '')}
               />
             </div>
           </div>

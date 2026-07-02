@@ -10,6 +10,7 @@ import {
 } from '@/components/ui/sheet';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { DatePicker } from '@/components/ui/date-picker';
 import {
   Form,
   FormControl,
@@ -38,7 +39,7 @@ import { useState, useEffect, useRef, useCallback } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { toast } from '@/hooks/use-toast';
 import { getErrorMessage } from '@/utils/error';
-import { usePostSuperTenants } from '@/api/generated/super-admin/super-admin';
+import { usePostSuperTenants, useGetSuperPlans } from '@/api/generated/super-admin/super-admin';
 import { orvalMutator } from '@/lib/orval-mutator';
 import { COUNTRY_BY_NAME } from '@/config/world-countries';
 import { isValidPhoneNumber, isPossiblePhoneNumber, type CountryCode } from 'libphonenumber-js';
@@ -63,7 +64,7 @@ const schema = z.object({
   country:          z.string().min(1, 'Country is required'),
   currency:         z.string().length(3, 'Currency required'),
   currencySymbol:   z.string().min(1),
-  plan:             z.enum(['starter', 'pro', 'enterprise']).optional(),
+  plan:             z.string().optional(),
   ownerFirstName:   z.string().min(1, 'Required'),
   ownerLastName:    z.string().min(1, 'Required'),
   ownerEmail:       z.string().email('Invalid email'),
@@ -149,6 +150,10 @@ export default function CreateTenantForm({ open, onOpenChange, onSuccess }: Crea
   });
 
   const enabledCountries: EnabledCountry[] = platformConfig?.enabledCountries ?? [];
+
+  // Load available SaaS plans
+  const { data: plansData } = useGetSuperPlans({ query: { staleTime: 5 * 60 * 1000 } });
+  const availablePlans = (plansData?.data ?? []).filter((p) => p.isActive !== false);
 
   const form = useForm<FormValues>({
     resolver: zodResolver(schema),
@@ -421,12 +426,23 @@ export default function CreateTenantForm({ open, onOpenChange, onSuccess }: Crea
                     render={({ field }) => (
                       <FormItem>
                         <FormLabel>Plan</FormLabel>
-                        <Select value={field.value} onValueChange={field.onChange}>
-                          <FormControl><SelectTrigger><SelectValue /></SelectTrigger></FormControl>
+                        <Select value={field.value ?? ''} onValueChange={field.onChange}>
+                          <FormControl><SelectTrigger><SelectValue placeholder="Select plan" /></SelectTrigger></FormControl>
                           <SelectContent>
-                            <SelectItem value="starter">Starter</SelectItem>
-                            <SelectItem value="pro">Pro</SelectItem>
-                            <SelectItem value="enterprise">Enterprise</SelectItem>
+                            {availablePlans.length > 0
+                              ? availablePlans.map((p) => (
+                                  <SelectItem key={p.name ?? ''} value={p.name ?? ''}>
+                                    {p.displayName ?? p.name}
+                                  </SelectItem>
+                                ))
+                              : (
+                                <>
+                                  <SelectItem value="starter">Starter</SelectItem>
+                                  <SelectItem value="pro">Pro</SelectItem>
+                                  <SelectItem value="enterprise">Enterprise</SelectItem>
+                                </>
+                              )
+                            }
                           </SelectContent>
                         </Select>
                         <FormMessage />
@@ -523,7 +539,10 @@ export default function CreateTenantForm({ open, onOpenChange, onSuccess }: Crea
                       <FormItem>
                         <FormLabel>First Invoice Date *</FormLabel>
                         <FormControl>
-                          <Input type="date" {...field} value={field.value ?? todayStr} />
+                          <DatePicker
+                            value={field.value ?? todayStr}
+                            onChange={(v) => field.onChange(v ?? '')}
+                          />
                         </FormControl>
                         <FormMessage />
                       </FormItem>

@@ -10,6 +10,7 @@ import {
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
+import { DatePicker } from '@/components/ui/date-picker';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { Separator } from '@/components/ui/separator';
@@ -199,7 +200,11 @@ function LogMaintenanceDialog({
             </div>
             <div className="space-y-1.5">
               <Label htmlFor="performedAt">Performed At <span className="text-destructive">*</span></Label>
-              <Input id="performedAt" type="date" {...register('performedAt')} />
+              <DatePicker
+                id="performedAt"
+                value={watch('performedAt') ?? ''}
+                onChange={(v) => setValue('performedAt', v ?? '')}
+              />
               {errors.performedAt && <p className="text-xs text-destructive">{errors.performedAt.message}</p>}
             </div>
           </div>
@@ -250,7 +255,11 @@ function LogMaintenanceDialog({
             </div>
             <div className="space-y-1.5">
               <Label htmlFor="nextMaintenanceDue">Next Due Date</Label>
-              <Input id="nextMaintenanceDue" type="date" {...register('nextMaintenanceDue')} />
+              <DatePicker
+                id="nextMaintenanceDue"
+                value={watch('nextMaintenanceDue') ?? ''}
+                onChange={(v) => setValue('nextMaintenanceDue', v ?? '')}
+              />
             </div>
           </div>
           <div className="space-y-1.5">
@@ -351,7 +360,11 @@ function CreateWorkOrderDialog({
             </div>
             <div className="space-y-1.5">
               <Label htmlFor="wo-due">Due Date</Label>
-              <Input id="wo-due" type="date" {...register('dueAt')} />
+              <DatePicker
+                id="wo-due"
+                value={watch('dueAt') ?? ''}
+                onChange={(v) => setValue('dueAt', v ?? '')}
+              />
             </div>
           </div>
           <div className="space-y-1.5">

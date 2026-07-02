@@ -1,8 +1,9 @@
 import { useState, useEffect, useCallback } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { format } from 'date-fns';
 import {
   Download, Search, RefreshCw, Users, TrendingUp,
-  Inbox, Bell, Filter, ChevronUp, ChevronDown,
+  Inbox, Bell, Filter, ChevronUp, ChevronDown, ArrowLeft,
 } from 'lucide-react';
 import { Button }     from '@/components/ui/button';
 import { Badge }      from '@/components/ui/badge';
@@ -69,6 +70,7 @@ function SortIndicator({ field, sortBy, sortOrder }: {
 // ─── Component ────────────────────────────────────────────────────────────────
 
 export default function LeadsPage() {
+  const navigate = useNavigate();
   const qc   = useQueryClient();
   const user = useAuthStore((s) => s.user);
 
@@ -188,6 +190,10 @@ export default function LeadsPage() {
         description="Website form submissions from gymanger.com"
         actions={
           <div className="flex gap-2">
+            <Button variant="outline" size="sm" onClick={() => navigate('/super-admin')}>
+              <ArrowLeft className="h-3.5 w-3.5 mr-1.5" />
+              Back
+            </Button>
             <Button variant="outline" size="sm" onClick={handleRefresh} disabled={isFetching}>
               <RefreshCw className={`h-4 w-4 mr-1.5 ${isFetching ? 'animate-spin' : ''}`} />
               Refresh

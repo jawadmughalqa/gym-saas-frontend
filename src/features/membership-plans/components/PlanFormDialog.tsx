@@ -185,7 +185,7 @@ export function PlanFormDialog({
           billingFrequency:   (defaultValues.billingFrequency as typeof BILLING_FREQUENCIES[number]) ?? 'monthly',
           durationDays:       defaultValues.durationDays ?? '',
           basePrice:          defaultValues.basePrice ?? 0,
-          currency:           defaultValues.currency ?? tenantCurrency,
+          currency:           tenantCurrency,
           maxFreezes:         defaultValues.maxFreezes ?? 2,
           freezeDurationDays: defaultValues.freezeDurationDays ?? 30,
           features:           (defaultValues.features ?? []).map((v) => ({ value: v })),
@@ -210,6 +210,13 @@ export function PlanFormDialog({
       }
     }
   }, [open, defaultValues, form, tenantCurrency]);
+
+  // ── Keep currency synced with tenant setting ───────────────────────────────
+  useEffect(() => {
+    if (tenantCurrency) {
+      form.setValue('currency', tenantCurrency);
+    }
+  }, [tenantCurrency, form]);
 
   // ── Submit ─────────────────────────────────────────────────────────────────
   const handleSubmit = (values: PlanFormValues) => {
@@ -312,7 +319,7 @@ export function PlanFormDialog({
                   )}
                 />
 
-                {/* Currency */}
+                {/* Currency — read-only, derived from gym owner's country setting */}
                 <FormField
                   control={form.control}
                   name="currency"
@@ -320,9 +327,13 @@ export function PlanFormDialog({
                     <FormItem>
                       <FormLabel>Currency</FormLabel>
                       <FormControl>
-                        <Input placeholder="PK" maxLength={3} {...field} />
+                        <div className="flex h-10 w-full items-center rounded-md border border-input bg-muted px-3 py-2 text-sm font-medium select-none cursor-default">
+                          <span>{field.value || tenantCurrency || '—'}</span>
+                        </div>
                       </FormControl>
-                      <FormMessage />
+                      <p className="text-xs text-muted-foreground">
+                        Determined by your gym's country configuration
+                      </p>
                     </FormItem>
                   )}
                 />

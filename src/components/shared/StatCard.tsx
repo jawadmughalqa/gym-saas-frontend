@@ -52,7 +52,7 @@ export default function StatCard({
       <CardHeader className="flex flex-row items-start justify-between space-y-0 pb-3">
         <CardTitle className="text-sm font-medium text-muted-foreground leading-snug">{title}</CardTitle>
         {Icon && (
-          <div className={cn('rounded-lg p-2 bg-primary/10 text-primary shrink-0', iconClassName)}>
+          <div className={cn('rounded-lg p-2 shrink-0', iconClassName ?? 'bg-primary/10 text-primary')}>
             <Icon className="h-4 w-4" />
           </div>
         )}

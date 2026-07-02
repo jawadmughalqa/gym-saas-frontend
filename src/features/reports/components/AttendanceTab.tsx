@@ -45,8 +45,8 @@ export default function AttendanceTab() {
 
       {/* Summary KPIs */}
       <div className="grid gap-4 sm:grid-cols-2">
-        <StatCard title="Total Check-Ins"  value={String(d?.totalCheckIns     ?? 0)} icon={Activity} iconClassName="bg-purple-500" />
-        <StatCard title="Unique Members"   value={String(d?.uniqueMemberCount ?? 0)} icon={Users}    iconClassName="bg-indigo-500" />
+        <StatCard title="Total Check-Ins"  value={String(d?.totalCheckIns     ?? 0)} icon={Activity} iconClassName="bg-purple-500/10 text-purple-600 dark:text-purple-400" />
+        <StatCard title="Unique Members"   value={String(d?.uniqueMemberCount ?? 0)} icon={Users}    iconClassName="bg-indigo-500/10 text-indigo-600 dark:text-indigo-400" />
       </div>
 
       {/* Check-ins over time */}

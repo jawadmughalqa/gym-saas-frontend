@@ -111,7 +111,7 @@ export function MemberBillingDialog({
       <Dialog open={open} onOpenChange={onOpenChange}>
         <DialogContent className="max-w-2xl p-0 flex flex-col max-h-[90vh]">
           {/* ── Header ────────────────────────────────────────────────────── */}
-          <DialogHeader className="px-5 py-3 border-b shrink-0">
+          <DialogHeader className="pl-5 pr-12 py-3 border-b shrink-0">
             <div className="flex items-center justify-between">
               <div>
                 <DialogTitle className="text-base">{memberName}</DialogTitle>

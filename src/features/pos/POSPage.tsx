@@ -161,7 +161,7 @@ function PaymentDropdown({ value, onChange }: { value: PaymentMethod; onChange: 
 export default function POSPage() {
   const { toast } = useToast();
   const qc = useQueryClient();
-  const { symbol: currencySymbol, currency } = useTenantCurrency();
+  const { currencySymbol, currency } = useTenantCurrency();
 
   const fmt = (n: number) => `${currencySymbol}${n.toFixed(2)}`;
 

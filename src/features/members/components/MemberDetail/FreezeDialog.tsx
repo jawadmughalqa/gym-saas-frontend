@@ -1,4 +1,4 @@
-import { useForm }    from 'react-hook-form';
+import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z }           from 'zod';
 import { Loader2 }     from 'lucide-react';
@@ -12,6 +12,7 @@ import {
 import { Button } from '@/components/ui/button';
 import { Input }  from '@/components/ui/input';
 import { Label }  from '@/components/ui/label';
+import { DatePicker } from '@/components/ui/date-picker';
 import { useQueryClient } from '@tanstack/react-query';
 import {
   usePostMembersMemberIdSubscriptionsSubscriptionIdFreeze,
@@ -72,6 +73,7 @@ export function FreezeDialog({
   const {
     register,
     handleSubmit,
+    control,
     formState: { errors },
     reset,
   } = useForm<FreezeFormValues>({
@@ -101,11 +103,16 @@ export function FreezeDialog({
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
           <div className="space-y-1.5">
             <Label htmlFor="resumeAt">Resume Date *</Label>
-            <Input
-              id="resumeAt"
-              type="date"
-              disabled={freezeMutation.isPending}
-              {...register('resumeAt')}
+            <Controller
+              control={control}
+              name="resumeAt"
+              render={({ field }) => (
+                <DatePicker
+                  id="resumeAt"
+                  value={field.value ?? ''}
+                  onChange={(v) => field.onChange(v ?? '')}
+                />
+              )}
             />
             {errors.resumeAt && (
               <p className="text-xs text-destructive">{errors.resumeAt.message}</p>

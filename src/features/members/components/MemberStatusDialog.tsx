@@ -1,5 +1,4 @@
-import { useState } from 'react';
-import { useForm } from 'react-hook-form';
+import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import {
@@ -10,6 +9,7 @@ import { Button }   from '@/components/ui/button';
 import { Input }    from '@/components/ui/input';
 import { Label }    from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
+import { DatePicker } from '@/components/ui/date-picker';
 import { Badge }    from '@/components/ui/badge';
 import { AlertTriangle, Snowflake, UserX, UserCheck } from 'lucide-react';
 import type { MemberStatus } from '@/types/member.types';
@@ -118,7 +118,7 @@ export function MemberStatusDialog({
 }: MemberStatusDialogProps) {
   const config = STATUS_CONFIG[targetStatus];
 
-  const { register, handleSubmit, reset, formState: { errors } } = useForm<FormValues>({
+  const { register, handleSubmit, reset, control, formState: { errors } } = useForm<FormValues>({
     resolver: zodResolver(
       baseSchema.superRefine((data, ctx) => {
         if (config.requiresReason && !data.reason?.trim()) {
@@ -196,12 +196,17 @@ export function MemberStatusDialog({
               <Label htmlFor="freezeEndDate">
                 Resume Date <span className="text-destructive">*</span>
               </Label>
-              <Input
-                id="freezeEndDate"
-                type="date"
-                min={minDate}
-                className={errors.freezeEndDate ? 'border-destructive' : ''}
-                {...register('freezeEndDate')}
+              <Controller
+                control={control}
+                name="freezeEndDate"
+                render={({ field }) => (
+                  <DatePicker
+                    id="freezeEndDate"
+                    value={field.value ?? ''}
+                    onChange={(v) => field.onChange(v ?? '')}
+                    minDate={minDate}
+                  />
+                )}
               />
               {errors.freezeEndDate && (
                 <p className="text-xs text-destructive">{errors.freezeEndDate.message}</p>

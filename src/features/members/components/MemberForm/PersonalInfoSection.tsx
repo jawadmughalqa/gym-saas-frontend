@@ -1,5 +1,6 @@
 import { Input }    from '@/components/ui/input';
 import { Label }    from '@/components/ui/label';
+import { DatePicker } from '@/components/ui/date-picker';
 import { PHONE } from '@/config/tenant.config';
 import { Textarea } from '@/components/ui/textarea';
 import {
@@ -135,12 +136,11 @@ export function PersonalInfoSection({
       {/* Date of Birth */}
       <div className="space-y-1.5">
         <Label htmlFor="dateOfBirth">Date of Birth <span className="text-muted-foreground font-normal">(optional)</span></Label>
-        <Input
+        <DatePicker
           id="dateOfBirth"
-          type="date"
-          disabled={isPending}
-          max={new Date().toISOString().split('T')[0]}
-          {...register('dateOfBirth')}
+          value={watch('dateOfBirth') ?? ''}
+          onChange={(v) => setValue('dateOfBirth', v ?? '', { shouldValidate: true })}
+          maxDate={new Date().toISOString().split('T')[0]}
         />
       </div>
 
@@ -155,7 +155,7 @@ export function PersonalInfoSection({
             max={120}
             placeholder="e.g. 28"
             disabled={isPending}
-            {...register('age', { valueAsNumber: true })}
+            {...register('age')}
           />
           {errors.age && (
             <p className="text-xs text-destructive">{errors.age.message}</p>

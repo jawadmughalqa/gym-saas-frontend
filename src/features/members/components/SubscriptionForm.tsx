@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useForm } from 'react-hook-form';
+import { DatePicker } from '@/components/ui/date-picker';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { Loader2, Info } from 'lucide-react';
@@ -120,9 +121,10 @@ export default function SubscriptionForm({
         void queryClient.invalidateQueries({
           queryKey: getGetMembersQueryKey(),
         });
-        // Invalidate invoices so BillingTab immediately shows the auto-created invoice
+        // Invalidate ALL invoice queries — BillingTab uses { memberId, limit: 100 }
+        // which is a different key from { memberId }, so we invalidate the prefix to catch both
         void queryClient.invalidateQueries({
-          queryKey: getGetInvoicesQueryKey({ memberId }),
+          queryKey: getGetInvoicesQueryKey(),
         });
         toast({
           title:       'Subscription assigned',
@@ -131,9 +133,7 @@ export default function SubscriptionForm({
         onOpenChange(false);
       },
       onError: (err: unknown) => {
-        const msg =
-          (err as { response?: { data?: { message?: string } } })
-            ?.response?.data?.message ?? 'Failed to assign subscription.';
+        const msg = (err as Error)?.message ?? 'Failed to assign subscription.';
         toast({ title: 'Error', description: msg, variant: 'destructive' });
       },
     },
@@ -413,6 +413,8 @@ export default function SubscriptionForm({
               <CommonFields
                 register={planForm.register}
                 isPending={isPending}
+                startDateValue={planForm.watch('startDate') ?? ''}
+                onStartDateChange={(v) => planForm.setValue('startDate', v ?? '')}
               />
 
               {/* Auto invoice */}
@@ -555,6 +557,8 @@ export default function SubscriptionForm({
               <CommonFields
                 register={customForm.register}
                 isPending={isPending}
+                startDateValue={customForm.watch('startDate') ?? ''}
+                onStartDateChange={(v) => customForm.setValue('startDate', v ?? '')}
               />
 
               {/* Auto invoice */}
@@ -597,19 +601,22 @@ export default function SubscriptionForm({
 function CommonFields({
   register,
   isPending,
+  startDateValue,
+  onStartDateChange,
 }: {
-  register:  ReturnType<typeof useForm>['register'];
-  isPending: boolean;
+  register:           ReturnType<typeof useForm>['register'];
+  isPending:          boolean;
+  startDateValue:     string;
+  onStartDateChange:  (v: string | undefined) => void;
 }) {
   return (
     <>
       <div className="space-y-1.5">
         <Label htmlFor="startDate">Start Date</Label>
-        <Input
+        <DatePicker
           id="startDate"
-          type="date"
-          disabled={isPending}
-          {...(register as (name: string) => object)('startDate')}
+          value={startDateValue}
+          onChange={onStartDateChange}
         />
         <p className="text-xs text-muted-foreground">Defaults to today. Change if the membership starts on a different date.</p>
       </div>

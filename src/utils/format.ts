@@ -1,14 +1,23 @@
 import { format, formatDistanceToNow } from 'date-fns';
 import { CURRENCY } from '@/config/tenant.config';
 
-export const formatDate = (date: string | Date) =>
-  format(new Date(date), 'MMM d, yyyy');
+export const formatDate = (date: string | Date | null | undefined): string => {
+  if (!date) return '—';
+  const d = new Date(date);
+  return isNaN(d.getTime()) ? '—' : format(d, 'MMM d, yyyy');
+};
 
-export const formatDateTime = (date: string | Date) =>
-  format(new Date(date), 'MMM d, yyyy HH:mm');
+export const formatDateTime = (date: string | Date | null | undefined): string => {
+  if (!date) return '—';
+  const d = new Date(date);
+  return isNaN(d.getTime()) ? '—' : format(d, 'MMM d, yyyy HH:mm');
+};
 
-export const formatRelative = (date: string | Date) =>
-  formatDistanceToNow(new Date(date), { addSuffix: true });
+export const formatRelative = (date: string | Date | null | undefined): string => {
+  if (!date) return '—';
+  const d = new Date(date);
+  return isNaN(d.getTime()) ? '—' : formatDistanceToNow(d, { addSuffix: true });
+};
 
 export const formatCurrency = (amount: number, currency = 'PKR') =>
   new Intl.NumberFormat('en-PK', { style: 'currency', currency }).format(amount);

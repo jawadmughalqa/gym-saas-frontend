@@ -4,6 +4,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { DatePicker } from "@/components/ui/date-picker";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import {
@@ -371,11 +372,10 @@ export default function ExpenseForm({
             <Label htmlFor="date">
               Date <span className="text-destructive">*</span>
             </Label>
-            <Input
+            <DatePicker
               id="date"
-              type="date"
-              {...register("date")}
-              className={errors.date ? "border-destructive" : ""}
+              value={watch("date") ?? ''}
+              onChange={(v) => setValue("date", v ?? '', { shouldValidate: true })}
             />
             {errors.date && (
               <p className="text-xs text-destructive">{errors.date.message}</p>

@@ -24,6 +24,7 @@ import {
 } from '@/components/ui/alert-dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Skeleton } from '@/components/ui/skeleton';
 import {
   useCredentials,
   useEnrollFingerprint,
@@ -273,9 +274,19 @@ export function FingerprintTab({ memberId }: Props) {
         </CardHeader>
         <CardContent>
           {isLoading ? (
-            <div className="flex items-center gap-2 text-sm text-muted-foreground py-4">
-              <Loader2 className="h-4 w-4 animate-spin" />
-              Loading credentials…
+            <div className="space-y-2 py-1">
+              {Array.from({ length: 2 }).map((_, i) => (
+                <div key={i} className="flex items-center justify-between rounded-lg border p-3 animate-pulse">
+                  <div className="flex items-center gap-3">
+                    <Skeleton className="h-9 w-9 rounded-full shrink-0" />
+                    <div className="space-y-1.5">
+                      <Skeleton className="h-4 w-28" />
+                      <Skeleton className="h-3 w-36" />
+                    </div>
+                  </div>
+                  <Skeleton className="h-8 w-16 rounded" />
+                </div>
+              ))}
             </div>
           ) : credList.length === 0 ? (
             <div className="flex flex-col items-center gap-3 py-10 text-center text-muted-foreground">

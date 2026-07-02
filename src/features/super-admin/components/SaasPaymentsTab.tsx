@@ -9,6 +9,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { DatePicker } from '@/components/ui/date-picker';
 import {
   Select,
   SelectContent,
@@ -252,20 +253,18 @@ export default function SaasPaymentsTab() {
           <>
             <div className="space-y-1">
               <p className="text-xs text-muted-foreground">From</p>
-              <Input
-                type="date"
-                className="h-9 w-40"
+              <DatePicker
                 value={customStart}
-                onChange={(e) => setCustomStart(e.target.value)}
+                onChange={(v) => setCustomStart(v ?? '')}
+                className="h-9 w-40"
               />
             </div>
             <div className="space-y-1">
               <p className="text-xs text-muted-foreground">To</p>
-              <Input
-                type="date"
-                className="h-9 w-40"
+              <DatePicker
                 value={customEnd}
-                onChange={(e) => setCustomEnd(e.target.value)}
+                onChange={(v) => setCustomEnd(v ?? '')}
+                className="h-9 w-40"
               />
             </div>
           </>
@@ -295,28 +294,28 @@ export default function SaasPaymentsTab() {
           label="Total Collected"
           value={fmt(summary?.totalCollected ?? 0)}
           icon={TrendingUp}
-          iconClass="bg-green-500 text-green-600"
+          iconClass="bg-green-500/10 text-green-600 dark:text-green-400"
           sub={`${summary?.invoiceCounts.paid ?? 0} invoices paid`}
         />
         <PayStat
           label="Total Billed"
           value={fmt(summary?.totalBilled ?? 0)}
           icon={CreditCard}
-          iconClass="bg-blue-500 text-blue-600"
+          iconClass="bg-blue-500/10 text-blue-600 dark:text-blue-400"
           sub={`${summary?.invoiceCounts.total ?? 0} total invoices`}
         />
         <PayStat
           label="Pending"
           value={fmt(summary?.totalDue ?? 0)}
           icon={Clock}
-          iconClass="bg-amber-500 text-amber-600"
+          iconClass="bg-amber-500/10 text-amber-600 dark:text-amber-400"
           sub={`${summary?.invoiceCounts.pending ?? 0} invoices`}
         />
         <PayStat
           label="Overdue"
           value={fmt(summary?.totalOverdue ?? 0)}
           icon={AlertTriangle}
-          iconClass="bg-red-500 text-red-600"
+          iconClass="bg-red-500/10 text-red-600 dark:text-red-400"
           sub={`${summary?.invoiceCounts.overdue ?? 0} invoices`}
         />
       </div>

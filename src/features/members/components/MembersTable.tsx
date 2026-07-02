@@ -207,8 +207,12 @@ export function MembersTable({
                     onStatusClick(row, target);
                   }}
                   className={
-                    target === 'inactive' || target === 'suspended'
+                    target === 'inactive'
                       ? 'text-destructive focus:text-destructive'
+                      : target === 'suspended'
+                      ? 'text-amber-600 focus:text-amber-600 dark:text-amber-400 dark:focus:text-amber-400'
+                      : target === 'frozen'
+                      ? 'text-blue-600 focus:text-blue-600 dark:text-blue-400 dark:focus:text-blue-400'
                       : ''
                   }
                 >

@@ -9,6 +9,7 @@ import {
 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
+import { DatePicker } from '@/components/ui/date-picker';
 import { Separator } from '@/components/ui/separator';
 import { Badge } from '@/components/ui/badge';
 import { Label } from '@/components/ui/label';
@@ -18,6 +19,7 @@ import {
 import PageHeader from '@/components/layout/PageHeader';
 import PageShell from '@/components/layout/PageShell';
 import StatCard from '@/components/shared/StatCard';
+import { StatCardSkeleton } from '@/components/ui/skeleton';
 import { useAuthStore } from '@/stores/auth.store';
 import { useGetReportsDashboard } from '@/api/generated/reports/reports';
 import { useGetBillingDashboard } from '@/api/generated/billing/billing';
@@ -201,23 +203,21 @@ function PaymentSummaryCard() {
             {/* Custom From */}
             <div className="space-y-1">
               <Label className="text-xs text-muted-foreground uppercase tracking-wide">From</Label>
-              <input
-                type="date"
+              <DatePicker
                 value={customFrom}
-                max={customTo}
-                onChange={(e) => setCustomFrom(e.target.value)}
-                className="h-8 rounded-md border border-input bg-background px-3 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
+                maxDate={customTo || undefined}
+                onChange={(v) => setCustomFrom(v ?? '')}
+                className="h-8"
               />
             </div>
             {/* Custom To */}
             <div className="space-y-1">
               <Label className="text-xs text-muted-foreground uppercase tracking-wide">To</Label>
-              <input
-                type="date"
+              <DatePicker
                 value={customTo}
-                min={customFrom}
-                onChange={(e) => setCustomTo(e.target.value)}
-                className="h-8 rounded-md border border-input bg-background px-3 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
+                minDate={customFrom || undefined}
+                onChange={(v) => setCustomTo(v ?? '')}
+                className="h-8"
               />
             </div>
           </>
@@ -254,47 +254,69 @@ function PaymentSummaryCard() {
       <CardContent className="pt-2 space-y-5">
         {/* ── Stat numbers ── */}
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-          {/* Total Collected */}
-          <div className="rounded-lg border bg-emerald-500/10 dark:bg-emerald-950/20 border-emerald-500/25 dark:border-emerald-800 p-4">
-            <div className="flex items-center gap-2 mb-1">
-              <CheckCircle2 className="h-4 w-4 text-emerald-600 shrink-0" />
-              <span className="text-xs font-medium text-emerald-500 dark:text-emerald-400">
-                Total Collected
-              </span>
-            </div>
-            <p className="text-2xl font-bold tabular-nums text-emerald-500 dark:text-emerald-300">
-              {billingLoading ? '—' : formatCurrencyCompact(billing?.totalRevenue ?? 0)}
-            </p>
-            <p className="text-xs text-muted-foreground mt-0.5">Payments received</p>
-          </div>
+          {billingLoading ? (
+            <>
+              <div className="rounded-lg border p-4 space-y-2 animate-pulse">
+                <div className="h-3 w-28 rounded bg-muted" />
+                <div className="h-7 w-24 rounded bg-muted" />
+                <div className="h-3 w-20 rounded bg-muted" />
+              </div>
+              <div className="rounded-lg border p-4 space-y-2 animate-pulse">
+                <div className="h-3 w-20 rounded bg-muted" />
+                <div className="h-7 w-24 rounded bg-muted" />
+                <div className="h-3 w-28 rounded bg-muted" />
+              </div>
+              <div className="rounded-lg border p-4 space-y-2 animate-pulse">
+                <div className="h-3 w-28 rounded bg-muted" />
+                <div className="h-7 w-24 rounded bg-muted" />
+                <div className="h-3 w-20 rounded bg-muted" />
+              </div>
+            </>
+          ) : (
+            <>
+              {/* Total Collected */}
+              <div className="rounded-lg border bg-emerald-500/10 dark:bg-emerald-950/20 border-emerald-500/25 dark:border-emerald-800 p-4">
+                <div className="flex items-center gap-2 mb-1">
+                  <CheckCircle2 className="h-4 w-4 text-emerald-600 shrink-0" />
+                  <span className="text-xs font-medium text-emerald-500 dark:text-emerald-400">
+                    Total Collected
+                  </span>
+                </div>
+                <p className="text-2xl font-bold tabular-nums text-emerald-500 dark:text-emerald-300">
+                  {formatCurrencyCompact(billing?.totalRevenue ?? 0)}
+                </p>
+                <p className="text-xs text-muted-foreground mt-0.5">Payments received</p>
+              </div>
 
-          {/* Total Due */}
-          <div className="rounded-lg border bg-red-500/10 dark:bg-red-950/20 border-red-500/25 dark:border-red-800 p-4">
-            <div className="flex items-center gap-2 mb-1">
-              <AlertCircle className="h-4 w-4 text-red-600 shrink-0" />
-              <span className="text-xs font-medium text-red-500 dark:text-red-400">
-                Total Due
-              </span>
-            </div>
-            <p className="text-2xl font-bold tabular-nums text-red-500 dark:text-red-300">
-              {billingLoading ? '—' : formatCurrencyCompact(billing?.pendingFees ?? 0)}
-            </p>
-            <p className="text-xs text-muted-foreground mt-0.5">Outstanding invoices</p>
-          </div>
+              {/* Total Due */}
+              <div className="rounded-lg border bg-red-500/10 dark:bg-red-950/20 border-red-500/25 dark:border-red-800 p-4">
+                <div className="flex items-center gap-2 mb-1">
+                  <AlertCircle className="h-4 w-4 text-red-600 shrink-0" />
+                  <span className="text-xs font-medium text-red-500 dark:text-red-400">
+                    Total Due
+                  </span>
+                </div>
+                <p className="text-2xl font-bold tabular-nums text-red-500 dark:text-red-300">
+                  {formatCurrencyCompact(billing?.pendingFees ?? 0)}
+                </p>
+                <p className="text-xs text-muted-foreground mt-0.5">Outstanding invoices</p>
+              </div>
 
-          {/* Today's Collection */}
-          <div className="rounded-lg border bg-blue-500/10 dark:bg-blue-950/20 border-blue-500/25 dark:border-blue-800 p-4">
-            <div className="flex items-center gap-2 mb-1">
-              <CalendarDays className="h-4 w-4 text-blue-600 shrink-0" />
-              <span className="text-xs font-medium text-blue-500 dark:text-blue-400">
-                Today's Collection
-              </span>
-            </div>
-            <p className="text-2xl font-bold tabular-nums text-blue-500 dark:text-blue-300">
-              {billingLoading ? '—' : formatCurrencyCompact(billing?.todayCollection ?? 0)}
-            </p>
-            <p className="text-xs text-muted-foreground mt-0.5">Received today</p>
-          </div>
+              {/* Today's Collection */}
+              <div className="rounded-lg border bg-blue-500/10 dark:bg-blue-950/20 border-blue-500/25 dark:border-blue-800 p-4">
+                <div className="flex items-center gap-2 mb-1">
+                  <CalendarDays className="h-4 w-4 text-blue-600 shrink-0" />
+                  <span className="text-xs font-medium text-blue-500 dark:text-blue-400">
+                    Today's Collection
+                  </span>
+                </div>
+                <p className="text-2xl font-bold tabular-nums text-blue-500 dark:text-blue-300">
+                  {formatCurrencyCompact(billing?.todayCollection ?? 0)}
+                </p>
+                <p className="text-xs text-muted-foreground mt-0.5">Received today</p>
+              </div>
+            </>
+          )}
         </div>
 
         {/* ── Bar chart ── */}
@@ -390,34 +412,45 @@ export default function DashboardPage() {
 
       {/* ── KPI strip ── */}
       <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
-        <StatCard
-          title="Active Members"
-          value={dashLoading ? '—' : String(members.active ?? 0)}
-          icon={Users}
-          iconClassName="bg-primary/10 text-primary"
-          subtitle={membersSubtitle}
-        />
-        <StatCard
-          title="Revenue This Month"
-          value={dashLoading ? '—' : formatCurrencyCompact(revenue.thisMonth ?? 0)}
-          icon={CreditCard}
-          iconClassName="bg-emerald-500 text-emerald-600"
-          subtitle="Invoices paid"
-        />
-        <StatCard
-          title="Active Trainers"
-          value={dashLoading ? '—' : String(trainers.active ?? 0)}
-          icon={Dumbbell}
-          iconClassName="bg-purple-500 text-purple-600"
-          subtitle="Currently assigned"
-        />
-        <StatCard
-          title="New This Month"
-          value={dashLoading ? '—' : String(members.newThisMonth ?? 0)}
-          icon={TrendingUp}
-          iconClassName="bg-amber-500 text-amber-600"
-          subtitle="New members"
-        />
+        {dashLoading ? (
+          <>
+            <StatCardSkeleton />
+            <StatCardSkeleton />
+            <StatCardSkeleton />
+            <StatCardSkeleton />
+          </>
+        ) : (
+          <>
+            <StatCard
+              title="Active Members"
+              value={String(members.active ?? 0)}
+              icon={Users}
+              iconClassName="bg-primary/10 text-primary"
+              subtitle={membersSubtitle}
+            />
+            <StatCard
+              title="Revenue This Month"
+              value={formatCurrencyCompact(revenue.thisMonth ?? 0)}
+              icon={CreditCard}
+              iconClassName="bg-emerald-500/10 text-emerald-600 dark:text-emerald-400"
+              subtitle="Invoices paid"
+            />
+            <StatCard
+              title="Active Trainers"
+              value={String(trainers.active ?? 0)}
+              icon={Dumbbell}
+              iconClassName="bg-purple-500/10 text-purple-600 dark:text-purple-400"
+              subtitle="Currently assigned"
+            />
+            <StatCard
+              title="New This Month"
+              value={String(members.newThisMonth ?? 0)}
+              icon={TrendingUp}
+              iconClassName="bg-amber-500/10 text-amber-600 dark:text-amber-400"
+              subtitle="New members"
+            />
+          </>
+        )}
       </div>
 
       {/* ── Main body ── */}

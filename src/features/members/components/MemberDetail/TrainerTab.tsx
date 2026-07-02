@@ -22,7 +22,7 @@ import {
   UserMinus,
   Calendar,
   Dumbbell,
-  DollarSign,
+  Banknote,
   Clock,
   ChevronDown,
   ChevronUp,
@@ -247,7 +247,7 @@ export function TrainerTab({ memberId, branchId }: TrainerTabProps) {
             />
             {current.monthlyCharge !== undefined && (
               <AssignmentInfoRow
-                icon={DollarSign}
+                icon={Banknote}
                 label="PT Charge"
                 value={`${current.currency} ${current.monthlyCharge.toLocaleString()} / month`}
               />

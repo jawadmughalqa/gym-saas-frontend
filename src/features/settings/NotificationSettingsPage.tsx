@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import {
   Mail, MessageSquare, Bell, CheckCircle2, Loader2,
-  Eye, EyeOff, Send, ShieldCheck, ExternalLink,
+  Eye, EyeOff, Send, ShieldCheck, ExternalLink, Info,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -10,6 +10,13 @@ import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
+import { CardSkeleton } from '@/components/ui/skeleton';
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from '@/components/ui/tooltip';
 import PageHeader from '@/components/layout/PageHeader';
 import PageShell from '@/components/layout/PageShell';
 import { useToast } from '@/hooks/use-toast';
@@ -43,6 +50,26 @@ function DayChip({ day, selected, onToggle }: { day: number; selected: boolean; 
     >
       {day}d
     </button>
+  );
+}
+
+// ─── Field label with tooltip ─────────────────────────────────────────────────
+
+function FieldLabel({ label, tip }: { label: string; tip: string }) {
+  return (
+    <div className="flex items-center gap-1.5">
+      <span>{label}</span>
+      <TooltipProvider delayDuration={200}>
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <Info className="h-3.5 w-3.5 text-muted-foreground cursor-help shrink-0" />
+          </TooltipTrigger>
+          <TooltipContent side="top" className="max-w-[260px] text-xs leading-relaxed">
+            {tip}
+          </TooltipContent>
+        </Tooltip>
+      </TooltipProvider>
+    </div>
   );
 }
 
@@ -131,7 +158,6 @@ export default function NotificationSettingsPage() {
     onSuccess: () => {
       toast({ title: 'WhatsApp settings saved' });
       qc.invalidateQueries({ queryKey: ['notification-config'] });
-      // Clear token field after save (like passwords — don't show stored secrets)
       setWa((prev) => ({ ...prev, accessToken: '' }));
     },
     onError: () => toast({ title: 'Failed to save WhatsApp settings', variant: 'destructive' }),
@@ -176,8 +202,11 @@ export default function NotificationSettingsPage() {
   if (isLoading) {
     return (
       <PageShell>
-        <div className="flex items-center justify-center h-48">
-          <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+        <PageHeader title="Notification Channels" subtitle="Configure email and WhatsApp delivery" />
+        <div className="space-y-4 max-w-2xl">
+          <CardSkeleton />
+          <CardSkeleton />
+          <CardSkeleton />
         </div>
       </PageShell>
     );
@@ -223,16 +252,29 @@ export default function NotificationSettingsPage() {
             {smtp.enabled && (
               <>
                 <div className="grid grid-cols-2 gap-4">
+                  {/* Host */}
                   <div className="space-y-1.5">
-                    <Label>Host</Label>
+                    <Label>
+                      <FieldLabel
+                        label="Host"
+                        tip="Your email provider's SMTP server address. Examples: smtp.gmail.com (Gmail), smtp.hostinger.com (Hostinger), mail.yourdomain.com (cPanel hosting)"
+                      />
+                    </Label>
                     <Input
                       placeholder="smtp.gmail.com"
                       value={smtp.host}
                       onChange={(e) => setSmtp((s) => ({ ...s, host: e.target.value }))}
                     />
                   </div>
+
+                  {/* Port */}
                   <div className="space-y-1.5">
-                    <Label>Port</Label>
+                    <Label>
+                      <FieldLabel
+                        label="Port"
+                        tip="The connection port for your SMTP server. Use 587 for STARTTLS (recommended for most providers), 465 for SSL/TLS, or 25 for unencrypted (not recommended)."
+                      />
+                    </Label>
                     <Input
                       type="number"
                       placeholder="587"
@@ -243,20 +285,28 @@ export default function NotificationSettingsPage() {
                 </div>
 
                 <div className="grid grid-cols-2 gap-4">
+                  {/* Username */}
                   <div className="space-y-1.5">
-                    <Label>Username</Label>
+                    <Label>
+                      <FieldLabel
+                        label="Username"
+                        tip="Usually your full email address. Example: billing@mygym.com or you@gmail.com. This is the account used to log in to the SMTP server."
+                      />
+                    </Label>
                     <Input
                       placeholder="you@yourdomain.com"
                       value={smtp.user}
                       onChange={(e) => setSmtp((s) => ({ ...s, user: e.target.value }))}
                     />
                   </div>
+
+                  {/* Password */}
                   <div className="space-y-1.5">
                     <Label>
-                      Password{' '}
-                      {config?.smtp.hasPass && (
-                        <span className="text-xs text-muted-foreground">(stored — leave blank to keep)</span>
-                      )}
+                      <FieldLabel
+                        label={`Password${config?.smtp.hasPass ? ' (stored — leave blank to keep)' : ''}`}
+                        tip="Your email account password. For Gmail, you must use an App Password (not your regular password) — generate one at myaccount.google.com → Security → App Passwords."
+                      />
                     </Label>
                     <div className="relative">
                       <Input
@@ -278,16 +328,29 @@ export default function NotificationSettingsPage() {
                 </div>
 
                 <div className="grid grid-cols-2 gap-4">
+                  {/* From name */}
                   <div className="space-y-1.5">
-                    <Label>From name</Label>
+                    <Label>
+                      <FieldLabel
+                        label="From name"
+                        tip="The sender name your members will see in their inbox. Example: 'Lahore Fitness Club' or 'My Gym Billing'. Keep it recognisable so emails aren't ignored."
+                      />
+                    </Label>
                     <Input
                       placeholder="My Gym"
                       value={smtp.fromName}
                       onChange={(e) => setSmtp((s) => ({ ...s, fromName: e.target.value }))}
                     />
                   </div>
+
+                  {/* From email */}
                   <div className="space-y-1.5">
-                    <Label>From email</Label>
+                    <Label>
+                      <FieldLabel
+                        label="From email"
+                        tip="The email address that appears as the sender. Example: noreply@mygym.com or billing@mygym.com. Must match the domain of your SMTP account to avoid spam filters."
+                      />
+                    </Label>
                     <Input
                       placeholder="noreply@mygym.com"
                       value={smtp.fromEmail}
@@ -296,37 +359,52 @@ export default function NotificationSettingsPage() {
                   </div>
                 </div>
 
+                {/* SSL/TLS toggle */}
                 <div className="flex items-center gap-2">
                   <Switch
                     id="smtp-secure"
                     checked={smtp.secure}
                     onCheckedChange={(v) => setSmtp((s) => ({ ...s, secure: v }))}
                   />
-                  <Label htmlFor="smtp-secure" className="text-sm">Use SSL/TLS (port 465)</Label>
+                  <Label htmlFor="smtp-secure" className="text-sm flex items-center gap-1.5">
+                    <FieldLabel
+                      label="Use SSL/TLS (port 465)"
+                      tip="Enable this only if your provider requires port 465 with SSL/TLS. For port 587 (STARTTLS), leave this OFF — the server upgrades the connection automatically."
+                    />
+                  </Label>
                 </div>
 
                 <Separator />
 
-                <div className="flex items-center gap-2">
-                  <Input
-                    placeholder="Test recipient email"
-                    value={testEmail}
-                    onChange={(e) => setTestEmail(e.target.value)}
-                    className="max-w-xs"
-                  />
-                  <Button
-                    variant={smtpTestOk ? 'default' : 'outline'}
-                    size="sm"
-                    onClick={() => testSMTPMut.mutate()}
-                    disabled={!testEmail || testSMTPMut.isPending}
-                  >
-                    {testSMTPMut.isPending
-                      ? <Loader2 className="h-3.5 w-3.5 animate-spin mr-1" />
-                      : smtpTestOk
-                        ? <CheckCircle2 className="h-3.5 w-3.5 mr-1 text-green-400" />
-                        : <Send className="h-3.5 w-3.5 mr-1" />}
-                    {smtpTestOk ? 'Sent!' : 'Send test'}
-                  </Button>
+                {/* Test email */}
+                <div className="space-y-1.5">
+                  <Label className="text-sm">
+                    <FieldLabel
+                      label="Send a test email"
+                      tip="Enter any email address and click 'Send test' to verify your SMTP settings are working. You should receive a test message within a few seconds."
+                    />
+                  </Label>
+                  <div className="flex items-center gap-2">
+                    <Input
+                      placeholder="Test recipient email"
+                      value={testEmail}
+                      onChange={(e) => setTestEmail(e.target.value)}
+                      className="max-w-xs"
+                    />
+                    <Button
+                      variant={smtpTestOk ? 'default' : 'outline'}
+                      size="sm"
+                      onClick={() => testSMTPMut.mutate()}
+                      disabled={!testEmail || testSMTPMut.isPending}
+                    >
+                      {testSMTPMut.isPending
+                        ? <Loader2 className="h-3.5 w-3.5 animate-spin mr-1" />
+                        : smtpTestOk
+                          ? <CheckCircle2 className="h-3.5 w-3.5 mr-1 text-green-400" />
+                          : <Send className="h-3.5 w-3.5 mr-1" />}
+                      {smtpTestOk ? 'Sent!' : 'Send test'}
+                    </Button>
+                  </div>
                 </div>
               </>
             )}
@@ -380,12 +458,13 @@ export default function NotificationSettingsPage() {
           </CardHeader>
 
           <CardContent className="space-y-4">
+            {/* Access Token */}
             <div className="space-y-1.5">
               <Label>
-                Access Token{' '}
-                {config?.whatsapp.hasToken && (
-                  <span className="text-xs text-muted-foreground">(stored — leave blank to keep)</span>
-                )}
+                <FieldLabel
+                  label={`Access Token${config?.whatsapp.hasToken ? ' (stored — leave blank to keep)' : ''}`}
+                  tip="A permanent token from Meta (Facebook) Business Suite. Steps: go to developers.facebook.com → Your App → WhatsApp → API Setup → Generate a Permanent Token. Paste the full token here."
+                />
               </Label>
               <div className="relative">
                 <Input
@@ -408,8 +487,14 @@ export default function NotificationSettingsPage() {
               </p>
             </div>
 
+            {/* Phone Number ID */}
             <div className="space-y-1.5">
-              <Label>Phone Number ID</Label>
+              <Label>
+                <FieldLabel
+                  label="Phone Number ID"
+                  tip="A numeric ID assigned to your WhatsApp Business number by Meta. Find it at: developers.facebook.com → Your App → WhatsApp → API Setup → Phone Number ID. Example: 123456789012345. This is NOT your actual phone number."
+                />
+              </Label>
               <Input
                 placeholder="e.g. 123456789012345"
                 value={wa.phoneNumberId}
@@ -447,7 +532,12 @@ export default function NotificationSettingsPage() {
               <>
                 <Separator />
                 <div className="space-y-1.5">
-                  <Label>Send test message</Label>
+                  <Label>
+                    <FieldLabel
+                      label="Send test message"
+                      tip="Enter a mobile number in international format without the + sign. Example: 923001234567 for a Pakistani number (+92 300 1234567). The recipient must have messaged your WhatsApp Business number in the last 24 hours."
+                    />
+                  </Label>
                   <div className="flex items-center gap-2">
                     <Input
                       placeholder="e.g. 923001234567 (no +)"
@@ -511,7 +601,12 @@ export default function NotificationSettingsPage() {
 
           <CardContent className="space-y-4">
             <div className="space-y-2">
-              <Label className="text-sm">Remind members X days before due date</Label>
+              <Label className="text-sm">
+                <FieldLabel
+                  label="Remind members X days before due date"
+                  tip="Select how many days before an invoice is due you want the reminder sent. Example: selecting '3' sends a reminder 3 days before the due date. You can select multiple values to send reminders at different times."
+                />
+              </Label>
               <div className="flex flex-wrap gap-2">
                 {PRESET_DAYS.map((d) => (
                   <DayChip

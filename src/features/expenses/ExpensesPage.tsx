@@ -6,6 +6,7 @@ import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from '@/components/ui/select';
 import { Input } from '@/components/ui/input';
+import { DatePicker } from '@/components/ui/date-picker';
 import { Label } from '@/components/ui/label';
 import PageHeader from '@/components/layout/PageHeader';
 import PageShell from '@/components/layout/PageShell';
@@ -268,21 +269,19 @@ export default function ExpensesPage() {
         <div className="flex flex-col sm:flex-row gap-3 items-start sm:items-center">
           <div className="flex items-center gap-2">
             <Label htmlFor="startDate" className="text-sm shrink-0 text-muted-foreground">From</Label>
-            <Input
+            <DatePicker
               id="startDate"
-              type="date"
               value={startDate}
-              onChange={(e) => { setStartDate(e.target.value); table.setPage(1); }}
+              onChange={(v) => { setStartDate(v ?? ''); table.setPage(1); }}
               className="w-40 h-9 text-sm"
             />
           </div>
           <div className="flex items-center gap-2">
             <Label htmlFor="endDate" className="text-sm shrink-0 text-muted-foreground">To</Label>
-            <Input
+            <DatePicker
               id="endDate"
-              type="date"
               value={endDate}
-              onChange={(e) => { setEndDate(e.target.value); table.setPage(1); }}
+              onChange={(v) => { setEndDate(v ?? ''); table.setPage(1); }}
               className="w-40 h-9 text-sm"
             />
           </div>

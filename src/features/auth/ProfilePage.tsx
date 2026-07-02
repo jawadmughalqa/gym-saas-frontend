@@ -34,7 +34,7 @@ import {
   useMyTrainerProfile,
   useMyTrainerRatings,
 } from '@/features/trainer-portal/hooks/use-trainer-portal';
-import { COUNTRY_BY_NAME, applyPhoneMask, maskDigitCount } from '@/config/world-countries';
+import { WORLD_COUNTRIES, COUNTRY_BY_NAME, applyPhoneMask, maskDigitCount } from '@/config/world-countries';
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -1072,15 +1072,199 @@ function EditProfileDialog({
   );
 }
 
+// ─── Edit Organisation Dialog (gym owner only) ────────────────────────────────
+
+const TIMEZONE_OPTIONS = [
+  { label: 'UTC',                value: 'UTC'                    },
+  { label: 'Asia/Karachi (PKT)', value: 'Asia/Karachi'           },
+  { label: 'Asia/Kolkata (IST)', value: 'Asia/Kolkata'           },
+  { label: 'Asia/Dubai (GST)',   value: 'Asia/Dubai'             },
+  { label: 'Asia/Riyadh (AST)',  value: 'Asia/Riyadh'            },
+  { label: 'Asia/Singapore',     value: 'Asia/Singapore'         },
+  { label: 'Asia/Tokyo',         value: 'Asia/Tokyo'             },
+  { label: 'Europe/London (GMT)',value: 'Europe/London'          },
+  { label: 'Europe/Berlin (CET)',value: 'Europe/Berlin'          },
+  { label: 'Europe/Paris (CET)', value: 'Europe/Paris'           },
+  { label: 'America/New_York (ET)', value: 'America/New_York'   },
+  { label: 'America/Chicago (CT)',  value: 'America/Chicago'    },
+  { label: 'America/Denver (MT)',   value: 'America/Denver'     },
+  { label: 'America/Los_Angeles (PT)', value: 'America/Los_Angeles' },
+  { label: 'America/Toronto',    value: 'America/Toronto'        },
+  { label: 'Australia/Sydney',   value: 'Australia/Sydney'       },
+  { label: 'Africa/Cairo',       value: 'Africa/Cairo'           },
+  { label: 'Africa/Lagos',       value: 'Africa/Lagos'           },
+  { label: 'Africa/Nairobi',     value: 'Africa/Nairobi'         },
+];
+
+interface EditOrgValues {
+  country:  string;
+  timezone: string;
+}
+
+function EditOrgDialog({
+  open,
+  onOpenChange,
+  currentCountry,
+  currentTimezone,
+}: {
+  open: boolean;
+  onOpenChange: (v: boolean) => void;
+  currentCountry?: string | null;
+  currentTimezone?: string | null;
+}) {
+  const qc = useQueryClient();
+  const [saving, setSaving] = useState(false);
+
+  // Enabled countries from /auth/countries
+  const { data: countriesData, isLoading: countriesLoading } = useQuery({
+    queryKey: ['auth', 'countries'],
+    queryFn: async () => {
+      const res = await api.get('/auth/countries');
+      return res.data?.data as { enabledCountries: { name: string; code: string; currencyCode: string; currencySymbol: string }[] };
+    },
+    staleTime: 10 * 60 * 1000,
+  });
+  const allCountries = countriesData?.enabledCountries ?? [];
+
+  const { control, handleSubmit, reset, watch } = useForm<EditOrgValues>({
+    defaultValues: { country: '', timezone: 'UTC' },
+  });
+
+  const watchedCountry = watch('country');
+
+  // Derive currency preview from the selected country
+  const derivedCurrency = (() => {
+    const c = WORLD_COUNTRIES.find((w) => w.name === watchedCountry);
+    return c ? `${c.currencySymbol} ${c.currencyCode}` : null;
+  })();
+
+  useEffect(() => {
+    if (open) {
+      reset({
+        country:  currentCountry  ?? '',
+        timezone: currentTimezone ?? 'UTC',
+      });
+    }
+  }, [open, currentCountry, currentTimezone, reset]);
+
+  async function onSubmit(data: EditOrgValues) {
+    setSaving(true);
+    try {
+      const payload: Record<string, string> = {};
+      if (data.country)  payload.country  = data.country;
+      if (data.timezone) payload.timezone = data.timezone;
+
+      await api.patch('/tenants/me', payload);
+
+      // Refresh the tenant cache so currency updates everywhere
+      await qc.invalidateQueries({ queryKey: ['/tenants/me'] });
+
+      toast({ title: 'Organisation updated' });
+      onOpenChange(false);
+    } catch (err: any) {
+      toast({
+        variant: 'destructive',
+        title: 'Update failed',
+        description: err?.response?.data?.message ?? 'Something went wrong.',
+      });
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  return (
+    <Dialog open={open} onOpenChange={(v) => { if (!v) reset(); onOpenChange(v); }}>
+      <DialogContent className="sm:max-w-md">
+        <DialogHeader>
+          <DialogTitle>Edit Organisation</DialogTitle>
+        </DialogHeader>
+        <form onSubmit={handleSubmit(onSubmit)} className="space-y-4 py-2">
+
+          {/* Country */}
+          <div className="space-y-1.5">
+            <Label>Country</Label>
+            <Controller
+              control={control}
+              name="country"
+              render={({ field }) => (
+                <Select value={field.value} onValueChange={field.onChange}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select country…" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {countriesLoading ? (
+                      <SelectItem value="__loading__" disabled>Loading countries…</SelectItem>
+                    ) : (
+                      allCountries.map((c) => (
+                        <SelectItem key={c.code} value={c.name}>{c.name}</SelectItem>
+                      ))
+                    )}
+                  </SelectContent>
+                </Select>
+              )}
+            />
+          </div>
+
+          {/* Derived currency — read-only preview */}
+          {derivedCurrency && (
+            <div className="flex items-center gap-2 rounded-md border border-border bg-muted/40 px-3 py-2.5">
+              <CreditCard className="h-4 w-4 text-muted-foreground flex-shrink-0" />
+              <div className="min-w-0">
+                <p className="text-xs text-muted-foreground">Default Currency (auto-derived)</p>
+                <p className="text-sm font-semibold font-mono">{derivedCurrency}</p>
+              </div>
+            </div>
+          )}
+
+          {/* Timezone */}
+          <div className="space-y-1.5">
+            <Label>Timezone</Label>
+            <Controller
+              control={control}
+              name="timezone"
+              render={({ field }) => (
+                <Select value={field.value} onValueChange={field.onChange}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select timezone…" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {TIMEZONE_OPTIONS.map((tz) => (
+                      <SelectItem key={tz.value} value={tz.value}>{tz.label}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              )}
+            />
+          </div>
+
+          <DialogFooter className="pt-2">
+            <Button type="button" variant="outline" onClick={() => onOpenChange(false)} disabled={saving}>
+              Cancel
+            </Button>
+            <Button type="submit" disabled={saving}>
+              {saving ? 'Saving…' : 'Save Changes'}
+            </Button>
+          </DialogFooter>
+        </form>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
 // ─── ProfilePage ──────────────────────────────────────────────────────────────
 
 export default function ProfilePage() {
   const user     = useAuthStore((s) => s.user);
   const navigate = useNavigate();
-  const [editOpen, setEditOpen] = useState(false);
+  const [editOpen,    setEditOpen]    = useState(false);
+  const [editOrgOpen, setEditOrgOpen] = useState(false);
 
   // Full profile from backend (includes phone, address, branchIds, etc.)
   const { data: myProfile } = useMyProfile();
+
+  // Tenant data (for gym owners) — used to pass current org settings to dialog
+  const { data: tenantData } = useGetMyTenant({ query: { staleTime: 1000 * 60 * 5, enabled: user?.role === 'gym_owner' } });
+  const tenantForEdit = tenantData?.data as any;
 
   if (!user) return null;
 
@@ -1216,6 +1400,12 @@ export default function ProfilePage() {
             <Pencil className="h-4 w-4" />
             Edit Profile
           </Button>
+          {isGymOwner && (
+            <Button variant="outline" className="gap-2" onClick={() => setEditOrgOpen(true)}>
+              <Building2 className="h-4 w-4" />
+              Edit Organisation
+            </Button>
+          )}
           <Button variant="outline" className="gap-2" onClick={() => navigate('/settings/change-password')}>
             <KeyRound className="h-4 w-4" />
             Change password
@@ -1234,6 +1424,15 @@ export default function ProfilePage() {
         onOpenChange={setEditOpen}
         profile={myProfile}
       />
+
+      {isGymOwner && (
+        <EditOrgDialog
+          open={editOrgOpen}
+          onOpenChange={setEditOrgOpen}
+          currentCountry={tenantForEdit?.country}
+          currentTimezone={tenantForEdit?.settings?.timezone}
+        />
+      )}
     </div>
   );
 }

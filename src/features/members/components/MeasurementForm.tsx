@@ -1,10 +1,11 @@
-import { useForm } from 'react-hook-form';
+import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { Loader2 } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { DatePicker } from '@/components/ui/date-picker';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Separator } from '@/components/ui/separator';
@@ -73,7 +74,7 @@ export default function MeasurementForm({ open, onOpenChange, memberId }: Measur
 
   const isPending = logMeasurement.isPending;
 
-  const { register, handleSubmit, reset, formState: { errors } } = useForm<FormValues>({
+  const { register, handleSubmit, reset, control, formState: { errors } } = useForm<FormValues>({
     resolver: zodResolver(formSchema),
   });
 
@@ -136,7 +137,17 @@ export default function MeasurementForm({ open, onOpenChange, memberId }: Measur
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
           <div className="space-y-1.5">
             <Label htmlFor="measureDate">Date</Label>
-            <Input id="measureDate" type="date" disabled={isPending} {...register('date')} />
+            <Controller
+              control={control}
+              name="date"
+              render={({ field }) => (
+                <DatePicker
+                  id="measureDate"
+                  value={field.value ?? ''}
+                  onChange={(v) => field.onChange(v ?? '')}
+                />
+              )}
+            />
             <p className="text-xs text-muted-foreground">Defaults to today if left blank.</p>
           </div>
 

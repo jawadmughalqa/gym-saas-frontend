@@ -263,12 +263,13 @@ export default function MemberForm({
             title:       'Member registered',
             description: 'Member created and membership assigned.',
           });
-        } catch {
+        } catch (subErr) {
           // Member was saved — only subscription failed
           await queryClient.invalidateQueries({ queryKey: getGetMembersQueryKey() });
+          const subErrMsg = (subErr as Error)?.message ?? 'Plan assignment failed';
           toast({
             title:       'Member registered',
-            description: 'Member created. Plan assignment failed — assign from the profile page.',
+            description: `Member created. Subscription error: ${subErrMsg}. Assign from the profile page.`,
             variant:     'destructive',
           });
         }

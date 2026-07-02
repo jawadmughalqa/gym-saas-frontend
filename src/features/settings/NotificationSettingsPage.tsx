@@ -10,6 +10,7 @@ import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
+import { CardSkeleton } from '@/components/ui/skeleton';
 import PageHeader from '@/components/layout/PageHeader';
 import PageShell from '@/components/layout/PageShell';
 import { useToast } from '@/hooks/use-toast';
@@ -176,8 +177,11 @@ export default function NotificationSettingsPage() {
   if (isLoading) {
     return (
       <PageShell>
-        <div className="flex items-center justify-center h-48">
-          <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+        <PageHeader title="Notification Channels" subtitle="Configure email and WhatsApp delivery" />
+        <div className="space-y-4 max-w-2xl">
+          <CardSkeleton />
+          <CardSkeleton />
+          <CardSkeleton />
         </div>
       </PageShell>
     );

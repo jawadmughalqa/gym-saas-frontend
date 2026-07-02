@@ -19,6 +19,7 @@ import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Separator } from '@/components/ui/separator';
+import { Skeleton } from '@/components/ui/skeleton';
 import PageShell from '@/components/layout/PageShell';
 import PageHeader from '@/components/layout/PageHeader';
 import { toast } from '@/hooks/use-toast';
@@ -189,7 +190,16 @@ export default function CountriesPage() {
         </CardHeader>
         <CardContent className="p-0">
           {isLoading ? (
-            <div className="p-6 text-center text-sm text-muted-foreground">Loading…</div>
+            <div className="divide-y divide-border">
+              {Array.from({ length: 8 }).map((_, i) => (
+                <div key={i} className="flex items-center gap-4 px-4 py-3">
+                  <Skeleton className="h-4 w-4 rounded" />
+                  <Skeleton className="h-4 w-6 rounded" />
+                  <Skeleton className="h-4 flex-1 max-w-[180px]" />
+                  <Skeleton className="h-4 w-12 ml-auto" />
+                </div>
+              ))}
+            </div>
           ) : (
             <div className="divide-y divide-border">
               {filtered.map((country: WorldCountry) => {

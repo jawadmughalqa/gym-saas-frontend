@@ -18,6 +18,7 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { Alert, AlertDescription } from '@/components/ui/alert';
+import { Skeleton } from '@/components/ui/skeleton';
 import {
   MessageSquare, User, Globe, Smartphone,
   Send, Loader2, Phone, Mail, Building2,
@@ -94,8 +95,29 @@ export default function LeadDetailSheet({ leadId, onClose }: Props) {
         </SheetHeader>
 
         {isLoading && (
-          <div className="flex justify-center py-12">
-            <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+          <div className="space-y-4 py-2">
+            <div className="grid grid-cols-2 gap-3">
+              <div className="space-y-1.5">
+                <Skeleton className="h-3 w-16" />
+                <Skeleton className="h-8 w-full" />
+              </div>
+              <div className="space-y-1.5">
+                <Skeleton className="h-3 w-16" />
+                <Skeleton className="h-8 w-full" />
+              </div>
+            </div>
+            <Skeleton className="h-px w-full" />
+            <div className="space-y-3">
+              {Array.from({ length: 5 }).map((_, i) => (
+                <div key={i} className="flex items-start gap-3 py-2">
+                  <Skeleton className="h-4 w-4 rounded shrink-0 mt-0.5" />
+                  <div className="flex-1 space-y-1">
+                    <Skeleton className="h-3 w-20" />
+                    <Skeleton className="h-4 w-40" />
+                  </div>
+                </div>
+              ))}
+            </div>
           </div>
         )}
 

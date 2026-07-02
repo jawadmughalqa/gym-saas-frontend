@@ -20,6 +20,7 @@ import {
 import { Input }    from '@/components/ui/input';
 import { Label }    from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
+import { Skeleton, CardSkeleton } from '@/components/ui/skeleton';
 import PageShell    from '@/components/layout/PageShell';
 import PageHeader   from '@/components/layout/PageHeader';
 import { useToast } from '@/hooks/use-toast';
@@ -552,8 +553,17 @@ function LogsSheet({
         </SheetHeader>
 
         {isLoading ? (
-          <div className="flex items-center justify-center py-12">
-            <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+          <div className="space-y-2">
+            {Array.from({ length: 5 }).map((_, i) => (
+              <div key={i} className="flex items-start gap-3 rounded-lg border p-3 animate-pulse">
+                <Skeleton className="h-2 w-2 rounded-full mt-1.5 shrink-0" />
+                <div className="flex-1 space-y-1.5">
+                  <Skeleton className="h-4 w-32" />
+                  <Skeleton className="h-3 w-48" />
+                  <Skeleton className="h-3 w-24" />
+                </div>
+              </div>
+            ))}
           </div>
         ) : logs.length === 0 ? (
           <div className="text-center py-12 text-muted-foreground text-sm">
@@ -697,8 +707,20 @@ export default function CampaignsPage() {
       />
 
       {isLoading ? (
-        <div className="flex items-center justify-center py-20">
-          <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+        <div className="space-y-4">
+          {/* Stats strip skeleton */}
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+            {Array.from({ length: 4 }).map((_, i) => (
+              <div key={i} className="rounded-lg border p-4 space-y-2 animate-pulse">
+                <Skeleton className="h-8 w-12 mx-auto" />
+                <Skeleton className="h-3 w-24 mx-auto" />
+              </div>
+            ))}
+          </div>
+          {/* Campaign card skeletons */}
+          <CardSkeleton />
+          <CardSkeleton />
+          <CardSkeleton />
         </div>
       ) : campaigns.length === 0 ? (
         <EmptyState onCreate={() => { setEditing(undefined); setSheetOpen(true); }} />

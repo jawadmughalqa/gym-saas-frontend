@@ -57,6 +57,8 @@ import { z } from 'zod';
 import { useQueryClient, useMutation, useQuery } from '@tanstack/react-query';
 import { useAuthStore } from '@/stores/auth.store';
 import { orvalMutator } from '@/lib/orval-mutator';
+import { WORLD_COUNTRIES } from '@/config/world-countries';
+import { FormDescription } from '@/components/ui/form';
 import { decodeJwt } from '@/utils/jwt';
 import { downloadSaasInvoicePdf, printSaasInvoicePdf, shareSaasInvoicePdfViaWhatsApp } from '@/utils/invoice-pdf';
 import type { JwtPayloadShape } from '@/utils/jwt';
@@ -420,16 +422,13 @@ function ResetPasswordDialog({
 
 // ─── Edit Tenant Details Dialog ──────────────────────────────────────────────
 
-// Pakistan: 03XXXXXXXXX | +923XXXXXXXXX | 00923XXXXXXXXX
-const PK_PHONE_RE = /^(?:\+92|0092|0)3[0-9]{9}$/;
-
 const editTenantSchema = z.object({
   businessName: z.string().min(2, 'At least 2 characters').max(100),
   contactEmail: z.string().email('Invalid email'),
   contactPhone: z
     .string()
-    .refine((v) => !v || PK_PHONE_RE.test(v), {
-      message: 'Enter a valid Pakistan number — e.g. 03001234567 or +923001234567',
+    .refine((v) => !v || v.replace(/\D/g, '').length >= 7, {
+      message: 'Phone number must have at least 7 digits',
     })
     .optional(),
   country: z.string().min(2, 'Country is required').max(100),
@@ -452,6 +451,25 @@ function EditTenantDialog({
     resolver: zodResolver(editTenantSchema),
     defaultValues,
   });
+
+  // Load enabled countries from platform config
+  const { data: countriesData, isLoading: countriesLoading } = useQuery({
+    queryKey: ['auth', 'countries'],
+    queryFn: async () => {
+      const { api } = await import('@/lib/axios');
+      const res = await api.get('/auth/countries');
+      return res.data?.data as { enabledCountries: { name: string; code: string; currencyCode: string; currencySymbol: string }[] };
+    },
+    staleTime: 10 * 60 * 1000,
+  });
+  const allCountries = countriesData?.enabledCountries ?? [];
+
+  // Derive currency preview from the currently selected country
+  const watchedCountry = form.watch('country');
+  const derivedCurrency = (() => {
+    const c = WORLD_COUNTRIES.find((w) => w.name === watchedCountry);
+    return c ? `${c.currencySymbol} ${c.currencyCode}` : null;
+  })();
 
   // Reset form with latest tenant data every time the dialog opens
   useEffect(() => {
@@ -523,12 +541,12 @@ function EditTenantDialog({
                   <FormLabel>Contact Phone</FormLabel>
                   <FormControl>
                     <Input
-                      placeholder="e.g. 03001234567 or +923001234567"
+                      placeholder="e.g. +923001234567"
                       {...field}
                       value={field.value ?? ''}
                     />
                   </FormControl>
-                  <p className="text-[11px] text-muted-foreground">Pakistan standard format: 03XX-XXXXXXX or +923XXXXXXXXX</p>
+                  <FormDescription>Include country code, e.g. +92 for Pakistan</FormDescription>
                   <FormMessage />
                 </FormItem>
               )}
@@ -539,7 +557,32 @@ function EditTenantDialog({
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>Country</FormLabel>
-                  <FormControl><Input {...field} /></FormControl>
+                  <Select value={field.value} onValueChange={field.onChange}>
+                    <FormControl>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select country…" />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      {countriesLoading ? (
+                        <SelectItem value="__loading__" disabled>Loading countries…</SelectItem>
+                      ) : allCountries.length > 0 ? (
+                        allCountries.map((c) => (
+                          <SelectItem key={c.code} value={c.name}>{c.name}</SelectItem>
+                        ))
+                      ) : (
+                        // Fallback to full WORLD_COUNTRIES list if none are enabled yet
+                        WORLD_COUNTRIES.map((c) => (
+                          <SelectItem key={c.code} value={c.name}>{c.name}</SelectItem>
+                        ))
+                      )}
+                    </SelectContent>
+                  </Select>
+                  {derivedCurrency && (
+                    <FormDescription>
+                      Default currency: <span className="font-semibold font-mono">{derivedCurrency}</span>
+                    </FormDescription>
+                  )}
                   <FormMessage />
                 </FormItem>
               )}

@@ -195,7 +195,7 @@ function ProductModal({
 export default function ProductsPage() {
   const { toast }   = useToast();
   const qc          = useQueryClient();
-  const { symbol }  = useTenantCurrency();
+  const { currencySymbol }  = useTenantCurrency();
 
   const [showArchived, setShowArchived]   = useState(false);
   const [activeCategory, setActiveCategory] = useState<ProductCategory | 'all'>('all');
@@ -238,7 +238,7 @@ export default function ProductsPage() {
   });
 
   return (
-    <div className="p-6 max-w-5xl mx-auto space-y-6">
+    <div className="p-6 space-y-6">
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
@@ -324,7 +324,7 @@ export default function ProductsPage() {
                       <span className="capitalize text-muted-foreground">{p.category}</span>
                     </td>
                     <td className="px-4 py-3 text-right font-semibold">
-                      {symbol}{p.price.toFixed(2)}
+                      {currencySymbol}{p.price.toFixed(2)}
                     </td>
                     <td className="px-4 py-3 text-right">
                       <div className="flex items-center justify-end gap-1.5">

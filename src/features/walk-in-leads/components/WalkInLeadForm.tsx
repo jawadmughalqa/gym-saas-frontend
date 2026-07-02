@@ -4,6 +4,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { DatePicker } from "@/components/ui/date-picker";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import {
@@ -402,11 +403,19 @@ export default function WalkInLeadForm({ open, onOpenChange, lead }: WalkInLeadF
           <div className="grid grid-cols-2 gap-3">
             <div className="space-y-1.5">
               <Label htmlFor="visitDate">Visit Date</Label>
-              <Input id="visitDate" type="date" {...register("visitDate")} />
+              <DatePicker
+                id="visitDate"
+                value={watch("visitDate") ?? ''}
+                onChange={(v) => setValue("visitDate", v ?? '')}
+              />
             </div>
             <div className="space-y-1.5">
               <Label htmlFor="followUpDate">Follow-up Date</Label>
-              <Input id="followUpDate" type="date" {...register("followUpDate")} />
+              <DatePicker
+                id="followUpDate"
+                value={watch("followUpDate") ?? ''}
+                onChange={(v) => setValue("followUpDate", v ?? '')}
+              />
             </div>
           </div>
 

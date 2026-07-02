@@ -9,7 +9,10 @@ export const memberFormSchema = z.object({
   lastName:              z.string().min(1, 'Last name is required').max(50),
   email:                 z.string().email('Invalid email'),
   phone:                 z.string().min(5, 'Phone is required').max(30),
-  age:         z.coerce.number().int().min(1).max(120).optional(),
+  age:         z.preprocess(
+    (v) => (v === '' || v === null || v === undefined || (typeof v === 'number' && isNaN(v)) ? undefined : Number(v)),
+    z.number().int().min(1, 'Age must be at least 1').max(120, 'Age must be 120 or less').optional()
+  ),
   dateOfBirth: z.string().optional(),   // ISO date string "YYYY-MM-DD", optional
   gender:      z.enum(['male', 'female', 'other', 'prefer_not_to_say']).optional(),
   notes:       z.string().max(1000).optional(),
@@ -71,7 +74,7 @@ export const memberFormDefaults: MemberFormValues = {
   phone:                 '',
   age:         undefined,
   dateOfBirth: '',
-  gender:      undefined,
+  gender:      'male' as MemberFormValues['gender'],
   notes:       '',
   ec_name:               '',
   ec_relationship:       '',

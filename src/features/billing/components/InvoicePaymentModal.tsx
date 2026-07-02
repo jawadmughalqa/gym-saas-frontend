@@ -32,6 +32,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
+import { DatePicker } from '@/components/ui/date-picker';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Separator } from '@/components/ui/separator';
@@ -275,11 +276,13 @@ function MethodExtraFields({
   register,
   errors,
   disabled,
+  control,
 }: {
   method: PayMethodTab;
   register: ReturnType<typeof useForm<PayFormValues>>['register'];
   errors: ReturnType<typeof useForm<PayFormValues>>['formState']['errors'];
   disabled: boolean;
+  control: ReturnType<typeof useForm<PayFormValues>>['control'];
 }) {
   if (method === 'cash') {
     return (
@@ -350,7 +353,16 @@ function MethodExtraFields({
         </div>
         <div className="space-y-1.5">
           <Label className="text-xs">Cheque Date</Label>
-          <Input type="date" disabled={disabled} className="h-9" {...register('chequeDate')} />
+          <Controller
+            control={control}
+            name="chequeDate"
+            render={({ field }) => (
+              <DatePicker
+                value={field.value ?? ''}
+                onChange={(v) => field.onChange(v ?? '')}
+              />
+            )}
+          />
         </div>
         <div className="col-span-2 space-y-1.5">
           <Label className="text-xs">Bank Name</Label>
@@ -1496,6 +1508,7 @@ export function InvoicePaymentModal({
                               register={register}
                               errors={errors}
                               disabled={false}
+                              control={control}
                             />
                           </TabsContent>
                         ))}

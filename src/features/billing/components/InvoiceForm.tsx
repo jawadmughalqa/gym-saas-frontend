@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { useFieldArray, useForm } from "react-hook-form";
+import { useFieldArray, useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import {
@@ -13,6 +13,7 @@ import {
 import { Sheet, SheetContent } from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { DatePicker } from "@/components/ui/date-picker";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import {
@@ -635,11 +636,16 @@ export default function InvoiceForm({
               </div>
               <div className="space-y-1.5">
                 <Label htmlFor="dueDate">Due Date</Label>
-                <Input
-                  id="dueDate"
-                  type="date"
-                  disabled={isPending}
-                  {...register("dueDate")}
+                <Controller
+                  control={control}
+                  name="dueDate"
+                  render={({ field }) => (
+                    <DatePicker
+                      id="dueDate"
+                      value={field.value ?? ''}
+                      onChange={(v) => field.onChange(v ?? '')}
+                    />
+                  )}
                 />
               </div>
             </div>

@@ -4,23 +4,20 @@ import { CalendarIcon, X } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Button } from './button';
 import { Popover, PopoverContent, PopoverTrigger } from './popover';
+import { Calendar } from './calendar';
 
 interface DatePickerProps {
-  value?: string;          // ISO date string "YYYY-MM-DD"
+  value?: string;
   onChange?: (value: string | undefined) => void;
   placeholder?: string;
   disabled?: boolean;
   className?: string;
   clearable?: boolean;
-  minDate?: string;
-  maxDate?: string;
+  minDate?: string;   // ISO "YYYY-MM-DD"
+  maxDate?: string;   // ISO "YYYY-MM-DD"
   id?: string;
 }
 
-/**
- * Lightweight date picker — uses native <input type="date"> inside a Popover.
- * Accepts and returns ISO "YYYY-MM-DD" strings to stay compatible with Zod date schemas.
- */
 export function DatePicker({
   value,
   onChange,
@@ -34,11 +31,14 @@ export function DatePicker({
 }: DatePickerProps) {
   const [open, setOpen] = React.useState(false);
 
-  const displayValue = React.useMemo(() => {
-    if (!value) return null;
+  const selected = React.useMemo(() => {
+    if (!value) return undefined;
     const d = parseISO(value);
-    return isValid(d) ? format(d, 'MMM d, yyyy') : null;
+    return isValid(d) ? d : undefined;
   }, [value]);
+
+  const fromDate = minDate ? parseISO(minDate) : undefined;
+  const toDate   = maxDate ? parseISO(maxDate)   : undefined;
 
   return (
     <Popover open={open} onOpenChange={setOpen}>
@@ -55,7 +55,9 @@ export function DatePicker({
           )}
         >
           <CalendarIcon className="mr-2 h-4 w-4 shrink-0" />
-          <span className="flex-1 truncate">{displayValue ?? placeholder}</span>
+          <span className="flex-1 truncate">
+            {selected ? format(selected, 'MMM d, yyyy') : placeholder}
+          </span>
           {clearable && value && (
             <X
               className="ml-1 h-4 w-4 text-muted-foreground hover:text-foreground"
@@ -68,17 +70,22 @@ export function DatePicker({
         </Button>
       </PopoverTrigger>
 
-      <PopoverContent className="w-auto p-3" align="start">
-        <input
-          type="date"
-          value={value ?? ''}
-          min={minDate}
-          max={maxDate}
-          onChange={(e) => {
-            onChange?.(e.target.value || undefined);
+      <PopoverContent className="w-auto p-0" align="start">
+        <Calendar
+          mode="single"
+          selected={selected}
+          onSelect={(date) => {
+            onChange?.(date ? format(date, 'yyyy-MM-dd') : undefined);
             setOpen(false);
           }}
-          className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
+          disabled={(date) => {
+            if (fromDate && date < fromDate) return true;
+            if (toDate   && date > toDate)   return true;
+            return false;
+          }}
+          captionLayout="dropdown"
+          defaultMonth={selected}
+          initialFocus
         />
       </PopoverContent>
     </Popover>

@@ -10,6 +10,7 @@ import {
 } from '@/components/ui/sheet';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { DatePicker } from '@/components/ui/date-picker';
 import {
   Form,
   FormControl,
@@ -538,7 +539,10 @@ export default function CreateTenantForm({ open, onOpenChange, onSuccess }: Crea
                       <FormItem>
                         <FormLabel>First Invoice Date *</FormLabel>
                         <FormControl>
-                          <Input type="date" {...field} value={field.value ?? todayStr} />
+                          <DatePicker
+                            value={field.value ?? todayStr}
+                            onChange={(v) => field.onChange(v ?? '')}
+                          />
                         </FormControl>
                         <FormMessage />
                       </FormItem>

@@ -2,6 +2,7 @@ import { useState, useCallback } from 'react';
 import { ScanLine, Search, CheckCircle2, XCircle, Clock, RefreshCw, UserPlus } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { DatePicker } from '@/components/ui/date-picker';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent } from '@/components/ui/card';
 import {
@@ -286,17 +287,15 @@ export default function AttendancePage() {
           <option value="blocked">Blocked</option>
         </select>
 
-        <input
-          type="date"
-          className="border rounded-md px-3 h-8 text-sm bg-background"
+        <DatePicker
           value={startDate}
-          onChange={(e) => { setStartDate(e.target.value); setPage(1); }}
+          onChange={(v) => { setStartDate(v ?? ''); setPage(1); }}
+          className="h-8"
         />
-        <input
-          type="date"
-          className="border rounded-md px-3 h-8 text-sm bg-background"
+        <DatePicker
           value={endDate}
-          onChange={(e) => { setEndDate(e.target.value); setPage(1); }}
+          onChange={(v) => { setEndDate(v ?? ''); setPage(1); }}
+          className="h-8"
         />
 
         {(search || branchId || result || startDate || endDate) && (

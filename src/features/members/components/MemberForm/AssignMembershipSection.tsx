@@ -18,6 +18,7 @@ import { ChevronDown, ChevronUp, Plus } from 'lucide-react';
 import { Button }    from '@/components/ui/button';
 import { Input }     from '@/components/ui/input';
 import { Label }     from '@/components/ui/label';
+import { DatePicker } from '@/components/ui/date-picker';
 import { Separator } from '@/components/ui/separator';
 import {
   Select,
@@ -348,12 +349,10 @@ export function AssignMembershipSection({ control, errors, isPending, currency: 
             <Label htmlFor="membershipStartDate">
               Start Date <span className="text-destructive">*</span>
             </Label>
-            <Input
+            <DatePicker
               id="membershipStartDate"
-              type="date"
-              disabled={isPending}
-              value={startDateField.value as string}
-              onChange={(e) => startDateField.onChange(e.target.value)}
+              value={(startDateField.value as string) ?? ''}
+              onChange={(v) => startDateField.onChange(v ?? '')}
             />
             <p className="text-xs text-muted-foreground">
               Defaults to today. Change if the membership starts on a different date.

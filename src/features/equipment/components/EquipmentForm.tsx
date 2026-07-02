@@ -1,5 +1,6 @@
 import { useEffect } from 'react';
 import { useForm } from 'react-hook-form';
+import { DatePicker } from '@/components/ui/date-picker';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { Button } from '@/components/ui/button';
@@ -314,7 +315,11 @@ export default function EquipmentForm({ open, onOpenChange, equipment }: Equipme
           <div className="grid grid-cols-3 gap-4">
             <div className="space-y-1.5">
               <Label htmlFor="purchaseDate">Purchase Date</Label>
-              <Input id="purchaseDate" type="date" {...register('purchaseDate')} />
+              <DatePicker
+                id="purchaseDate"
+                value={watch('purchaseDate') ?? ''}
+                onChange={(v) => setValue('purchaseDate', v ?? '')}
+              />
             </div>
             <div className="space-y-1.5">
               <Label htmlFor="purchasePrice">Purchase Price</Label>
@@ -339,7 +344,11 @@ export default function EquipmentForm({ open, onOpenChange, equipment }: Equipme
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-1.5">
               <Label htmlFor="warrantyExpiresAt">Warranty Expires</Label>
-              <Input id="warrantyExpiresAt" type="date" {...register('warrantyExpiresAt')} />
+              <DatePicker
+                id="warrantyExpiresAt"
+                value={watch('warrantyExpiresAt') ?? ''}
+                onChange={(v) => setValue('warrantyExpiresAt', v ?? '')}
+              />
             </div>
             <div className="space-y-1.5">
               <Label htmlFor="vendor">Vendor</Label>

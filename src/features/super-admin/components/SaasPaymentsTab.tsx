@@ -9,6 +9,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { DatePicker } from '@/components/ui/date-picker';
 import {
   Select,
   SelectContent,
@@ -252,20 +253,18 @@ export default function SaasPaymentsTab() {
           <>
             <div className="space-y-1">
               <p className="text-xs text-muted-foreground">From</p>
-              <Input
-                type="date"
-                className="h-9 w-40"
+              <DatePicker
                 value={customStart}
-                onChange={(e) => setCustomStart(e.target.value)}
+                onChange={(v) => setCustomStart(v ?? '')}
+                className="h-9 w-40"
               />
             </div>
             <div className="space-y-1">
               <p className="text-xs text-muted-foreground">To</p>
-              <Input
-                type="date"
-                className="h-9 w-40"
+              <DatePicker
                 value={customEnd}
-                onChange={(e) => setCustomEnd(e.target.value)}
+                onChange={(v) => setCustomEnd(v ?? '')}
+                className="h-9 w-40"
               />
             </div>
           </>

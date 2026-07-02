@@ -9,6 +9,7 @@ import {
 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
+import { DatePicker } from '@/components/ui/date-picker';
 import { Separator } from '@/components/ui/separator';
 import { Badge } from '@/components/ui/badge';
 import { Label } from '@/components/ui/label';
@@ -202,23 +203,21 @@ function PaymentSummaryCard() {
             {/* Custom From */}
             <div className="space-y-1">
               <Label className="text-xs text-muted-foreground uppercase tracking-wide">From</Label>
-              <input
-                type="date"
+              <DatePicker
                 value={customFrom}
-                max={customTo}
-                onChange={(e) => setCustomFrom(e.target.value)}
-                className="h-8 rounded-md border border-input bg-background px-3 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
+                maxDate={customTo || undefined}
+                onChange={(v) => setCustomFrom(v ?? '')}
+                className="h-8"
               />
             </div>
             {/* Custom To */}
             <div className="space-y-1">
               <Label className="text-xs text-muted-foreground uppercase tracking-wide">To</Label>
-              <input
-                type="date"
+              <DatePicker
                 value={customTo}
-                min={customFrom}
-                onChange={(e) => setCustomTo(e.target.value)}
-                className="h-8 rounded-md border border-input bg-background px-3 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
+                minDate={customFrom || undefined}
+                onChange={(v) => setCustomTo(v ?? '')}
+                className="h-8"
               />
             </div>
           </>

@@ -1,10 +1,11 @@
-import { useForm } from 'react-hook-form';
+import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
+import { DatePicker } from '@/components/ui/date-picker';
 import { Label } from '@/components/ui/label';
 import { useQueryClient } from '@tanstack/react-query';
 import { toast } from '@/hooks/use-toast';
@@ -51,7 +52,7 @@ export default function CreateInstalmentDialog({ invoiceId, open, onOpenChange }
     },
   });
 
-  const { register, handleSubmit, reset, formState: { errors } } = useForm<InstalmentFormValues>({
+  const { register, handleSubmit, reset, control, formState: { errors } } = useForm<InstalmentFormValues>({
     resolver: zodResolver(instalmentSchema),
     defaultValues: { numberOfInstalments: 3, frequencyDays: 30, downPayment: 0 },
   });
@@ -102,7 +103,16 @@ export default function CreateInstalmentDialog({ invoiceId, open, onOpenChange }
           </div>
           <div className="space-y-1.5">
             <Label>Start Date</Label>
-            <Input type="date" disabled={create.isPending} {...register('startDate')} />
+            <Controller
+              control={control}
+              name="startDate"
+              render={({ field }) => (
+                <DatePicker
+                  value={field.value ?? ''}
+                  onChange={(v) => field.onChange(v ?? '')}
+                />
+              )}
+            />
             <p className="text-xs text-muted-foreground">Defaults to today.</p>
           </div>
           <DialogFooter>

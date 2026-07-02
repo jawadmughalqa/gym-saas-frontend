@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useForm } from "react-hook-form";
+import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { Loader2, Check } from "lucide-react";
@@ -12,6 +12,7 @@ import {
   DialogFooter,
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
+import { DatePicker } from "@/components/ui/date-picker";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
@@ -104,6 +105,7 @@ export default function AssignMemberDialog({ trainerId, open, onOpenChange }: Pr
     reset,
     watch,
     setValue,
+    control,
     formState: { errors },
   } = useForm<AssignFormValues>({
     resolver: zodResolver(assignSchema),
@@ -314,7 +316,16 @@ export default function AssignMemberDialog({ trainerId, open, onOpenChange }: Pr
           {/* Start Date */}
           <div className="space-y-1.5">
             <Label>Start Date</Label>
-            <Input type="date" disabled={assign.isPending} {...register("startDate")} />
+            <Controller
+              control={control}
+              name="startDate"
+              render={({ field }) => (
+                <DatePicker
+                  value={field.value ?? ''}
+                  onChange={(v) => field.onChange(v ?? '')}
+                />
+              )}
+            />
           </div>
 
           {/* Notes */}

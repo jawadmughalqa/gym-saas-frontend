@@ -118,6 +118,13 @@ export default function MemberForm({
     },
   });
 
+  // ── Auto-select first branch when branches load and none is selected ─────
+  useEffect(() => {
+    if (!isEdit && branches.length > 0 && !watch('branchId') && !defaultBranchId) {
+      setValue('branchId', branches[0]!._id, { shouldValidate: false });
+    }
+  }, [branches, isEdit, defaultBranchId, setValue, watch]);
+
   // ── Populate form when editing ────────────────────────────────────────────
   useEffect(() => {
     if (!open) return;

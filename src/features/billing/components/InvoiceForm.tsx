@@ -42,7 +42,7 @@ import { cn } from "@/lib/utils";
 import { formatCurrency } from "@/utils/format";
 import { useGetMembers } from "@/api/generated/members/members";
 import { useGetBranches } from "@/api/generated/branches/branches";
-import { usePostDiscountsValidate, useGetDiscounts } from "@/api/generated/discounts/discounts";
+import { usePostDiscountsValidate, useGetDiscounts, getGetDiscountsQueryKey } from "@/api/generated/discounts/discounts";
 import {
   usePostInvoices,
   getGetInvoicesQueryKey,
@@ -302,6 +302,7 @@ export default function InvoiceForm({
     mutation: {
       onSuccess: () => {
         queryClient.invalidateQueries({ queryKey: getGetInvoicesQueryKey() });
+        queryClient.invalidateQueries({ queryKey: getGetDiscountsQueryKey() });
         toast({ title: "Invoice created successfully" });
         onOpenChange(false);
         reset();

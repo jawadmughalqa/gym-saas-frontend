@@ -49,7 +49,7 @@ function StatusBadge({ discount }: { discount: Discount }) {
   const status = getDiscountStatus(discount);
   if (status === "active")
     return (
-      <Badge className="bg-emerald-500 text-emerald-600 border-emerald-500/25 hover:bg-emerald-500">
+      <Badge className="bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border-emerald-500/25 hover:bg-emerald-500/20">
         Active
       </Badge>
     );

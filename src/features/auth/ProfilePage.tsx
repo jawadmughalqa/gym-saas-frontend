@@ -1400,12 +1400,6 @@ export default function ProfilePage() {
             <Pencil className="h-4 w-4" />
             Edit Profile
           </Button>
-          {isGymOwner && (
-            <Button variant="outline" className="gap-2" onClick={() => setEditOrgOpen(true)}>
-              <Building2 className="h-4 w-4" />
-              Edit Organisation
-            </Button>
-          )}
           <Button variant="outline" className="gap-2" onClick={() => navigate('/settings/change-password')}>
             <KeyRound className="h-4 w-4" />
             Change password

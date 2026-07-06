@@ -154,6 +154,59 @@ interface InvoiceFormProps {
   defaultBranchId?: string;
 }
 
+// ─── BranchCombobox ───────────────────────────────────────────────────────────
+
+interface BranchComboboxProps {
+  value: string;
+  onChange: (id: string) => void;
+  branches: { _id: string; name: string }[];
+  loading?: boolean;
+  disabled?: boolean;
+}
+
+function BranchCombobox({ value, onChange, branches, loading, disabled }: BranchComboboxProps) {
+  const [open, setOpen] = useState(false);
+  const selected = branches.find((b) => b._id === value);
+
+  return (
+    <Popover open={open} onOpenChange={setOpen}>
+      <PopoverTrigger asChild>
+        <Button
+          type="button"
+          variant="outline"
+          role="combobox"
+          aria-expanded={open}
+          disabled={disabled || loading}
+          className={cn("w-full justify-between font-normal", !value && "text-muted-foreground")}
+        >
+          <span className="truncate">{loading ? "Loading…" : selected ? selected.name : "Select a branch…"}</span>
+          <ChevronsUpDown className="w-4 h-4 ml-2 opacity-50 shrink-0" />
+        </Button>
+      </PopoverTrigger>
+      <PopoverContent className="w-[var(--radix-popover-trigger-width)] p-0" align="start">
+        <Command>
+          <CommandInput placeholder="Search branches…" />
+          <CommandList>
+            <CommandEmpty>No branches found.</CommandEmpty>
+            <CommandGroup>
+              {branches.map((b) => (
+                <CommandItem
+                  key={b._id}
+                  value={b.name}
+                  onSelect={() => { onChange(b._id); setOpen(false); }}
+                >
+                  <Check className={cn("mr-2 h-4 w-4", value === b._id ? "opacity-100" : "opacity-0")} />
+                  {b.name}
+                </CommandItem>
+              ))}
+            </CommandGroup>
+          </CommandList>
+        </Command>
+      </PopoverContent>
+    </Popover>
+  );
+}
+
 // ─── MemberCombobox ───────────────────────────────────────────────────────────
 
 interface MemberComboboxProps {
@@ -565,32 +618,16 @@ export default function InvoiceForm({
               {/* Step 1 — Branch */}
               <div className="space-y-1.5">
                 <Label>Branch *</Label>
-                <Select
+                <BranchCombobox
                   value={branchId}
-                  onValueChange={(v) => {
+                  onChange={(v) => {
                     setValue("branchId", v, { shouldValidate: true });
-                    if (memberId)
-                      setValue("memberId", "", { shouldValidate: false });
+                    if (memberId) setValue("memberId", "", { shouldValidate: false });
                   }}
-                  disabled={isPending || branchesLoading}
-                >
-                  <SelectTrigger
-                    className={errors.branchId ? "border-destructive" : ""}
-                  >
-                    <SelectValue
-                      placeholder={
-                        branchesLoading ? "Loading…" : "Select a branch"
-                      }
-                    />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {branches.map((b) => (
-                      <SelectItem key={b._id} value={b._id}>
-                        {b.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                  branches={branches}
+                  loading={branchesLoading}
+                  disabled={isPending}
+                />
                 {errors.branchId && (
                   <p className="text-xs text-destructive">
                     {errors.branchId.message}

@@ -94,7 +94,6 @@ const PAY_METHODS: { value: PayMethodTab; label: string; icon: React.ReactNode }
 
 // Map UI payment method tabs to backend payment method enum
 function toBackendMethod(tab: PayMethodTab): string {
-  if (tab === 'jazzcash' || tab === 'easypaisa') return 'online';
   return tab;
 }
 

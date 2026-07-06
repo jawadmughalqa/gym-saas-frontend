@@ -31,14 +31,32 @@ export function useTenantCurrency(): TenantCurrency {
   const { data } = useGetMyTenant({ query: { staleTime: 10 * 60 * 1000 } });
   const tenant = data?.data;
 
-  const currency = tenant?.settings?.currency;
-  const country  = tenant?.country ?? '';
+  const country = tenant?.country ?? '';
 
-  if (!currency) return { ...FALLBACK, country };
+  // Primary: derive currency from the tenant's country — this is always correct
+  // regardless of what is stored in settings.currency.
+  const countryMatch = WORLD_COUNTRIES.find(
+    (c) => c.name.toLowerCase() === country.toLowerCase(),
+  );
 
-  // Derive the symbol from the static WORLD_COUNTRIES list
-  const countryData = WORLD_COUNTRIES.find((c) => c.currencyCode === currency);
-  const currencySymbol = countryData?.currencySymbol ?? currency;
+  if (countryMatch) {
+    return {
+      currency:       countryMatch.currencyCode,
+      currencySymbol: countryMatch.currencySymbol,
+      country,
+    };
+  }
 
-  return { currency, currencySymbol, country };
+  // Fallback: use stored settings.currency if country is unknown/unsupported
+  const stored = tenant?.settings?.currency;
+  if (stored) {
+    const symbolMatch = WORLD_COUNTRIES.find((c) => c.currencyCode === stored);
+    return {
+      currency:       stored,
+      currencySymbol: symbolMatch?.currencySymbol ?? stored,
+      country,
+    };
+  }
+
+  return { ...FALLBACK, country };
 }

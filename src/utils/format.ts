@@ -19,8 +19,8 @@ export const formatRelative = (date: string | Date | null | undefined): string =
   return isNaN(d.getTime()) ? '—' : formatDistanceToNow(d, { addSuffix: true });
 };
 
-export const formatCurrency = (amount: number, currency = 'PKR') =>
-  new Intl.NumberFormat('en-PK', { style: 'currency', currency }).format(amount);
+export const formatCurrency = (amount: number, currency = 'USD') =>
+  new Intl.NumberFormat('en-US', { style: 'currency', currency }).format(amount);
 
 export const formatPercent = (value: number) =>
   `${(value * 100).toFixed(1)}%`;

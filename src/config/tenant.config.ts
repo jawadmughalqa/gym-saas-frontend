@@ -10,12 +10,12 @@
 
 // ─── Currency ─────────────────────────────────────────────────────────────────
 
-export const CURRENCY = 'PKR' as const;
-export const CURRENCY_SYMBOL = '₨' as const;
+export const CURRENCY = 'USD' as const;
+export const CURRENCY_SYMBOL = '$' as const;
 
 /** Single-entry array used in dropdowns that list supported currencies. */
 export const CURRENCIES = [
-  { value: CURRENCY, label: `${CURRENCY} – Pakistani Rupee` },
+  { value: CURRENCY, label: `${CURRENCY} – US Dollar` },
 ] as const;
 
 // ─── Locale & timezone ────────────────────────────────────────────────────────

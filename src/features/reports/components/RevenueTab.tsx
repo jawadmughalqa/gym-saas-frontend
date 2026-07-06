@@ -6,6 +6,7 @@ import {
 import { DollarSign, TrendingDown } from 'lucide-react';
 import StatCard from '@/components/shared/StatCard';
 import { formatCurrencyCompact, formatCurrencyFull } from '@/utils/format';
+import { useTenantCurrency } from '@/hooks/use-tenant-currency';
 import { CHART_COLORS } from '@/lib/constants';
 import { useGetReportsRevenue } from '@/api/generated/reports/reports';
 import type { GetReportsRevenueGranularity } from '@/api/generated/schemas/getReportsRevenueGranularity';
@@ -16,6 +17,7 @@ import {
 import type { DatePreset } from './ReportsShared';
 
 export default function RevenueTab({ branchId }: { branchId?: string }) {
+  const { currency } = useTenantCurrency();
   const [preset, setPreset] = useState<DatePreset>('30d');
   const { dateFrom, dateTo } = getDateRange(preset);
   const granularity = granularityForPreset(preset) as GetReportsRevenueGranularity;
@@ -41,9 +43,9 @@ export default function RevenueTab({ branchId }: { branchId?: string }) {
 
       {/* KPI cards */}
       <div className="grid gap-4 sm:grid-cols-3">
-        <StatCard title="Gross Revenue"   value={formatCurrencyCompact(totals?.grossRevenue  ?? 0)} icon={DollarSign}   iconClassName="bg-emerald-500/10 text-emerald-600 dark:text-emerald-400" />
-        <StatCard title="Net Revenue"     value={formatCurrencyCompact(totals?.netRevenue    ?? 0)} icon={DollarSign}   iconClassName="bg-green-500/10 text-green-600 dark:text-green-400" />
-        <StatCard title="Total Refunded"  value={formatCurrencyCompact(totals?.totalRefunded ?? 0)} icon={TrendingDown} iconClassName="bg-amber-500/10 text-amber-600 dark:text-amber-400" />
+        <StatCard title="Gross Revenue"   value={formatCurrencyCompact(totals?.grossRevenue  ?? 0, currency)} icon={DollarSign}   iconClassName="bg-emerald-500/10 text-emerald-600 dark:text-emerald-400" />
+        <StatCard title="Net Revenue"     value={formatCurrencyCompact(totals?.netRevenue    ?? 0, currency)} icon={DollarSign}   iconClassName="bg-green-500/10 text-green-600 dark:text-green-400" />
+        <StatCard title="Total Refunded"  value={formatCurrencyCompact(totals?.totalRefunded ?? 0, currency)} icon={TrendingDown} iconClassName="bg-amber-500/10 text-amber-600 dark:text-amber-400" />
       </div>
 
       {/* Outstanding / Overdue */}
@@ -52,14 +54,14 @@ export default function RevenueTab({ branchId }: { branchId?: string }) {
           {outstanding && outstanding.count > 0 && (
             <div className="rounded-xl border bg-amber-500/10 dark:bg-amber-950/20 border-amber-500/25 dark:border-amber-800 p-5">
               <p className="text-xs font-semibold text-amber-500 dark:text-amber-400 uppercase tracking-widest mb-1">Outstanding</p>
-              <p className="text-2xl font-bold tabular-nums">{formatCurrencyCompact(outstanding.totalAmount)}</p>
+              <p className="text-2xl font-bold tabular-nums">{formatCurrencyCompact(outstanding.totalAmount, currency)}</p>
               <p className="text-sm text-muted-foreground mt-1">{outstanding.count} invoices pending</p>
             </div>
           )}
           {overdue && overdue.count > 0 && (
             <div className="rounded-xl border bg-red-500/10 dark:bg-red-950/20 border-red-500/25 dark:border-red-800 p-5">
               <p className="text-xs font-semibold text-red-600 uppercase tracking-widest mb-1">Overdue</p>
-              <p className="text-2xl font-bold tabular-nums text-red-600">{formatCurrencyCompact(overdue.totalAmount)}</p>
+              <p className="text-2xl font-bold tabular-nums text-red-600">{formatCurrencyCompact(overdue.totalAmount, currency)}</p>
               <p className="text-sm text-muted-foreground mt-1">{overdue.count} overdue invoices</p>
             </div>
           )}
@@ -83,8 +85,8 @@ export default function RevenueTab({ branchId }: { branchId?: string }) {
               </defs>
               <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" />
               <XAxis dataKey="period" tick={{ fontSize: 11 }} tickFormatter={(v: string) => v.slice(5)} />
-              <YAxis tick={{ fontSize: 11 }} tickFormatter={(v: number) => formatCurrencyCompact(v)} width={80} />
-              <Tooltip formatter={(v: number) => [formatCurrencyFull(v), 'Revenue']} />
+              <YAxis tick={{ fontSize: 11 }} tickFormatter={(v: number) => formatCurrencyCompact(v, currency)} width={80} />
+              <Tooltip formatter={(v: number) => [formatCurrencyFull(v, currency), 'Revenue']} />
               <Area type="monotone" dataKey="totalRevenue" stroke={CHART_COLORS[0]} fill="url(#revGrad)" strokeWidth={2} />
             </AreaChart>
           </ResponsiveContainer>
@@ -113,7 +115,7 @@ export default function RevenueTab({ branchId }: { branchId?: string }) {
                     <Cell key={i} fill={CHART_COLORS[i % CHART_COLORS.length]} />
                   ))}
                 </Pie>
-                <Tooltip formatter={(v: number) => formatCurrencyFull(v)} />
+                <Tooltip formatter={(v: number) => formatCurrencyFull(v, currency)} />
               </PieChart>
             </ResponsiveContainer>
           </ChartCard>
@@ -130,7 +132,7 @@ export default function RevenueTab({ branchId }: { branchId?: string }) {
                     <span className="capitalize">{(item.method as string)?.replace('_', ' ')}</span>
                   </div>
                   <div className="text-right">
-                    <span className="font-semibold tabular-nums">{formatCurrencyCompact(item.total ?? 0)}</span>
+                    <span className="font-semibold tabular-nums">{formatCurrencyCompact(item.total ?? 0, currency)}</span>
                     <span className="text-muted-foreground ml-2 text-xs">({item.count} txns)</span>
                   </div>
                 </div>

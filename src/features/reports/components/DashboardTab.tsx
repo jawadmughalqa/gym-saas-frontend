@@ -8,9 +8,11 @@ import { StatCardSkeleton } from '@/components/ui/skeleton';
 import StatCard from '@/components/shared/StatCard';
 import { formatCurrencyCompact } from '@/utils/format';
 import { useGetReportsDashboard } from '@/api/generated/reports/reports';
+import { useTenantCurrency } from '@/hooks/use-tenant-currency';
 import { GrowthBadge, SectionTitle } from './ReportsShared';
 
 export default function DashboardTab({ branchId }: { branchId?: string }) {
+  const { currency } = useTenantCurrency();
   const { data, isLoading } = useGetReportsDashboard(branchId ? { branchId } : undefined, {
     query: { staleTime: 60_000 },
   });
@@ -69,10 +71,10 @@ export default function DashboardTab({ branchId }: { branchId?: string }) {
             </>
           ) : (
             <>
-              <StatCard title="Today's Revenue" value={formatCurrencyCompact(revenue.today     ?? 0)} icon={DollarSign} iconClassName="bg-emerald-500/10 text-emerald-600 dark:text-emerald-400" />
-              <StatCard title="This Week"        value={formatCurrencyCompact(revenue.thisWeek  ?? 0)} icon={DollarSign} iconClassName="bg-green-500/10 text-green-600 dark:text-green-400" />
-              <StatCard title="This Month"       value={formatCurrencyCompact(revenue.thisMonth ?? 0)} icon={DollarSign} iconClassName="bg-teal-500/10 text-teal-600 dark:text-teal-400" />
-              <StatCard title="Last Month"       value={formatCurrencyCompact(revenue.lastMonth ?? 0)} icon={DollarSign} />
+              <StatCard title="Today's Revenue" value={formatCurrencyCompact(revenue.today     ?? 0, currency)} icon={DollarSign} iconClassName="bg-emerald-500/10 text-emerald-600 dark:text-emerald-400" />
+              <StatCard title="This Week"        value={formatCurrencyCompact(revenue.thisWeek  ?? 0, currency)} icon={DollarSign} iconClassName="bg-green-500/10 text-green-600 dark:text-green-400" />
+              <StatCard title="This Month"       value={formatCurrencyCompact(revenue.thisMonth ?? 0, currency)} icon={DollarSign} iconClassName="bg-teal-500/10 text-teal-600 dark:text-teal-400" />
+              <StatCard title="Last Month"       value={formatCurrencyCompact(revenue.lastMonth ?? 0, currency)} icon={DollarSign} />
             </>
           )}
         </div>

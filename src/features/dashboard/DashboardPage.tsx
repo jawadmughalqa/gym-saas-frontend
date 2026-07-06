@@ -283,7 +283,7 @@ function PaymentSummaryCard() {
                   </span>
                 </div>
                 <p className="text-2xl font-bold tabular-nums text-emerald-500 dark:text-emerald-300">
-                  {formatCurrencyCompact(billing?.totalRevenue ?? 0)}
+                  {formatCurrencyCompact(billing?.totalRevenue ?? 0, currency)}
                 </p>
                 <p className="text-xs text-muted-foreground mt-0.5">Payments received</p>
               </div>
@@ -297,7 +297,7 @@ function PaymentSummaryCard() {
                   </span>
                 </div>
                 <p className="text-2xl font-bold tabular-nums text-red-500 dark:text-red-300">
-                  {formatCurrencyCompact(billing?.pendingFees ?? 0)}
+                  {formatCurrencyCompact(billing?.pendingFees ?? 0, currency)}
                 </p>
                 <p className="text-xs text-muted-foreground mt-0.5">Outstanding invoices</p>
               </div>
@@ -311,7 +311,7 @@ function PaymentSummaryCard() {
                   </span>
                 </div>
                 <p className="text-2xl font-bold tabular-nums text-blue-500 dark:text-blue-300">
-                  {formatCurrencyCompact(billing?.todayCollection ?? 0)}
+                  {formatCurrencyCompact(billing?.todayCollection ?? 0, currency)}
                 </p>
                 <p className="text-xs text-muted-foreground mt-0.5">Received today</p>
               </div>
@@ -338,7 +338,7 @@ function PaymentSummaryCard() {
                 axisLine={false}
               />
               <YAxis
-                tickFormatter={(v: number) => formatCurrencyCompact(v)}
+                tickFormatter={(v: number) => formatCurrencyCompact(v, currency)}
                 tick={{ fontSize: 11 }}
                 tickLine={false}
                 axisLine={false}
@@ -362,6 +362,7 @@ function PaymentSummaryCard() {
 export default function DashboardPage() {
   const user = useAuthStore((s) => s.user);
   const isBranchManager = user?.role === 'branch_manager';
+  const { currency } = useTenantCurrency();
 
   const today = new Date().toLocaleDateString('en-GB', {
     weekday: 'long',
@@ -430,7 +431,7 @@ export default function DashboardPage() {
             />
             <StatCard
               title="Revenue This Month"
-              value={formatCurrencyCompact(revenue.thisMonth ?? 0)}
+              value={formatCurrencyCompact(revenue.thisMonth ?? 0, currency)}
               icon={CreditCard}
               iconClassName="bg-emerald-500/10 text-emerald-600 dark:text-emerald-400"
               subtitle="Invoices paid"

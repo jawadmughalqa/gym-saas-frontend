@@ -541,12 +541,12 @@ function EditTenantDialog({
                   <FormLabel>Contact Phone</FormLabel>
                   <FormControl>
                     <Input
-                      placeholder="e.g. +923001234567"
+                      placeholder="e.g. +12125550147"
                       {...field}
                       value={field.value ?? ''}
                     />
                   </FormControl>
-                  <FormDescription>Include country code, e.g. +92 for Pakistan</FormDescription>
+                  <FormDescription>Include country code in E.164 format, e.g. +1 for US/Canada</FormDescription>
                   <FormMessage />
                 </FormItem>
               )}
@@ -1039,7 +1039,7 @@ export default function TenantDetailPage() {
       invoiceNumber: row.invoiceNumber ?? 'INV',
       status: row.status ?? 'unknown',
       recipientName: tenant?.businessName ?? '',
-      currency: row.currency ?? 'PKR',
+      currency: row.currency ?? 'USD',
       total: row.amount ?? 0,
       amountDue: row.amount ?? 0,
       dueDate: row.dueDate,
@@ -1229,7 +1229,7 @@ export default function TenantDetailPage() {
           <Card className="p-4 sm:col-span-2">
             <p className="text-xs text-muted-foreground">Total Revenue Collected</p>
             <p className="text-2xl font-bold mt-1 text-green-600">
-              {new Intl.NumberFormat(undefined, { style: 'currency', currency: stats.revenue?.currency || 'PKR' }).format(stats.revenue?.total ?? 0)}
+              {new Intl.NumberFormat(undefined, { style: 'currency', currency: stats.revenue?.currency || 'USD' }).format(stats.revenue?.total ?? 0)}
             </p>
             <p className="text-xs text-muted-foreground">From all paid invoices</p>
           </Card>
@@ -1237,7 +1237,7 @@ export default function TenantDetailPage() {
           <Card className="p-4 sm:col-span-2">
             <p className="text-xs text-muted-foreground">Total Refunded</p>
             <p className="text-2xl font-bold mt-1 text-destructive">
-              {new Intl.NumberFormat(undefined, { style: 'currency', currency: stats.refunds?.currency || 'PKR' }).format(stats.refunds?.total ?? 0)}
+              {new Intl.NumberFormat(undefined, { style: 'currency', currency: stats.refunds?.currency || 'USD' }).format(stats.refunds?.total ?? 0)}
             </p>
             <p className="text-xs text-muted-foreground">{stats.refunds?.count ?? 0} approved refund{stats.refunds?.count !== 1 ? 's' : ''}</p>
           </Card>

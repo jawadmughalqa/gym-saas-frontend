@@ -21,18 +21,30 @@ export const CURRENCIES = [
 // ─── Locale & timezone ────────────────────────────────────────────────────────
 
 /** BCP-47 locale tag for number / date formatting. */
-export const LOCALE = 'en-PK' as const;
+export const LOCALE = 'en-US' as const;
 
-export const TIMEZONE = 'Asia/Karachi' as const;
+export const TIMEZONE = 'UTC' as const;
 
 /** Timezone options for select inputs. */
 export const TIMEZONE_OPTIONS = [
-  { value: TIMEZONE, label: 'Asia/Karachi (PKT, UTC+5)' },
+  { value: 'UTC',              label: 'UTC (Coordinated Universal Time)'  },
+  { value: 'America/New_York', label: 'America/New_York (ET, UTC-5/-4)'   },
+  { value: 'America/Chicago',  label: 'America/Chicago (CT, UTC-6/-5)'    },
+  { value: 'America/Denver',   label: 'America/Denver (MT, UTC-7/-6)'     },
+  { value: 'America/Los_Angeles', label: 'America/Los_Angeles (PT, UTC-8/-7)' },
+  { value: 'America/Toronto',  label: 'America/Toronto (ET, UTC-5/-4)'    },
+  { value: 'America/Vancouver', label: 'America/Vancouver (PT, UTC-8/-7)' },
+  { value: 'Europe/London',    label: 'Europe/London (GMT/BST, UTC+0/+1)' },
+  { value: 'Europe/Paris',     label: 'Europe/Paris (CET, UTC+1/+2)'      },
+  { value: 'Asia/Dubai',       label: 'Asia/Dubai (GST, UTC+4)'           },
+  { value: 'Asia/Karachi',     label: 'Asia/Karachi (PKT, UTC+5)'         },
+  { value: 'Asia/Kolkata',     label: 'Asia/Kolkata (IST, UTC+5:30)'      },
+  { value: 'Australia/Sydney', label: 'Australia/Sydney (AEST, UTC+10/+11)' },
 ] as const;
 
 // ─── Country ──────────────────────────────────────────────────────────────────
 
-export const COUNTRY = 'Pakistan' as const;
+export const COUNTRY = 'United States' as const;
 
 /** Country options for select inputs. */
 export const COUNTRY_OPTIONS = [
@@ -43,21 +55,18 @@ export const COUNTRY_OPTIONS = [
 
 export const PHONE = {
   /** ITU country calling code (without leading +). */
-  countryCode: '+92',
+  countryCode: '+1',
 
   /** Placeholder shown in phone input fields. */
-  placeholder: '+92 3XX-XXXXXXX',
+  placeholder: '+1 (212) 555-0147',
 
   /**
-   * Accepts the common Pakistani mobile formats:
-   *  - 03XX-XXXXXXX   (local)
-   *  - +923XX-XXXXXXX (international)
-   *  - 923XXXXXXXXXX  (no plus)
-   * Spaces and hyphens are tolerated.
+   * Accepts international E.164 format and common local formats.
+   * Phone validation is handled per-country via WORLD_COUNTRIES patterns.
    */
-  regex: /^(?:\+92|0092|92|0)?[3][0-9]{9}$/,
+  regex: /^\+?[1-9]\d{6,14}$/,
 
-  errorMessage: 'Enter a valid Pakistani mobile number (e.g. 03XX-XXXXXXX)',
+  errorMessage: 'Enter a valid phone number in international format (e.g. +1 212 555 0147)',
 } as const;
 
 // ─── Convenience re-export ────────────────────────────────────────────────────

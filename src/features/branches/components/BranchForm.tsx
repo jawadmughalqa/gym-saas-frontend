@@ -17,13 +17,6 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
-import {
   Form,
   FormControl,
   FormField,
@@ -31,18 +24,9 @@ import {
   FormLabel,
   FormMessage,
 } from '@/components/ui/form';
-
-// ─── Pakistan provinces / territories ─────────────────────────────────────────
-
-const PK_PROVINCES = [
-  'Punjab',
-  'Sindh',
-  'Khyber Pakhtunkhwa',
-  'Balochistan',
-  'Islamabad Capital Territory',
-  'Azad Jammu & Kashmir',
-  'Gilgit-Baltistan',
-];
+import { useTenantCurrency } from '@/hooks/use-tenant-currency';
+import { WORLD_COUNTRIES } from '@/config/world-countries';
+import { PhoneInput } from '@/components/ui/phone-input';
 import {
   usePostBranches,
   usePatchBranchesBranchId,
@@ -84,15 +68,20 @@ export default function BranchForm({ open, onOpenChange, branch }: BranchFormPro
   const qc = useQueryClient();
   const isEdit = !!branch;
 
+  const { country: tenantCountry } = useTenantCurrency();
+  const countryData = WORLD_COUNTRIES.find((c) => c.name === tenantCountry);
+  const phonePlaceholder = countryData?.phoneExample ?? '+1 (212) 555-0147';
+  const phoneIsoCode = countryData?.code;
+
   const form = useForm<FormValues>({
     resolver: zodResolver(schema),
     defaultValues: {
       name: '',
       code: '',
       city: '',
-      country: 'Pakistan',
+      country: tenantCountry || '',
       street: '',
-      state: 'Punjab',
+      state: '',
       postalCode: '',
       phone: '',
       email: '',
@@ -122,9 +111,9 @@ export default function BranchForm({ open, onOpenChange, branch }: BranchFormPro
         name: '',
         code: '',
         city: '',
-        country: 'Pakistan',
+        country: tenantCountry || '',
         street: '',
-        state: 'Punjab',
+        state: '',
         postalCode: '',
         phone: '',
         email: '',
@@ -132,7 +121,8 @@ export default function BranchForm({ open, onOpenChange, branch }: BranchFormPro
         isHeadquarters: false,
       });
     }
-  }, [branch, form]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [branch, form, tenantCountry]);
 
   function invalidate() {
     qc.invalidateQueries({ queryKey: getGetBranchesQueryKey() });
@@ -248,7 +238,7 @@ export default function BranchForm({ open, onOpenChange, branch }: BranchFormPro
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel>City *</FormLabel>
-                      <FormControl><Input placeholder="Lahore" {...field} /></FormControl>
+                      <FormControl><Input placeholder="e.g. Toronto" {...field} /></FormControl>
                       <FormMessage />
                     </FormItem>
                   )}
@@ -259,18 +249,7 @@ export default function BranchForm({ open, onOpenChange, branch }: BranchFormPro
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel>State / Province</FormLabel>
-                      <Select value={field.value} onValueChange={field.onChange}>
-                        <FormControl>
-                          <SelectTrigger>
-                            <SelectValue placeholder="Select province" />
-                          </SelectTrigger>
-                        </FormControl>
-                        <SelectContent>
-                          {PK_PROVINCES.map((p) => (
-                            <SelectItem key={p} value={p}>{p}</SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
+                      <FormControl><Input placeholder="e.g. Ontario" {...field} /></FormControl>
                       <FormMessage />
                     </FormItem>
                   )}
@@ -295,16 +274,7 @@ export default function BranchForm({ open, onOpenChange, branch }: BranchFormPro
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel>Country *</FormLabel>
-                      <Select value={field.value} onValueChange={field.onChange}>
-                        <FormControl>
-                          <SelectTrigger>
-                            <SelectValue placeholder="Select country" />
-                          </SelectTrigger>
-                        </FormControl>
-                        <SelectContent>
-                          <SelectItem value="Pakistan">Pakistan</SelectItem>
-                        </SelectContent>
-                      </Select>
+                      <FormControl><Input placeholder="e.g. United States" {...field} /></FormControl>
                       <FormMessage />
                     </FormItem>
                   )}
@@ -320,7 +290,15 @@ export default function BranchForm({ open, onOpenChange, branch }: BranchFormPro
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>Phone</FormLabel>
-                    <FormControl><Input placeholder="+92 322 XXXXXXX" {...field} /></FormControl>
+                    <FormControl>
+                      <PhoneInput
+                        id="branch-phone"
+                        value={field.value ?? ''}
+                        onChange={field.onChange}
+                        countryCode={phoneIsoCode}
+                        placeholder={phonePlaceholder}
+                      />
+                    </FormControl>
                     <FormMessage />
                   </FormItem>
                 )}

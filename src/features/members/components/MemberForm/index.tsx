@@ -403,6 +403,8 @@ export default function MemberForm({
             {/* Emergency contact */}
             <EmergencyContactSection
               register={register}
+              watch={watch}
+              setValue={setValue}
               errors={errors}
               isPending={isPending}
             />

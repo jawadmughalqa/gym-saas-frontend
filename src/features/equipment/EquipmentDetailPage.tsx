@@ -483,8 +483,8 @@ export default function EquipmentDetailPage() {
   const { data: workOrdersData } = useGetWorkOrders({ equipmentId: equipmentId ?? '' });
 
   const eq = equipment?.data;
-  // Treat equipment's stored currency as the tenant currency; fall back to PKR
-  const currency = (eq?.currency && eq.currency !== 'USD') ? eq.currency : 'PKR';
+  // Treat equipment's stored currency as the tenant currency; fall back to USD
+  const currency = eq?.currency || 'USD';
 
   // Look up branch name from branchId
   const { data: branchData } = useGetBranchesBranchId(

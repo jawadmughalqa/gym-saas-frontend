@@ -129,7 +129,7 @@ export default function TrainerDashboardPage() {
   const activeClients  = assignments.filter((a) => a.status === 'active');
   const endedClients   = assignments.filter((a) => a.status === 'ended');
   const totalRevenue   = activeClients.reduce((sum, a) => sum + (a.monthlyCharge ?? 0), 0);
-  const currency       = activeClients[0]?.currency ?? profile?.currency ?? 'PKR';
+  const currency       = activeClients[0]?.currency ?? profile?.currency ?? 'USD';
 
   // Show max 5 active clients on dashboard
   const recentClients = activeClients.slice(0, 5);

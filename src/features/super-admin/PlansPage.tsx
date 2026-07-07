@@ -122,7 +122,7 @@ const planFormSchema = z.object({
   displayName:           z.string().min(1, 'Required'),
   description:           z.string().optional(),
   price:                 z.string().min(1, 'Required'),
-  currency:              z.string().length(3, 'Must be 3 chars').default('PKR'),
+  currency:              z.string().length(3, 'Must be 3 chars').default('USD'),
   billingCycle:          z.enum(['monthly', 'yearly']).default('monthly'),
   trialDays:             z.string().default('0'),
   maxBranches:           z.string(),
@@ -281,7 +281,7 @@ function PlanFormFields({ form }: { form: ReturnType<typeof useForm<PlanFormValu
         <FormField control={form.control} name="currency" render={({ field }) => (
           <FormItem>
             <FormLabel>Currency</FormLabel>
-            <FormControl><Input placeholder="PKR" maxLength={3} {...field} /></FormControl>
+            <FormControl><Input placeholder="USD" maxLength={3} {...field} /></FormControl>
             <FormMessage />
           </FormItem>
         )} />
@@ -377,7 +377,7 @@ function EditPlanDialog({
       displayName:           plan.displayName ?? '',
       description:           plan.description ?? '',
       price:                 String(plan.price ?? 0),
-      currency:              plan.currency ?? 'PKR',
+      currency:              plan.currency ?? 'USD',
       billingCycle:          (planAny.billingCycle as 'monthly' | 'yearly') ?? 'monthly',
       trialDays:             String(planAny.trialDays ?? 0),
       maxBranches:           String(plan.quotas?.maxBranches ?? -1),
@@ -474,7 +474,7 @@ function CreatePlanDialog({
       displayName:           '',
       description:           '',
       price:                 '0',
-      currency:              'PKR',
+      currency:              'USD',
       billingCycle:          'monthly',
       trialDays:             '0',
       maxBranches:           '-1',
@@ -570,7 +570,7 @@ function PlanCard({ plan, onEdit }: { plan: Plan; onEdit: () => void }) {
   const customStyle = { border: 'border-sky-400', badge: 'bg-sky-500/15 text-sky-600 dark:text-sky-400', accent: 'text-sky-600 dark:text-sky-400' };
 
   const planAny    = plan as Plan & { trialDays?: number; billingCycle?: string };
-  const currency   = plan.currency ?? 'PKR';
+  const currency   = plan.currency ?? 'USD';
   const billing    = planAny.billingCycle ?? 'monthly';
   const trialDays  = planAny.trialDays ?? 0;
   const styles     = tierStyles[plan.name ?? ''] ?? customStyle;

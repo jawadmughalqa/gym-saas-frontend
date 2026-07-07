@@ -135,7 +135,7 @@ export default function SaasPaymentsTab() {
     }));
   }, [summary]);
 
-  const fmt = (n: number) => formatCurrency(n, summary?.currency ?? 'PKR');
+  const fmt = (n: number) => formatCurrency(n, summary?.currency ?? 'USD');
 
   // Per-tenant table columns
   const columns: ColumnDef<PaymentSummaryTenantRow>[] = [

@@ -333,7 +333,7 @@ export default function NotificationSettingsPage() {
                     <Label>
                       <FieldLabel
                         label="From name"
-                        tip="The sender name your members will see in their inbox. Example: 'Lahore Fitness Club' or 'My Gym Billing'. Keep it recognisable so emails aren't ignored."
+                        tip="The sender name your members will see in their inbox. Example: 'Downtown Fitness Club' or 'My Gym Billing'. Keep it recognisable so emails aren't ignored."
                       />
                     </Label>
                     <Input
@@ -535,12 +535,12 @@ export default function NotificationSettingsPage() {
                   <Label>
                     <FieldLabel
                       label="Send test message"
-                      tip="Enter a mobile number in international format without the + sign. Example: 923001234567 for a Pakistani number (+92 300 1234567). The recipient must have messaged your WhatsApp Business number in the last 24 hours."
+                      tip="Enter a mobile number in international format without the + sign. Example: 12125550147 for a US number (+1 212 555 0147). The recipient must have messaged your WhatsApp Business number in the last 24 hours."
                     />
                   </Label>
                   <div className="flex items-center gap-2">
                     <Input
-                      placeholder="e.g. 923001234567 (no +)"
+                      placeholder="e.g. 12125550147 (no +)"
                       value={testPhone}
                       onChange={(e) => setTestPhone(e.target.value)}
                       className="max-w-xs"

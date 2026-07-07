@@ -21,6 +21,9 @@ import { Separator } from '@/components/ui/separator';
 import { useGetBranches } from '@/api/generated/branches/branches';
 import { useCreateStaff, useUpdateStaff } from '../hooks/use-staff';
 import type { StaffUser } from '@/api/generated/schemas';
+import { useTenantCurrency } from '@/hooks/use-tenant-currency';
+import { WORLD_COUNTRIES } from '@/config/world-countries';
+import { PhoneInput } from '@/components/ui/phone-input';
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 
@@ -45,16 +48,6 @@ export const GENDER_OPTIONS = [
   { value: 'other',  label: 'Prefer not to say' },
 ] as const;
 
-export const COUNTRIES = [
-  'Pakistan',
-  // 'Afghanistan', 'Australia', 'Bahrain', 'Bangladesh',
-  // 'Canada', 'China', 'Egypt', 'France', 'Germany', 'India',
-  // 'Indonesia', 'Iran', 'Iraq', 'Jordan', 'Kenya', 'Kuwait',
-  // 'Malaysia', 'Nepal', 'Netherlands', 'Nigeria', 'Oman', 'Qatar',
-  // 'Saudi Arabia', 'Singapore', 'South Africa', 'Sri Lanka',
-  // 'Turkey', 'United Arab Emirates', 'United Kingdom', 'United States',
-  // 'Other',
-] as const;
 
 // What a Branch Manager can do — shown before gym owner assigns the role
 const BM_CAPABILITIES = [
@@ -202,6 +195,11 @@ export default function StaffForm({ open, onClose, staff }: StaffFormProps) {
   const { data: branchesData } = useGetBranches({ limit: 100 });
   const branches = branchesData?.data ?? [];
 
+  const { country: tenantCountry } = useTenantCurrency();
+  const countryData = WORLD_COUNTRIES.find((c) => c.name === tenantCountry);
+  const phonePlaceholder = countryData?.phoneExample ?? '+1 (212) 555-0147';
+  const phoneIsoCode = countryData?.code;
+
   function handleClose() {
     setCredentials(null);
     onClose();
@@ -234,7 +232,7 @@ export default function StaffForm({ open, onClose, staff }: StaffFormProps) {
       jobTitle:  '',
       gender:    undefined,
       age:       '',
-      country:   'Pakistan',
+      country:   tenantCountry || '',
       city:      '',
       address:   '',
       notes:     '',
@@ -255,7 +253,7 @@ export default function StaffForm({ open, onClose, staff }: StaffFormProps) {
       jobTitle:  staff?.jobTitle  ?? '',
       gender:    (staff?.gender as 'male' | 'female' | 'other' | undefined),
       age:       staff?.age ?? '',
-      country:   staff?.country   ?? 'Pakistan',
+      country:   staff?.country   ?? tenantCountry ?? '',
       city:      staff?.city      ?? '',
       address:   staff?.address   ?? '',
       notes:     staff?.notes     ?? '',
@@ -275,7 +273,7 @@ export default function StaffForm({ open, onClose, staff }: StaffFormProps) {
         jobTitle:  staff.jobTitle  ?? '',
         gender:    (staff.gender as 'male' | 'female' | 'other' | undefined),
         age:       staff.age ?? '',
-        country:   staff.country   ?? 'Pakistan',
+        country:   staff.country   ?? tenantCountry ?? '',
         city:      staff.city      ?? '',
         address:   staff.address   ?? '',
         notes:     staff.notes     ?? '',
@@ -291,7 +289,7 @@ export default function StaffForm({ open, onClose, staff }: StaffFormProps) {
         jobTitle:  '',
         gender:    undefined,
         age:       '',
-        country:   'Pakistan',
+        country:   tenantCountry || '',
         city:      '',
         address:   '',
         notes:     '',
@@ -299,7 +297,7 @@ export default function StaffForm({ open, onClose, staff }: StaffFormProps) {
       });
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [staff]);
+  }, [staff, tenantCountry]);
 
   // ── Helpers ────────────────────────────────────────────────────────────────
 
@@ -438,22 +436,11 @@ export default function StaffForm({ open, onClose, staff }: StaffFormProps) {
 
         {/* Country */}
         <div className="space-y-1.5">
-          <Label>Country</Label>
-          <Controller
-            control={form.control as any}
-            name="country"
-            render={({ field }) => (
-              <Select value={field.value ?? 'Pakistan'} onValueChange={field.onChange}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Select country…" />
-                </SelectTrigger>
-                <SelectContent>
-                  {COUNTRIES.map((c) => (
-                    <SelectItem key={c} value={c}>{c}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            )}
+          <Label htmlFor={`${prefix}-country`}>Country</Label>
+          <Input
+            id={`${prefix}-country`}
+            placeholder="e.g. United States"
+            {...(form as any).register('country')}
           />
         </div>
 
@@ -462,7 +449,7 @@ export default function StaffForm({ open, onClose, staff }: StaffFormProps) {
           <Label htmlFor={`${prefix}-city`}>City</Label>
           <Input
             id={`${prefix}-city`}
-            placeholder="e.g. Lahore"
+            placeholder="e.g. New York"
             {...(form as any).register('city')}
           />
         </div>
@@ -561,7 +548,19 @@ export default function StaffForm({ open, onClose, staff }: StaffFormProps) {
                 </div>
                 <div className="space-y-1.5">
                   <Label htmlFor="c-phone">Phone</Label>
-                  <Input id="c-phone" type="tel" placeholder="+92 300 0000000" {...createForm.register('phone')} />
+                  <Controller
+                    control={createForm.control}
+                    name="phone"
+                    render={({ field }) => (
+                      <PhoneInput
+                        id="c-phone"
+                        value={field.value ?? ''}
+                        onChange={field.onChange}
+                        countryCode={phoneIsoCode}
+                        placeholder={phonePlaceholder}
+                      />
+                    )}
+                  />
                 </div>
               </div>
 
@@ -672,7 +671,19 @@ export default function StaffForm({ open, onClose, staff }: StaffFormProps) {
               {/* Phone */}
               <div className="space-y-1.5">
                 <Label htmlFor="e-phone">Phone</Label>
-                <Input id="e-phone" type="tel" placeholder="+92 300 0000000" {...editForm.register('phone')} />
+                <Controller
+                  control={editForm.control}
+                  name="phone"
+                  render={({ field }) => (
+                    <PhoneInput
+                      id="e-phone"
+                      value={field.value ?? ''}
+                      onChange={field.onChange}
+                      countryCode={phoneIsoCode}
+                      placeholder={phonePlaceholder}
+                    />
+                  )}
+                />
               </div>
 
               {/* Role */}

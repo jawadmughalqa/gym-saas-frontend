@@ -34,7 +34,8 @@ import {
   useMyTrainerProfile,
   useMyTrainerRatings,
 } from '@/features/trainer-portal/hooks/use-trainer-portal';
-import { WORLD_COUNTRIES, COUNTRY_BY_NAME, applyPhoneMask, maskDigitCount } from '@/config/world-countries';
+import { WORLD_COUNTRIES, COUNTRY_BY_NAME } from '@/config/world-countries';
+import { isValidPhoneNumber, AsYouType, type CountryCode } from 'libphonenumber-js';
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -818,9 +819,9 @@ function EditProfileDialog({
   });
   const allCountries = countriesData?.enabledCountries ?? [];
 
-  // Phone masking state — driven by selected country
-  const [phoneMask,    setPhoneMask]    = useState('');
-  const [phoneExample, setPhoneExample] = useState('');
+  // Phone state — driven by selected country
+  const [phoneCountryCode, setPhoneCountryCode] = useState('');  // ISO alpha-2 e.g. "PK"
+  const [phoneExample,     setPhoneExample]     = useState('');
 
   const { register, handleSubmit, reset, control, watch, setValue, formState: { errors } } = useForm<EditProfileValues>({
     defaultValues: {
@@ -849,30 +850,31 @@ function EditProfileDialog({
         city:      profile.city    ?? '',
         address:   profile.address ?? '',
       });
-      // Set phone mask from stored country
+      // Set phone state from stored country
       const meta = country ? COUNTRY_BY_NAME.get(country) : undefined;
-      setPhoneMask(meta?.phoneMask ?? '');
+      setPhoneCountryCode(meta?.code ?? '');
       setPhoneExample(meta?.phoneExample ?? '');
     }
   }, [open, profile, reset]);
 
-  // Update phone mask when country changes and clear current phone value
+  // Update phone state when country changes and clear current phone value
   function handleCountryChange(countryName: string) {
     setValue('country', countryName);
     const meta = COUNTRY_BY_NAME.get(countryName);
-    setPhoneMask(meta?.phoneMask ?? '');
+    setPhoneCountryCode(meta?.code ?? '');
     setPhoneExample(meta?.phoneExample ?? '');
     setValue('phone', ''); // clear so user re-enters in new format
   }
 
-  // Apply mask as user types
+  // Format phone as user types using AsYouType (libphonenumber-js)
   function handlePhoneInput(raw: string) {
-    if (!phoneMask) {
+    if (!phoneCountryCode) {
       setValue('phone', raw);
       return;
     }
-    const masked = applyPhoneMask(raw, phoneMask);
-    setValue('phone', masked, { shouldValidate: true });
+    const formatter = new AsYouType(phoneCountryCode as CountryCode);
+    const formatted = formatter.input(raw);
+    setValue('phone', formatted, { shouldValidate: true });
   }
 
   function onClose() {
@@ -978,14 +980,12 @@ function EditProfileDialog({
             />
           </div>
 
-          {/* Phone — masked to the selected country's format */}
+          {/* Phone — formatted live by libphonenumber-js AsYouType */}
           {(() => {
-            const isComplete = phoneMask
-              ? maskDigitCount(phoneMask) === maskDigitCount(watch('phone'))
+            const phoneVal = watch('phone');
+            const isValid = phoneCountryCode && phoneVal
+              ? (() => { try { return isValidPhoneNumber(phoneVal, phoneCountryCode as CountryCode); } catch { return false; } })()
               : false;
-            const maskPlaceholder = phoneMask
-              ? phoneMask.replace(/#/g, '0')
-              : 'Select a country first';
             return (
               <div className="space-y-1.5">
                 <Label htmlFor="ep-phone">
@@ -1000,22 +1000,17 @@ function EditProfileDialog({
                   <Input
                     id="ep-phone"
                     type="tel"
-                    inputMode="numeric"
+                    inputMode="tel"
                     disabled={!watchedCountry}
-                    placeholder={maskPlaceholder}
-                    value={watch('phone')}
+                    placeholder={phoneExample || 'Select a country first'}
+                    value={phoneVal}
                     onChange={(e) => handlePhoneInput(e.target.value)}
-                    className={isComplete ? 'pr-8' : ''}
+                    className={isValid ? 'pr-8' : ''}
                   />
-                  {isComplete && (
+                  {isValid && (
                     <span className="absolute right-2.5 top-1/2 -translate-y-1/2 text-green-600 text-sm">✓</span>
                   )}
                 </div>
-                {phoneMask && watch('phone') && !isComplete && (
-                  <p className="text-xs text-muted-foreground">
-                    Format: {phoneMask.replace(/#/g, '0')}
-                  </p>
-                )}
               </div>
             );
           })()}
@@ -1051,7 +1046,7 @@ function EditProfileDialog({
           {/* City */}
           <div className="space-y-1.5">
             <Label htmlFor="ep-city">City</Label>
-            <Input id="ep-city" placeholder="e.g. Lahore" {...register('city')} />
+            <Input id="ep-city" placeholder="e.g. Toronto" {...register('city')} />
           </div>
 
           {/* Address */}

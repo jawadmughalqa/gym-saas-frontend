@@ -1,8 +1,8 @@
 import { Input }    from '@/components/ui/input';
 import { Label }    from '@/components/ui/label';
 import { DatePicker } from '@/components/ui/date-picker';
-import { PHONE } from '@/config/tenant.config';
 import { Textarea } from '@/components/ui/textarea';
+import { PhoneInput } from '@/components/ui/phone-input';
 import {
   Select,
   SelectContent,
@@ -12,6 +12,8 @@ import {
 } from '@/components/ui/select';
 import type { UseFormRegister, UseFormWatch, UseFormSetValue, FieldErrors } from 'react-hook-form';
 import type { MemberFormValues } from './types';
+import { useTenantCurrency } from '@/hooks/use-tenant-currency';
+import { WORLD_COUNTRIES } from '@/config/world-countries';
 
 interface Props {
   register:   UseFormRegister<MemberFormValues>;
@@ -34,6 +36,11 @@ export function PersonalInfoSection({
   branches,
   branchesLoading,
 }: Props) {
+  const { country: tenantCountry } = useTenantCurrency();
+  const countryData = WORLD_COUNTRIES.find((c) => c.name === tenantCountry);
+  const phonePlaceholder = countryData?.phoneExample ?? '+1 (212) 555-0147';
+  const phoneIsoCode = countryData?.code;
+
   return (
     <section className="space-y-4">
       <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide">
@@ -91,13 +98,14 @@ export function PersonalInfoSection({
       {/* Phone */}
       <div className="space-y-1.5">
         <Label htmlFor="phone">Phone *</Label>
-        <Input
+        <PhoneInput
           id="phone"
-          type="tel"
-          placeholder={PHONE.placeholder}
+          value={watch('phone') ?? ''}
+          onChange={(v) => setValue('phone', v, { shouldValidate: true })}
+          countryCode={phoneIsoCode}
+          placeholder={phonePlaceholder}
           disabled={isPending}
           className={errors.phone ? 'border-destructive' : ''}
-          {...register('phone')}
         />
         {errors.phone && (
           <p className="text-xs text-destructive">{errors.phone.message}</p>

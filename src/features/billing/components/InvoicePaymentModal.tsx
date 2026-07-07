@@ -68,7 +68,6 @@ import { getGetBillingRecentTransactionsQueryKey } from '@/api/generated/billing
 import { useGetMyTenant } from '@/api/generated/tenants/tenants';
 import { buildGymInvoicePdf } from '@/utils/invoice-pdf';
 import InvoiceActivityFeed from './InvoiceDetail/InvoiceActivityFeed';
-import { PHONE } from '@/config/tenant.config';
 import type { Invoice, InvoiceLineItem } from '@/types/billing.types';
 
 // ─── Constants ─────────────────────────────────────────────────────────────────
@@ -332,7 +331,7 @@ function MethodExtraFields({
       <div className="grid grid-cols-2 gap-3">
         <div className="space-y-1.5">
           <Label className="text-xs">{label} Mobile Number</Label>
-          <Input placeholder={PHONE.placeholder} disabled={disabled} className="h-9" {...register('mobileNumber')} />
+          <Input placeholder="+1 (212) 555-0147" disabled={disabled} className="h-9" {...register('mobileNumber')} />
         </div>
         <div className="space-y-1.5">
           <Label className="text-xs">Transaction ID</Label>
@@ -1099,7 +1098,7 @@ export function InvoicePaymentModal({
       status: invoice.status ?? '',
       recipientName: memberName,
       recipientEmail: invoice.memberId?.email,
-      currency: invoice.currency ?? 'PKR',
+      currency: invoice.currency ?? 'USD',
       total: invoice.total ?? 0,
       amountPaid: invoice.amountPaid,
       amountDue: invoice.amountDue,
@@ -1200,7 +1199,7 @@ export function InvoicePaymentModal({
       status: invoice.status ?? '',
       recipientName: memberName,
       recipientEmail: invoice.memberId?.email,
-      currency: invoice.currency ?? 'PKR',
+      currency: invoice.currency ?? 'USD',
       total: invoice.total ?? 0,
       amountPaid: invoice.amountPaid,
       amountDue: invoice.amountDue,

@@ -77,7 +77,7 @@ function PlanCard({
 }) {
   const planName   = plan.name ?? 'starter';
   const styles     = TIER_STYLES[planName] ?? TIER_STYLES['starter'];
-  const currency   = plan.currency ?? 'PKR';
+  const currency   = plan.currency ?? 'USD';
   const planAny    = plan as Plan & { billingCycle?: string; trialDays?: number };
   const billing    = planAny.billingCycle ?? 'monthly';
   const trialDays  = planAny.trialDays ?? 0;

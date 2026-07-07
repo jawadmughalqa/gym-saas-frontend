@@ -35,7 +35,7 @@ export interface InvoicePdfData {
 // ─── Formatters ───────────────────────────────────────────────────────────────
 
 function fmt(n: number, currency: string) {
-  return new Intl.NumberFormat(undefined, { style: 'currency', currency: currency || 'PKR' }).format(n);
+  return new Intl.NumberFormat(undefined, { style: 'currency', currency: currency || 'USD' }).format(n);
 }
 
 function statusColors(status: string): [number, number, number] {

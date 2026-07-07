@@ -95,7 +95,7 @@ function ClientCard({
               <div className="flex items-center gap-1.5 text-muted-foreground">
                 <DollarSign className="h-3.5 w-3.5 shrink-0" />
                 <span>
-                  {assignment.currency ?? 'PKR'}{' '}
+                  {assignment.currency ?? 'USD'}{' '}
                   {assignment.monthlyCharge.toLocaleString()} / mo
                 </span>
               </div>

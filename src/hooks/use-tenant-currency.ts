@@ -19,12 +19,15 @@ export interface TenantCurrency {
   currencySymbol: string;
   /** Country name set by the super admin at tenant creation */
   country: string;
+  /** BCP-47 locale tag for number/date formatting, e.g. 'en-GB', 'de-DE' */
+  locale: string;
 }
 
 const FALLBACK: TenantCurrency = {
   currency: 'USD',
   currencySymbol: '$',
   country: '',
+  locale: 'en-US',
 };
 
 export function useTenantCurrency(): TenantCurrency {
@@ -44,6 +47,7 @@ export function useTenantCurrency(): TenantCurrency {
       currency:       countryMatch.currencyCode,
       currencySymbol: countryMatch.currencySymbol,
       country,
+      locale:         countryMatch.locale,
     };
   }
 
@@ -55,6 +59,7 @@ export function useTenantCurrency(): TenantCurrency {
       currency:       stored,
       currencySymbol: symbolMatch?.currencySymbol ?? stored,
       country,
+      locale:         symbolMatch?.locale ?? 'en-US',
     };
   }
 

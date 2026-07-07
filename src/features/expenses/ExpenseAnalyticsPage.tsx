@@ -18,6 +18,7 @@ import { useExpenseSummary, useExpenseAnalytics } from './hooks/use-expenses';
 import { CATEGORY_LABELS } from './components/ExpenseForm';
 import { TrendingDown, Building2, ListOrdered, Calendar } from 'lucide-react';
 import { useTenantCurrency } from '@/hooks/use-tenant-currency';
+import { formatCurrencyCompact, formatCurrencyFull } from '@/utils/format';
 import { CHART_COLORS } from '@/lib/constants';
 
 // ─── Constants ────────────────────────────────────────────────────────────────
@@ -29,18 +30,11 @@ const MONTHS = [
   'July', 'August', 'September', 'October', 'November', 'December',
 ];
 
-
-function formatCurrency(amount: number) {
-  if (amount >= 1_000_000) return `${(amount / 1_000_000).toFixed(1)}M`;
-  if (amount >= 1_000) return `${(amount / 1_000).toFixed(0)}K`;
-  return amount.toLocaleString();
-}
-
 // ─── ExpenseAnalyticsPage ─────────────────────────────────────────────────────
 
 export default function ExpenseAnalyticsPage() {
   const isBranchManager = useAuthStore((s) => s.user?.role === 'branch_manager');
-  const { currency } = useTenantCurrency();
+  const { currency, locale } = useTenantCurrency();
   const [selectedYear, setSelectedYear] = useState<number>(CURRENT_YEAR);
   const [selectedMonth, setSelectedMonth] = useState<string>('all');
   const [branchFilter, setBranchFilter] = useState<string>('all');
@@ -163,7 +157,7 @@ export default function ExpenseAnalyticsPage() {
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
         <StatCard
           title="Total Expenses"
-          value={summaryLoading ? '…' : `${currency} ${formatCurrency(summary?.total ?? 0)}`}
+          value={summaryLoading ? '…' : formatCurrencyFull(summary?.total ?? 0, currency, locale)}
           icon={TrendingDown}
           subtitle="All categories"
         />
@@ -179,7 +173,7 @@ export default function ExpenseAnalyticsPage() {
             summaryLoading
               ? '…'
               : summary && summary.count > 0
-              ? `${currency} ${formatCurrency(Math.round(summary.total / summary.count))}`
+              ? formatCurrencyFull(Math.round(summary.total / summary.count), currency, locale)
               : '—'
           }
           icon={Calendar}
@@ -216,7 +210,7 @@ export default function ExpenseAnalyticsPage() {
                   axisLine={false}
                 />
                 <YAxis
-                  tickFormatter={(v) => `${formatCurrency(v)}`}
+                  tickFormatter={(v) => formatCurrencyCompact(v, currency, locale)}
                   tick={{ fontSize: 11 }}
                   tickLine={false}
                   axisLine={false}
@@ -293,7 +287,7 @@ export default function ExpenseAnalyticsPage() {
                         <span className="text-muted-foreground">{c.name}</span>
                       </div>
                       <span className="font-medium tabular-nums">
-                        {currency} {formatCurrency(c.total)}
+                        {formatCurrencyFull(c.total, currency, locale)}
                       </span>
                     </div>
                   ))}
@@ -325,7 +319,7 @@ export default function ExpenseAnalyticsPage() {
                       <CartesianGrid strokeDasharray="3 3" className="stroke-border" horizontal={false} />
                       <XAxis
                         type="number"
-                        tickFormatter={(v) => formatCurrency(v)}
+                        tickFormatter={(v) => formatCurrencyCompact(v, currency, locale)}
                         tick={{ fontSize: 11 }}
                         tickLine={false}
                         axisLine={false}
@@ -356,7 +350,7 @@ export default function ExpenseAnalyticsPage() {
                         <div className="flex items-center gap-2">
                           <Badge variant="outline" className="text-xs">{b.count} expenses</Badge>
                           <span className="font-medium tabular-nums">
-                            {currency} {formatCurrency(b.total)}
+                            {formatCurrencyFull(b.total, currency, locale)}
                           </span>
                         </div>
                       </div>
@@ -386,7 +380,7 @@ export default function ExpenseAnalyticsPage() {
                   axisLine={false}
                 />
                 <YAxis
-                  tickFormatter={(v) => formatCurrency(v)}
+                  tickFormatter={(v) => formatCurrencyCompact(v, currency, locale)}
                   tick={{ fontSize: 11 }}
                   tickLine={false}
                   axisLine={false}

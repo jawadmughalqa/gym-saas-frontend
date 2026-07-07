@@ -26,7 +26,7 @@ import { useGetBillingDashboard } from '@/api/generated/billing/billing';
 import { useGetReportsRevenue } from '@/api/generated/reports/reports';
 import { useGetBranches } from '@/api/generated/branches/branches';
 import { useTenantCurrency } from '@/hooks/use-tenant-currency';
-import { formatApiDate, formatCurrencyCompact } from '@/utils/format';
+import { formatApiDate, formatCurrencyCompact, formatDate } from '@/utils/format';
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 
@@ -77,7 +77,7 @@ function getDateRange(year: number, month: number): { dateFrom: string; dateTo: 
 function PaymentSummaryCard() {
   const user = useAuthStore((s) => s.user);
   const isBranchManager = user?.role === 'branch_manager';
-  const { currency } = useTenantCurrency();
+  const { currency, locale } = useTenantCurrency();
 
   const [year, setYear]       = useState<number>(CURRENT_YEAR);
   const [month, setMonth]     = useState<string>(String(CURRENT_MONTH));
@@ -283,7 +283,7 @@ function PaymentSummaryCard() {
                   </span>
                 </div>
                 <p className="text-2xl font-bold tabular-nums text-emerald-500 dark:text-emerald-300">
-                  {formatCurrencyCompact(billing?.totalRevenue ?? 0, currency)}
+                  {formatCurrencyCompact(billing?.totalRevenue ?? 0, currency, locale)}
                 </p>
                 <p className="text-xs text-muted-foreground mt-0.5">Payments received</p>
               </div>
@@ -297,7 +297,7 @@ function PaymentSummaryCard() {
                   </span>
                 </div>
                 <p className="text-2xl font-bold tabular-nums text-red-500 dark:text-red-300">
-                  {formatCurrencyCompact(billing?.pendingFees ?? 0, currency)}
+                  {formatCurrencyCompact(billing?.pendingFees ?? 0, currency, locale)}
                 </p>
                 <p className="text-xs text-muted-foreground mt-0.5">Outstanding invoices</p>
               </div>
@@ -311,7 +311,7 @@ function PaymentSummaryCard() {
                   </span>
                 </div>
                 <p className="text-2xl font-bold tabular-nums text-blue-500 dark:text-blue-300">
-                  {formatCurrencyCompact(billing?.todayCollection ?? 0, currency)}
+                  {formatCurrencyCompact(billing?.todayCollection ?? 0, currency, locale)}
                 </p>
                 <p className="text-xs text-muted-foreground mt-0.5">Received today</p>
               </div>
@@ -338,7 +338,7 @@ function PaymentSummaryCard() {
                 axisLine={false}
               />
               <YAxis
-                tickFormatter={(v: number) => formatCurrencyCompact(v, currency)}
+                tickFormatter={(v: number) => formatCurrencyCompact(v, currency, locale)}
                 tick={{ fontSize: 11 }}
                 tickLine={false}
                 axisLine={false}
@@ -362,14 +362,14 @@ function PaymentSummaryCard() {
 export default function DashboardPage() {
   const user = useAuthStore((s) => s.user);
   const isBranchManager = user?.role === 'branch_manager';
-  const { currency } = useTenantCurrency();
+  const { currency, locale } = useTenantCurrency();
 
-  const today = new Date().toLocaleDateString('en-GB', {
+  const today = new Intl.DateTimeFormat(locale, {
     weekday: 'long',
     day: 'numeric',
     month: 'long',
     year: 'numeric',
-  });
+  }).format(new Date());
 
   const firstName = user?.name?.split(' ')[0] ?? 'there';
 
@@ -431,7 +431,7 @@ export default function DashboardPage() {
             />
             <StatCard
               title="Revenue This Month"
-              value={formatCurrencyCompact(revenue.thisMonth ?? 0, currency)}
+              value={formatCurrencyCompact(revenue.thisMonth ?? 0, currency, locale)}
               icon={CreditCard}
               iconClassName="bg-emerald-500/10 text-emerald-600 dark:text-emerald-400"
               subtitle="Invoices paid"

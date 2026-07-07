@@ -26,6 +26,9 @@ import { useGetBranches } from "@/api/generated/branches/branches";
 import { UserCombobox } from "@/components/ui/UserCombobox";
 import { useCreateWalkInLead, useUpdateWalkInLead } from "../hooks/use-walkin-leads";
 import type { WalkInLead, WalkInLeadSource } from "@/api/walkInLeads.api";
+import { PhoneInput } from "@/components/ui/phone-input";
+import { useTenantCurrency } from "@/hooks/use-tenant-currency";
+import { WORLD_COUNTRIES } from "@/config/world-countries";
 
 
 // ─── Date helpers ─────────────────────────────────────────────────────────────
@@ -100,6 +103,11 @@ interface WalkInLeadFormProps {
 
 export default function WalkInLeadForm({ open, onOpenChange, lead }: WalkInLeadFormProps) {
   const isEditing = !!lead;
+
+  const { country: tenantCountry } = useTenantCurrency();
+  const countryData = WORLD_COUNTRIES.find((c) => c.name === tenantCountry);
+  const phonePlaceholder = countryData?.phoneExample ?? '+1 (212) 555-0147';
+  const phoneIsoCode = countryData?.code;
 
   const { data: branchesData } = useGetBranches({ limit: 100 });
   const branches = branchesData?.data ?? [];
@@ -288,10 +296,12 @@ export default function WalkInLeadForm({ open, onOpenChange, lead }: WalkInLeadF
               <Label htmlFor="phone">
                 Phone <span className="text-destructive">*</span>
               </Label>
-              <Input
+              <PhoneInput
                 id="phone"
-                placeholder="03xx-xxxxxxx"
-                {...register("phone")}
+                value={watch("phone") ?? ""}
+                onChange={(v) => setValue("phone", v, { shouldValidate: true })}
+                countryCode={phoneIsoCode}
+                placeholder={phonePlaceholder}
                 className={errors.phone ? "border-destructive" : ""}
               />
               {errors.phone && <p className="text-xs text-destructive">{errors.phone.message}</p>}

@@ -19,6 +19,7 @@ import {
 import { useQueryClient } from "@tanstack/react-query";
 import type { Discount } from "@/types/billing.types";
 import { formatCurrency } from "@/utils/format";
+import { useTenantCurrency } from "@/hooks/use-tenant-currency";
 
 const editSchema = z.object({
   description: z.string().max(200).optional(),
@@ -45,6 +46,7 @@ export function EditDiscountSheet({
 }: EditDiscountSheetProps) {
   const queryClient = useQueryClient();
   const updateDiscountMutation = usePatchDiscountsDiscountId();
+  const { currency, locale } = useTenantCurrency();
 
   const {
     register,
@@ -140,7 +142,7 @@ export function EditDiscountSheet({
               <span>
                 {discount.discountType === "percentage"
                   ? `${discount.value}%`
-                  : formatCurrency(discount.value, "USD")}
+                  : formatCurrency(discount.value, currency, locale)}
               </span>
             </div>
             <div className="flex justify-between text-sm">

@@ -61,6 +61,8 @@ import { WORLD_COUNTRIES } from '@/config/world-countries';
 import { FormDescription } from '@/components/ui/form';
 import { decodeJwt } from '@/utils/jwt';
 import { downloadSaasInvoicePdf, printSaasInvoicePdf, shareSaasInvoicePdfViaWhatsApp } from '@/utils/invoice-pdf';
+import SendWhatsAppMessageDialog from '@/components/shared/SendWhatsAppMessageDialog';
+import type { WhatsAppInvoiceData } from '@/utils/whatsapp-message';
 import type { JwtPayloadShape } from '@/utils/jwt';
 import type { Permission } from '@/lib/permissions';
 import {
@@ -922,6 +924,7 @@ export default function TenantDetailPage() {
   const [invoicesPage, setInvoicesPage] = useState(1);
   const [passwordVisible, setPasswordVisible] = useState(false);
   const [trialOpen, setTrialOpen] = useState(false);
+  const [saasWaDialog, setSaasWaDialog] = useState<{ data: WhatsAppInvoiceData; phone?: string } | null>(null);
 
   const enterImpersonation = useAuthStore((s) => s.enterImpersonation);
 
@@ -1074,6 +1077,27 @@ export default function TenantDetailPage() {
     }
   }
 
+  function handleSaasInvoiceWhatsAppMessage(row: SaasInvoice) {
+    const phone = tenant?.contactPhone;
+    if (!phone) {
+      toast({ variant: 'destructive', title: 'No phone number', description: 'This tenant has no contact phone on file.' });
+      return;
+    }
+    setSaasWaDialog({
+      data: {
+        invoiceNumber: row.invoiceNumber ?? 'INV',
+        status: row.status ?? 'issued',
+        memberName: tenant?.businessName ?? '',
+        senderName: 'Gymanger Platform',
+        currency: row.currency ?? 'USD',
+        total: row.amount ?? 0,
+        amountDue: row.amount ?? 0,
+        dueDate: row.dueDate,
+      },
+      phone,
+    });
+  }
+
   const invoiceColumns: ColumnDef<SaasInvoice>[] = [
     {
       key: 'invoiceNumber',
@@ -1133,6 +1157,10 @@ export default function TenantDetailPage() {
               <DropdownMenuItem onClick={() => handleSaasInvoiceWhatsApp(row)}>
                 <MessageCircle className="mr-2 h-4 w-4" />
                 Send via WhatsApp
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => handleSaasInvoiceWhatsAppMessage(row)}>
+                <MessageCircle className="mr-2 h-4 w-4 text-green-500" />
+                Send WhatsApp Message
               </DropdownMenuItem>
               {row.status !== 'paid' && (
                 <>
@@ -1489,6 +1517,15 @@ export default function TenantDetailPage() {
       />
 
       <ConfirmDialog {...confirmProps} loading={impersonate.isPending} />
+
+      {saasWaDialog && (
+        <SendWhatsAppMessageDialog
+          open={!!saasWaDialog}
+          onOpenChange={(open) => { if (!open) setSaasWaDialog(null); }}
+          data={saasWaDialog.data}
+          phone={saasWaDialog.phone}
+        />
+      )}
     </PageShell>
   );
 }

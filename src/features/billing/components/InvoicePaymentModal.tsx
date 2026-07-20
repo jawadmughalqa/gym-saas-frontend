@@ -69,6 +69,8 @@ import { useGetMyTenant } from '@/api/generated/tenants/tenants';
 import { buildGymInvoicePdf } from '@/utils/invoice-pdf';
 import InvoiceActivityFeed from './InvoiceDetail/InvoiceActivityFeed';
 import type { Invoice, InvoiceLineItem } from '@/types/billing.types';
+import SendWhatsAppMessageDialog from '@/components/shared/SendWhatsAppMessageDialog';
+import type { WhatsAppInvoiceData } from '@/utils/whatsapp-message';
 
 // ─── Constants ─────────────────────────────────────────────────────────────────
 
@@ -404,6 +406,7 @@ function ReceiptPanel({
   onClose: () => void;
 }) {
   const receiptRef = useRef<HTMLDivElement>(null);
+  const [waMessageOpen, setWaMessageOpen] = useState(false);
 
   function handlePrint() {
     if (!receiptRef.current) return;
@@ -559,20 +562,48 @@ function ReceiptPanel({
           Print
         </Button>
         {memberPhone && (
-          <Button
-            size="sm"
-            variant="outline"
-            className="flex-1 min-w-[100px] text-green-500 border-green-300 hover:bg-green-500/10"
-            onClick={handleWhatsApp}
-          >
-            <MessageCircle className="h-3.5 w-3.5 mr-1.5" />
-            WhatsApp
-          </Button>
+          <>
+            <Button
+              size="sm"
+              variant="outline"
+              className="flex-1 min-w-[100px] text-green-500 border-green-300 hover:bg-green-500/10"
+              onClick={handleWhatsApp}
+            >
+              <MessageCircle className="h-3.5 w-3.5 mr-1.5" />
+              WhatsApp
+            </Button>
+            <Button
+              size="sm"
+              variant="outline"
+              className="flex-1 min-w-[100px]"
+              onClick={() => setWaMessageOpen(true)}
+            >
+              <MessageCircle className="h-3.5 w-3.5 mr-1.5 text-green-500" />
+              Message
+            </Button>
+          </>
         )}
         <Button size="sm" className="flex-1 min-w-[100px]" onClick={onClose}>
           Done
         </Button>
       </div>
+
+      <SendWhatsAppMessageDialog
+        open={waMessageOpen}
+        onOpenChange={setWaMessageOpen}
+        phone={memberPhone}
+        data={{
+          invoiceNumber: invoice.invoiceNumber ?? '',
+          status: isFullyPaid ? 'paid' : 'partially_paid',
+          memberName,
+          gymName,
+          currency: invoice.currency,
+          total: invoice.total,
+          amountPaid: (invoice.amountPaid ?? 0),
+          amountDue: remainingAfter,
+          dueDate: invoice.dueDate,
+        }}
+      />
     </div>
   );
 }
@@ -929,6 +960,7 @@ export function InvoicePaymentModal({
   const [view, setView] = useState<ModalView>('detail');
   const [activeTab, setActiveTab] = useState<PayMethodTab>('cash');
   const [pendingPayment, setPendingPayment] = useState<{ amount: number; method: string } | null>(null);
+  const [waMessageOpen, setWaMessageOpen] = useState(false);
 
   // Fetch invoice
   const { data: invoiceRes, isLoading } = useGetInvoicesInvoiceId(invoiceId ?? '', {
@@ -1314,6 +1346,7 @@ export function InvoicePaymentModal({
   // ── Detail view (main) ─────────────────────────────────────────────────────
 
   return (
+    <>
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent
         className={cn(
@@ -1576,16 +1609,28 @@ export function InvoicePaymentModal({
             {/* Action buttons */}
             <div className="flex items-center gap-2">
               {invoice.memberId?.phone && (
-                <Button
-                  type="button"
-                  size="sm"
-                  variant="outline"
-                  className="text-green-500 border-green-300 hover:bg-green-500/10 h-8 px-3"
-                  onClick={handleInvoiceWhatsApp}
-                >
-                  <MessageCircle className="h-3.5 w-3.5 mr-1.5" />
-                  Share
-                </Button>
+                <>
+                  <Button
+                    type="button"
+                    size="sm"
+                    variant="outline"
+                    className="text-green-500 border-green-300 hover:bg-green-500/10 h-8 px-3"
+                    onClick={handleInvoiceWhatsApp}
+                  >
+                    <MessageCircle className="h-3.5 w-3.5 mr-1.5" />
+                    Share
+                  </Button>
+                  <Button
+                    type="button"
+                    size="sm"
+                    variant="outline"
+                    className="h-8 px-3"
+                    onClick={() => setWaMessageOpen(true)}
+                  >
+                    <MessageCircle className="h-3.5 w-3.5 mr-1.5 text-green-500" />
+                    Message
+                  </Button>
+                </>
               )}
               <Button type="button" size="sm" variant="outline" className="h-8 px-3" onClick={handleInvoicePrint}>
                 <Printer className="h-3.5 w-3.5 mr-1.5" />
@@ -1604,6 +1649,26 @@ export function InvoicePaymentModal({
         </div>
       </DialogContent>
     </Dialog>
+
+    {invoice?.memberId?.phone && (
+      <SendWhatsAppMessageDialog
+        open={waMessageOpen}
+        onOpenChange={setWaMessageOpen}
+        phone={invoice.memberId.phone}
+        data={{
+          invoiceNumber: invoice.invoiceNumber ?? '',
+          status: invoice.status ?? '',
+          memberName: `${invoice.memberId?.firstName ?? ''} ${invoice.memberId?.lastName ?? ''}`.trim(),
+          gymName,
+          currency: invoice.currency,
+          total: invoice.total,
+          amountPaid: invoice.amountPaid,
+          amountDue: invoice.amountDue,
+          dueDate: invoice.dueDate,
+        }}
+      />
+    )}
+    </>
   );
 }
 

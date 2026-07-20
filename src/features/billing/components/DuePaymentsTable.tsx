@@ -12,9 +12,12 @@ import {
   CheckCircle2, ChevronUp, ChevronDown, ChevronsUpDown, Phone,
   MessageCircle, Printer, Download,
 } from 'lucide-react';
+import { useState } from 'react';
 import { formatCurrency, formatDate } from '@/utils/format';
 import { cn } from '@/lib/utils';
 import { buildGymInvoicePdf } from '@/utils/invoice-pdf';
+import SendWhatsAppMessageDialog from '@/components/shared/SendWhatsAppMessageDialog';
+import type { WhatsAppInvoiceData } from '@/utils/whatsapp-message';
 
 // ─── Types (exported so BillingDashboard can reuse) ───────────────────────────
 
@@ -118,6 +121,27 @@ export default function DuePaymentsTable({
   overdueCount, canCollect, gymName, onSort, onStatusTab, onSearch, onPage,
   onCollect, onViewInvoice,
 }: Props) {
+
+  const [waDialog, setWaDialog] = useState<{ data: WhatsAppInvoiceData; phone?: string } | null>(null);
+
+  function handleRowWhatsAppMessage(row: DueRow) {
+    const member = memberOf(row);
+    if (!member) return;
+    setWaDialog({
+      data: {
+        invoiceNumber: row.invoiceNumber,
+        status: row.status,
+        memberName: `${member.firstName} ${member.lastName}`.trim(),
+        gymName: gymName,
+        currency: row.currency || currency,
+        total: row.total,
+        amountPaid: row.amountPaid,
+        amountDue: row.amountDue,
+        dueDate: row.dueDate ?? undefined,
+      },
+      phone: member.phone,
+    });
+  }
 
   // ── Row-level actions ──────────────────────────────────────────────────────
 
@@ -442,13 +466,21 @@ export default function DuePaymentsTable({
                           View Invoice
                         </DropdownMenuItem>
                         {member?.phone && (
-                          <DropdownMenuItem
-                            onClick={() => handleRowWhatsApp(row)}
-                            className="text-green-500 focus:text-green-500 focus:bg-green-500/10"
-                          >
-                            <MessageCircle className="h-3.5 w-3.5 mr-2" />
-                            Share on WhatsApp
-                          </DropdownMenuItem>
+                          <>
+                            <DropdownMenuItem
+                              onClick={() => handleRowWhatsApp(row)}
+                              className="text-green-500 focus:text-green-500 focus:bg-green-500/10"
+                            >
+                              <MessageCircle className="h-3.5 w-3.5 mr-2" />
+                              Share on WhatsApp
+                            </DropdownMenuItem>
+                            <DropdownMenuItem
+                              onClick={() => handleRowWhatsAppMessage(row)}
+                            >
+                              <MessageCircle className="h-3.5 w-3.5 mr-2 text-green-500" />
+                              Send WhatsApp Message
+                            </DropdownMenuItem>
+                          </>
                         )}
                         <DropdownMenuSeparator />
                         <DropdownMenuItem onClick={() => handleRowPrint(row)}>
@@ -485,6 +517,15 @@ export default function DuePaymentsTable({
           </div>
         )}
       </CardContent>
+
+      {waDialog && (
+        <SendWhatsAppMessageDialog
+          open={!!waDialog}
+          onOpenChange={(open) => { if (!open) setWaDialog(null); }}
+          data={waDialog.data}
+          phone={waDialog.phone}
+        />
+      )}
     </Card>
   );
 }

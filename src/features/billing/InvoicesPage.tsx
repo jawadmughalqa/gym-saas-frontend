@@ -28,6 +28,8 @@ import { toast } from '@/hooks/use-toast';
 import InvoiceForm from './components/InvoiceForm';
 import type { InvoiceStatus } from '@/types/billing.types';
 import { downloadInvoicePdf, printInvoicePdf, shareInvoicePdfViaWhatsApp } from '@/utils/invoice-pdf';
+import SendWhatsAppMessageDialog from '@/components/shared/SendWhatsAppMessageDialog';
+import type { WhatsAppInvoiceData } from '@/utils/whatsapp-message';
 
 // gym name helper: branchId may be populated object or plain string
 function gymBranchName(row: InvoiceRow): string | undefined {
@@ -94,6 +96,7 @@ export default function InvoicesPage() {
 
   const [statusFilter, setStatusFilter] = useState<InvoiceStatus | 'all'>('all');
   const [formOpen, setFormOpen] = useState(false);
+  const [waDialog, setWaDialog] = useState<{ data: WhatsAppInvoiceData; phone?: string } | null>(null);
 
   const { confirm, confirmProps } = useConfirm();
 
@@ -137,6 +140,24 @@ export default function InvoicesPage() {
 
   function handleDownload(row: InvoiceRow) {
     downloadInvoicePdf(rowToPdfData(row));
+  }
+
+  function handleWhatsAppMessage(row: InvoiceRow) {
+    const member = row.memberId && typeof row.memberId === 'object' ? row.memberId : null;
+    setWaDialog({
+      data: {
+        invoiceNumber: row.invoiceNumber,
+        status: row.status,
+        memberName: memberName(row),
+        gymName: gymBranchName(row),
+        currency: row.currency,
+        total: row.total,
+        amountPaid: row.amountPaid,
+        amountDue: row.amountDue,
+        dueDate: row.dueDate,
+      },
+      phone: member?.phone,
+    });
   }
 
   async function handleWhatsApp(row: InvoiceRow) {
@@ -244,6 +265,10 @@ export default function InvoicesPage() {
                 <MessageCircle className="mr-2 h-4 w-4" />
                 Send via WhatsApp
               </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => handleWhatsAppMessage(row)}>
+                <MessageCircle className="mr-2 h-4 w-4 text-green-500" />
+                Send WhatsApp Message
+              </DropdownMenuItem>
               {can('invoice.void') && ['issued', 'partially_paid', 'overdue'].includes(row.status) && (
                 <>
                   <DropdownMenuSeparator />
@@ -349,6 +374,14 @@ export default function InvoicesPage() {
 
       <InvoiceForm open={formOpen} onOpenChange={setFormOpen} />
       <ConfirmDialog {...confirmProps} loading={voidMutation.isPending} />
+      {waDialog && (
+        <SendWhatsAppMessageDialog
+          open={!!waDialog}
+          onOpenChange={(open) => { if (!open) setWaDialog(null); }}
+          data={waDialog.data}
+          phone={waDialog.phone}
+        />
+      )}
     </PageShell>
   );
 }

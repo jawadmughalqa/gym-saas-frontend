@@ -3,8 +3,7 @@ import { Label } from '@/components/ui/label';
 import { PhoneInput } from '@/components/ui/phone-input';
 import type { UseFormRegister, UseFormWatch, UseFormSetValue, FieldErrors } from 'react-hook-form';
 import type { MemberFormValues } from './types';
-import { useTenantCurrency } from '@/hooks/use-tenant-currency';
-import { WORLD_COUNTRIES } from '@/config/world-countries';
+import { useTenantPhoneCountry } from '@/hooks/use-tenant-phone-country';
 
 interface Props {
   register:  UseFormRegister<MemberFormValues>;
@@ -15,10 +14,7 @@ interface Props {
 }
 
 export function EmergencyContactSection({ register, watch, setValue, errors, isPending }: Props) {
-  const { country: tenantCountry } = useTenantCurrency();
-  const countryData = WORLD_COUNTRIES.find((c) => c.name === tenantCountry);
-  const phonePlaceholder = countryData?.phoneExample ?? '+1 (212) 555-0147';
-  const phoneIsoCode = countryData?.code;
+  const { countryCode: phoneIsoCode } = useTenantPhoneCountry();
 
   return (
     <section className="space-y-4">
@@ -52,8 +48,7 @@ export function EmergencyContactSection({ register, watch, setValue, errors, isP
             id="ec_phone"
             value={watch('ec_phone') ?? ''}
             onChange={(v) => setValue('ec_phone', v, { shouldValidate: true })}
-            countryCode={phoneIsoCode}
-            placeholder={phonePlaceholder}
+            defaultCountry={phoneIsoCode}
             disabled={isPending}
           />
         </div>

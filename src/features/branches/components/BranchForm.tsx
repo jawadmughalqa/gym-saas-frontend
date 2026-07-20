@@ -24,8 +24,7 @@ import {
   FormLabel,
   FormMessage,
 } from '@/components/ui/form';
-import { useTenantCurrency } from '@/hooks/use-tenant-currency';
-import { WORLD_COUNTRIES } from '@/config/world-countries';
+import { useTenantPhoneCountry } from '@/hooks/use-tenant-phone-country';
 import { PhoneInput } from '@/components/ui/phone-input';
 import {
   usePostBranches,
@@ -68,10 +67,8 @@ export default function BranchForm({ open, onOpenChange, branch }: BranchFormPro
   const qc = useQueryClient();
   const isEdit = !!branch;
 
-  const { country: tenantCountry } = useTenantCurrency();
-  const countryData = WORLD_COUNTRIES.find((c) => c.name === tenantCountry);
-  const phonePlaceholder = countryData?.phoneExample ?? '+1 (212) 555-0147';
-  const phoneIsoCode = countryData?.code;
+  const { countryCode: phoneIsoCode, country: phoneCountry } = useTenantPhoneCountry();
+  const tenantCountry = phoneCountry?.name ?? '';
 
   const form = useForm<FormValues>({
     resolver: zodResolver(schema),
@@ -295,8 +292,7 @@ export default function BranchForm({ open, onOpenChange, branch }: BranchFormPro
                         id="branch-phone"
                         value={field.value ?? ''}
                         onChange={field.onChange}
-                        countryCode={phoneIsoCode}
-                        placeholder={phonePlaceholder}
+                        defaultCountry={phoneIsoCode}
                       />
                     </FormControl>
                     <FormMessage />

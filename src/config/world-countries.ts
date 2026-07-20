@@ -33,51 +33,6 @@ export interface WorldCountry {
   phoneExample: string;
 }
 
-// ─── Masking utility (exported for use in forms) ──────────────────────────────
-
-/**
- * Apply a phone mask to raw user input.
- *
- * Rules:
- * - `mask` uses `#` as digit placeholders; all other chars are literals.
- * - Digits from `raw` fill `#` slots left-to-right.
- * - Returns the masked string up to however many digits were provided.
- *
- * Example:  mask="+1 (###) ###-####", raw="13335551234"
- *           → "+1 (333) 555-1234"
- */
-export function applyPhoneMask(raw: string, mask: string): string {
-  // Extract only digits from raw input (preserve leading + if present)
-  const digits = raw.replace(/\D/g, '');
-  let digitIndex = 0;
-  let result = '';
-
-  for (let i = 0; i < mask.length; i++) {
-    if (digitIndex >= digits.length) break;
-    const ch = mask[i]!;
-    if (ch === '#') {
-      result += digits[digitIndex++];
-    } else {
-      result += ch;
-      // If the next mask char is '#' and we still have digits, continue;
-      // otherwise keep emitting literals only if there's a digit pending
-    }
-  }
-
-  return result;
-}
-
-/** Count how many `#` slots are in a mask — i.e. the expected digit count */
-export function maskDigitCount(mask: string): number {
-  return (mask.match(/#/g) ?? []).length;
-}
-
-/** Extract calling-code digits from mask prefix (before first #) */
-export function maskPrefix(mask: string): string {
-  const firstHash = mask.indexOf('#');
-  return firstHash === -1 ? mask : mask.slice(0, firstHash);
-}
-
 export const WORLD_COUNTRIES: WorldCountry[] = [
   {
     name: 'Pakistan', code: 'PK', callingCode: '+92',

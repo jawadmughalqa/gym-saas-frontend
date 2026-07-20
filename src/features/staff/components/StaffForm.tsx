@@ -22,7 +22,7 @@ import { useGetBranches } from '@/api/generated/branches/branches';
 import { useCreateStaff, useUpdateStaff } from '../hooks/use-staff';
 import type { StaffUser } from '@/api/generated/schemas';
 import { useTenantCurrency } from '@/hooks/use-tenant-currency';
-import { WORLD_COUNTRIES } from '@/config/world-countries';
+import { useTenantPhoneCountry } from '@/hooks/use-tenant-phone-country';
 import { PhoneInput } from '@/components/ui/phone-input';
 
 // ─── Constants ────────────────────────────────────────────────────────────────
@@ -195,10 +195,8 @@ export default function StaffForm({ open, onClose, staff }: StaffFormProps) {
   const { data: branchesData } = useGetBranches({ limit: 100 });
   const branches = branchesData?.data ?? [];
 
-  const { country: tenantCountry } = useTenantCurrency();
-  const countryData = WORLD_COUNTRIES.find((c) => c.name === tenantCountry);
-  const phonePlaceholder = countryData?.phoneExample ?? '+1 (212) 555-0147';
-  const phoneIsoCode = countryData?.code;
+  const { countryCode: phoneIsoCode, country: tenantCountryObj } = useTenantPhoneCountry();
+  const tenantCountry = tenantCountryObj?.name ?? '';
 
   function handleClose() {
     setCredentials(null);
@@ -556,8 +554,7 @@ export default function StaffForm({ open, onClose, staff }: StaffFormProps) {
                         id="c-phone"
                         value={field.value ?? ''}
                         onChange={field.onChange}
-                        countryCode={phoneIsoCode}
-                        placeholder={phonePlaceholder}
+                        defaultCountry={phoneIsoCode}
                       />
                     )}
                   />
@@ -679,8 +676,7 @@ export default function StaffForm({ open, onClose, staff }: StaffFormProps) {
                       id="e-phone"
                       value={field.value ?? ''}
                       onChange={field.onChange}
-                      countryCode={phoneIsoCode}
-                      placeholder={phonePlaceholder}
+                      defaultCountry={phoneIsoCode}
                     />
                   )}
                 />

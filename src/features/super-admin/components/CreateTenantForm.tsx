@@ -42,6 +42,7 @@ import { getErrorMessage } from '@/utils/error';
 import { usePostSuperTenants, useGetSuperPlans } from '@/api/generated/super-admin/super-admin';
 import { orvalMutator } from '@/lib/orval-mutator';
 import { COUNTRY_BY_NAME } from '@/config/world-countries';
+import { PhoneInput } from '@/components/ui/phone-input';
 import { isValidPhoneNumber, isPossiblePhoneNumber, type CountryCode } from 'libphonenumber-js';
 import type { CreateTenantResponseData } from '@/api/generated/schemas/createTenantResponseData';
 
@@ -184,7 +185,6 @@ export default function CreateTenantForm({ open, onOpenChange, onSuccess }: Crea
       setPhoneCallingCode(meta.callingCode);
       setPhoneExample(meta.phoneExample);
       setPhoneMask(meta.phoneMask);
-      form.setValue('contactPhone', meta.callingCode + ' ');
     } else {
       setPhoneCountryCode('');
       setPhoneCallingCode('');
@@ -483,22 +483,20 @@ export default function CreateTenantForm({ open, onOpenChange, onSuccess }: Crea
                             </TooltipTrigger>
                             <TooltipContent side="right" className="text-xs max-w-[220px]">
                               <p className="font-medium mb-0.5">Phone format for {form.watch('country')}</p>
-                              <p className="font-mono text-primary">{phoneExample}</p>
+                              <p className="font-mono text-primary">{phoneExample.replace(/^\+\d+\s*/, '')}</p>
                             </TooltipContent>
                           </Tooltip>
                         )}
                       </div>
 
                       <FormControl>
-                        <Input
-                          placeholder={phoneExample || 'Select a country first'}
-                          disabled={!form.watch('country')}
-                          {...field}
+                        <PhoneInput
                           value={phoneValue}
-                          onChange={(e) => handlePhoneChange(e.target.value)}
+                          onChange={handlePhoneChange}
+                          defaultCountry={phoneCountryCode || 'US'}
+                          disabled={!form.watch('country')}
+                          disableCountrySelect
                           className={hasPhoneError ? 'border-destructive focus-visible:ring-destructive' : ''}
-                          inputMode="tel"
-                          maxLength={phoneMask ? phoneMask.length + 1 : undefined}
                         />
                       </FormControl>
 

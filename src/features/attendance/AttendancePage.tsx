@@ -1,5 +1,8 @@
 import { useState, useCallback } from 'react';
-import { ScanLine, Search, CheckCircle2, XCircle, Clock, RefreshCw, UserPlus } from 'lucide-react';
+import { ScanLine, Search, CheckCircle2, XCircle, Clock, RefreshCw, UserPlus, Timer } from 'lucide-react';
+import { useQuery } from '@tanstack/react-query';
+import { api } from '@/lib/axios';
+import { usePlanFeatures } from '@/hooks/use-plan-features';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { DatePicker } from '@/components/ui/date-picker';
@@ -169,14 +172,28 @@ export default function AttendancePage() {
 
   const [search,    setSearch]    = useState('');
   const [branchId,  setBranchId]  = useState('');
+  const [shiftId,   setShiftId]   = useState('');
   const [result,    setResult]    = useState<CheckInResult | ''>('');
   const [startDate, setStartDate] = useState('');
   const [endDate,   setEndDate]   = useState('');
   const [page,      setPage]      = useState(1);
   const [quickOpen, setQuickOpen] = useState(false);
 
+  const { hasFeature } = usePlanFeatures();
+
   const { data: branchesData } = useGetBranches({ limit: 100 });
   const branches = branchesData?.data ?? [];
+
+  // Fetch shifts for the selected branch (only when shifts feature is on)
+  const { data: shiftsData } = useQuery({
+    queryKey: ['shifts-for-filter', branchId || 'all'],
+    queryFn: () =>
+      api.get('/shifts', { params: { ...(branchId && { branchId }), isActive: 'true' } })
+         .then((r) => r.data.data as { _id: string; name: string }[]),
+    enabled: hasFeature('shifts'),
+    staleTime: 60_000,
+  });
+  const availableShifts = shiftsData ?? [];
 
   // BMs are scoped to their own branch
   const effectiveBranch = user?.role === 'branch_manager'
@@ -187,6 +204,7 @@ export default function AttendancePage() {
     page,
     limit: PAGE_SIZE,
     ...(effectiveBranch && { branchId: effectiveBranch }),
+    ...(shiftId         && { shiftId }),
     ...(result          && { result }),
     ...(search          && { search }),
     ...(startDate       && { startDate }),
@@ -200,7 +218,7 @@ export default function AttendancePage() {
   const totalPages  = data?.totalPages ?? 1;
 
   const handleReset = useCallback(() => {
-    setSearch(''); setBranchId(''); setResult('');
+    setSearch(''); setBranchId(''); setShiftId(''); setResult('');
     setStartDate(''); setEndDate(''); setPage(1);
   }, []);
 
@@ -287,6 +305,20 @@ export default function AttendancePage() {
           <option value="blocked">Blocked</option>
         </select>
 
+        {/* Shift filter — only shown when shifts feature is on */}
+        {hasFeature('shifts') && availableShifts.length > 0 && (
+          <select
+            className="border rounded-md px-3 h-8 text-sm bg-background"
+            value={shiftId}
+            onChange={(e) => { setShiftId(e.target.value); setPage(1); }}
+          >
+            <option value="">All Shifts</option>
+            {availableShifts.map((s) => (
+              <option key={s._id} value={s._id}>{s.name}</option>
+            ))}
+          </select>
+        )}
+
         <DatePicker
           value={startDate}
           onChange={(v) => { setStartDate(v ?? ''); setPage(1); }}
@@ -298,7 +330,7 @@ export default function AttendancePage() {
           className="h-8"
         />
 
-        {(search || branchId || result || startDate || endDate) && (
+        {(search || branchId || shiftId || result || startDate || endDate) && (
           <Button variant="ghost" size="sm" className="h-8" onClick={handleReset}>
             Clear
           </Button>
@@ -315,6 +347,7 @@ export default function AttendancePage() {
               <th className="px-4 py-2.5 font-medium">Time</th>
               <th className="px-4 py-2.5 font-medium">Method</th>
               <th className="px-4 py-2.5 font-medium">Result</th>
+              {hasFeature('shifts') && <th className="px-4 py-2.5 font-medium">Shift</th>}
               <th className="px-4 py-2.5 font-medium">Subscription Expiry</th>
             </tr>
           </thead>
@@ -322,7 +355,7 @@ export default function AttendancePage() {
             {isLoading ? (
               Array.from({ length: 8 }).map((_, i) => (
                 <tr key={i}>
-                  {Array.from({ length: 6 }).map((_, j) => (
+                  {Array.from({ length: hasFeature('shifts') ? 7 : 6 }).map((_, j) => (
                     <td key={j} className="px-4 py-3">
                       <div className="h-4 bg-muted animate-pulse rounded w-3/4" />
                     </td>
@@ -331,7 +364,7 @@ export default function AttendancePage() {
               ))
             ) : records.length === 0 ? (
               <tr>
-                <td colSpan={6} className="px-4 py-16 text-center text-muted-foreground text-sm">
+                <td colSpan={hasFeature('shifts') ? 7 : 6} className="px-4 py-16 text-center text-muted-foreground text-sm">
                   No check-in records found.
                 </td>
               </tr>
@@ -393,6 +426,18 @@ export default function AttendancePage() {
                       </div>
                     )}
                   </td>
+
+                  {/* Shift — only when feature is on */}
+                  {hasFeature('shifts') && (
+                    <td className="px-4 py-3 text-sm text-muted-foreground">
+                      {record.shiftName ? (
+                        <span className="flex items-center gap-1">
+                          <Timer className="h-3 w-3 flex-shrink-0" />
+                          {record.shiftName}
+                        </span>
+                      ) : '—'}
+                    </td>
+                  )}
 
                   {/* Expiry */}
                   <td className="px-4 py-3">

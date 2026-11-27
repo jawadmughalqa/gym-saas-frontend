@@ -35,6 +35,7 @@ export const memberFormSchema = z.object({
     // shared
     discountAmount:         z.coerce.number().min(0).default(0),
     startDate:              z.string().optional(),
+    allowedShiftIds:        z.array(z.string()).optional().default([]),
   }).default({
     enabled:                false,
     planId:                 '',
@@ -43,6 +44,7 @@ export const memberFormSchema = z.object({
     customBillingFrequency: 'monthly',
     discountAmount:         0,
     startDate:              '',
+    allowedShiftIds:        [],
   }),
 
   // Optional trainer assignment (create-only)
@@ -87,6 +89,7 @@ export const memberFormDefaults: MemberFormValues = {
     customBillingFrequency: 'monthly',
     discountAmount:         0,
     startDate:              '',
+    allowedShiftIds:        [],
   },
   trainer: {
     enabled:                 false,

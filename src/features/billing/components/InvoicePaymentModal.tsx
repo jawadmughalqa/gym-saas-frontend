@@ -27,6 +27,7 @@ import {
   FileText, Printer, Download, X, Loader2, ChevronRight,
   User, Building2, Phone, Mail, Calendar, Hash, Tag,
   Receipt, Clock, RotateCcw, ExternalLink, MessageCircle, History,
+  Wallet,
 } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
@@ -49,7 +50,8 @@ import { usePermission } from '@/hooks/use-permission';
 import { formatCurrency, formatDate } from '@/utils/format';
 import { cn } from '@/lib/utils';
 
-import { useMutation } from '@tanstack/react-query';
+import { useMutation, useQuery } from '@tanstack/react-query';
+import { api } from '@/lib/axios';
 import { orvalMutator } from '@/lib/orval-mutator';
 import {
   useGetInvoicesInvoiceId,
@@ -81,7 +83,8 @@ type PayMethodTab =
   | 'jazzcash'
   | 'easypaisa'
   | 'cheque'
-  | 'online';
+  | 'online'
+  | 'wallet';
 
 const PAY_METHODS: { value: PayMethodTab; label: string; icon: React.ReactNode }[] = [
   { value: 'cash',          label: 'Cash',          icon: <Banknote className="h-4 w-4" /> },
@@ -91,6 +94,7 @@ const PAY_METHODS: { value: PayMethodTab; label: string; icon: React.ReactNode }
   { value: 'easypaisa',     label: 'EasyPaisa',     icon: <Smartphone className="h-4 w-4" /> },
   { value: 'cheque',        label: 'Cheque',        icon: <FileText className="h-4 w-4" /> },
   { value: 'online',        label: 'Online',        icon: <ExternalLink className="h-4 w-4" /> },
+  { value: 'wallet',        label: 'Wallet',        icon: <Wallet className="h-4 w-4" /> },
 ];
 
 // Map UI payment method tabs to backend payment method enum
@@ -104,7 +108,7 @@ const paySchema = z.object({
   amount: z.coerce
     .number({ invalid_type_error: 'Enter a valid amount' })
     .positive('Amount must be greater than 0'),
-  method: z.enum(['cash', 'card', 'bank_transfer', 'jazzcash', 'easypaisa', 'cheque', 'online'] as const),
+  method: z.enum(['cash', 'card', 'bank_transfer', 'jazzcash', 'easypaisa', 'cheque', 'online', 'wallet'] as const),
   // Method-specific fields
   reference:      z.string().optional(),
   transactionId:  z.string().optional(),
@@ -383,6 +387,19 @@ function MethodExtraFields({
           <Label className="text-xs">Reference</Label>
           <Input placeholder="Order / ref number" disabled={disabled} className="h-9" {...register('reference')} />
         </div>
+      </div>
+    );
+  }
+
+  if (method === 'wallet') {
+    return (
+      <div className="rounded-md bg-emerald-500/10 border border-emerald-500/25 px-3 py-2.5 text-sm text-emerald-700">
+        <p className="font-medium flex items-center gap-1.5">
+          <Wallet className="h-4 w-4" /> Wallet Payment
+        </p>
+        <p className="text-xs text-emerald-600 mt-0.5">
+          The amount will be deducted from the member's wallet balance. The system will verify available balance before processing.
+        </p>
       </div>
     );
   }
@@ -1032,8 +1049,29 @@ export function InvoicePaymentModal({
     invoice &&
     ['issued', 'partially_paid', 'overdue'].includes(invoice.status);
 
+  // Wallet balance: fetched lazily when the wallet tab is active
+  const invoiceMemberId = invoice
+    ? (typeof invoice.memberId === 'string' ? invoice.memberId : invoice.memberId?._id)
+    : undefined;
+  const { data: walletMemberData } = useQuery({
+    queryKey: ['member-wallet-balance', invoiceMemberId],
+    queryFn: () => api.get(`/members/${invoiceMemberId}`).then((r) => r.data),
+    enabled: !!invoiceMemberId && activeTab === 'wallet' && open,
+    staleTime: 1000 * 30,
+  });
+  const walletBalance: number = (walletMemberData?.data as any)?.walletBalance ?? 0;
+
   function onSubmit(values: PayFormValues) {
     if (!invoice) return;
+    // Client-side wallet guard (backend enforces this too, but this gives immediate feedback)
+    if (values.method === 'wallet' && walletMemberData && walletBalance < values.amount) {
+      toast({
+        variant: 'destructive',
+        title: 'Insufficient wallet balance',
+        description: `Available: ${formatCurrency(walletBalance, invoice.currency)}, required: ${formatCurrency(values.amount, invoice.currency)}`,
+      });
+      return;
+    }
     setPendingPayment({ amount: values.amount, method: values.method });
     setView('confirm');
   }
@@ -1546,6 +1584,22 @@ export function InvoicePaymentModal({
                       </Tabs>
                     )}
                   />
+
+                  {/* Wallet balance summary when wallet tab is active */}
+                  {activeTab === 'wallet' && walletMemberData && (
+                    <div className={cn(
+                      'flex items-center justify-between rounded-md border px-3 py-2 text-sm',
+                      walletBalance >= Number(watchedAmount)
+                        ? 'bg-emerald-500/10 border-emerald-500/25 text-emerald-700'
+                        : 'bg-destructive/10 border-destructive/25 text-destructive',
+                    )}>
+                      <span className="flex items-center gap-1.5">
+                        <Wallet className="h-4 w-4" />
+                        Wallet Balance
+                      </span>
+                      <span className="font-semibold">{formatCurrency(walletBalance, invoice.currency)}</span>
+                    </div>
+                  )}
 
                   {/* Notes */}
                   <div className="space-y-1.5">

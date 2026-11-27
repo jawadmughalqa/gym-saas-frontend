@@ -24,6 +24,8 @@ import EmptyState from "@/components/shared/EmptyState";
 import { useGetBranchesBranchId } from "@/api/generated/branches/branches";
 import { useGetMembers } from "@/api/generated/members/members";
 import BranchForm from "./components/BranchForm";
+import ShiftManagement from "./components/ShiftManagement";
+import { usePlanFeatures } from "@/hooks/use-plan-features";
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -64,6 +66,7 @@ export default function BranchDetailPage() {
 
   const [editOpen, setEditOpen] = useState(false);
   const [membersPage, setMembersPage] = useState(1);
+  const { hasFeature } = usePlanFeatures();
 
   const { data: branchData, isLoading: branchLoading } = useGetBranchesBranchId(
     branchId!,
@@ -205,6 +208,9 @@ export default function BranchDetailPage() {
               </Badge>
             )}
           </TabsTrigger>
+          {hasFeature('shifts') && (
+            <TabsTrigger value="shifts">Shifts</TabsTrigger>
+          )}
         </TabsList>
 
         {/* ── Details tab ── */}
@@ -349,6 +355,13 @@ export default function BranchDetailPage() {
             <Pagination meta={membersPagination} onPageChange={setMembersPage} />
           )}
         </TabsContent>
+
+        {/* ── Shifts tab ── */}
+        {hasFeature('shifts') && (
+          <TabsContent value="shifts" className="mt-4">
+            <ShiftManagement branchId={branchId!} />
+          </TabsContent>
+        )}
       </Tabs>
 
       {/* Edit form */}

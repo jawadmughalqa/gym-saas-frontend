@@ -3,7 +3,7 @@ import { orvalMutator } from '@/lib/orval-mutator';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
-export type CheckInMethod = 'qr' | 'rfid' | 'manual' | 'app';
+export type CheckInMethod = 'qr' | 'rfid' | 'manual' | 'app' | 'biometric';
 export type CheckInResult = 'allowed' | 'blocked';
 
 export interface AttendanceMember {
@@ -26,21 +26,25 @@ export interface AttendanceSubscription {
 }
 
 export interface AttendanceRecord {
-  _id:          string;
-  timestamp:    string;
-  method:       CheckInMethod;
-  result:       CheckInResult;
-  blockReason?: string;
-  notes?:       string;
-  member:       AttendanceMember | null;
-  branch:       AttendanceBranch | null;
-  subscription: AttendanceSubscription | null;
+  _id:           string;
+  timestamp:     string;
+  method:        CheckInMethod;
+  result:        CheckInResult;
+  blockReason?:  string;
+  notes?:        string;
+  shiftId?:      string;
+  shiftName?:    string;
+  adminOverride?: boolean;
+  member:        AttendanceMember | null;
+  branch:        AttendanceBranch | null;
+  subscription:  AttendanceSubscription | null;
 }
 
 export interface AttendanceListParams {
   page?:      number;
   limit?:     number;
   branchId?:  string;
+  shiftId?:   string;
   result?:    CheckInResult;
   search?:    string;
   startDate?: string;
@@ -62,6 +66,7 @@ export const listAttendance = (params: AttendanceListParams) => {
   if (params.page)      qs.set('page',      String(params.page));
   if (params.limit)     qs.set('limit',     String(params.limit));
   if (params.branchId)  qs.set('branchId',  params.branchId);
+  if (params.shiftId)   qs.set('shiftId',   params.shiftId);
   if (params.result)    qs.set('result',    params.result);
   if (params.search)    qs.set('search',    params.search);
   if (params.startDate) qs.set('startDate', params.startDate);

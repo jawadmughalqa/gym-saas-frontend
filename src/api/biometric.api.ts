@@ -50,15 +50,16 @@ export function useCredentials(memberId: string) {
 // Two-step: get options from backend → browser Touch ID → send result back
 
 export async function enrollFingerprint(memberId: string, label: string): Promise<BiometricCredential> {
-  // Step 1 — get registration challenge from backend
-  const optionsRes = await orvalMutator<{ data: PublicKeyCredentialCreationOptionsJSON; message: string } & { headers?: Record<string, string> }>({
+  // Step 1 — get registration options + a server-side challenge token
+  const optionsRes = await orvalMutator<{ data: PublicKeyCredentialCreationOptionsJSON & { challengeToken: string }; message: string }>({
     url:    `/biometric/${memberId}/enroll-options`,
     method: 'GET',
   });
 
-  // The challenge comes back in the response body (options.challenge)
   const options = (optionsRes as any).data ?? optionsRes;
-  const challenge: string = options.challenge;
+  // challengeToken is an opaque reference to the server-stored challenge.
+  // We send it back instead of the raw challenge string — the server looks it up.
+  const challengeToken: string = options.challengeToken;
 
   // Step 2 — trigger browser Touch ID / Face ID
   const registrationResponse = await startRegistration({ optionsJSON: options });
@@ -67,7 +68,7 @@ export async function enrollFingerprint(memberId: string, label: string): Promis
   const credential = await orvalMutator<{ data: BiometricCredential }>({
     url:    `/biometric/${memberId}/enroll-verify`,
     method: 'POST',
-    data:   { response: registrationResponse, challenge, label },
+    data:   { response: registrationResponse, challengeToken, label },
   });
 
   return (credential as any).data ?? credential;
@@ -84,14 +85,15 @@ export function useEnrollFingerprint(memberId: string) {
 // ─── Test access (verify fingerprint) ────────────────────────────────────────
 
 export async function testBiometricAccess(memberId: string): Promise<AuthResult> {
-  // Step 1 — get auth challenge scoped to this member
+  // Step 1 — get auth options + a server-side challenge token
   const optionsRes = await orvalMutator<any>({
     url:    `/biometric/auth-options?memberId=${memberId}`,
     method: 'GET',
   });
 
   const options = optionsRes?.data ?? optionsRes;
-  const challenge: string = options.challenge;
+  // challengeToken echoed back to the server — it never trusts the raw challenge from the client
+  const challengeToken: string = options.challengeToken;
 
   // Step 2 — trigger browser Touch ID / Face ID
   const authResponse = await startAuthentication({ optionsJSON: options });
@@ -100,7 +102,7 @@ export async function testBiometricAccess(memberId: string): Promise<AuthResult>
   const result = await orvalMutator<any>({
     url:    `/biometric/auth-verify`,
     method: 'POST',
-    data:   { response: authResponse, challenge },
+    data:   { response: authResponse, challengeToken },
   });
 
   return result?.data ?? result;

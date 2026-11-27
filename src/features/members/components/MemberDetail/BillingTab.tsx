@@ -11,7 +11,7 @@
  */
 
 import { useState } from 'react';
-import { FilePlus, ExternalLink, Banknote, Landmark } from 'lucide-react';
+import { FilePlus, ExternalLink, Banknote, Landmark, Wallet, ArrowUpRight, ArrowDownLeft } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useQueryClient } from '@tanstack/react-query';
 import { Button } from '@/components/ui/button';
@@ -83,6 +83,17 @@ export function BillingTab({ memberId, branchId, memberName }: BillingTabProps) 
     staleTime: 30_000,
   });
   const walletPayouts = payoutsData ?? [];
+
+  // ── Fetch wallet transaction ledger ───────────────────────────────────────
+  const { data: walletTxnData } = useQuery({
+    queryKey: ['wallet-transactions', memberId],
+    queryFn:  async () => {
+      const res = await api.get<{ data: any[]; total: number }>(`/members/${memberId}/wallet/transactions`, { params: { limit: 20 } });
+      return res.data;
+    },
+    staleTime: 30_000,
+  });
+  const walletTransactions: any[] = (walletTxnData as any)?.data ?? [];
 
   // ── Fetch invoices for this member ─────────────────────────────────────────
   const { data: invoicesData, isLoading, refetch } = useGetInvoices(
@@ -329,7 +340,7 @@ export function BillingTab({ memberId, branchId, memberName }: BillingTabProps) 
                       </div>
                       <div className="flex-1 min-w-0">
                         <p className="text-sm font-medium text-emerald-500 leading-tight">
-                          {formatCurrency(payout.amount, payout.medium === 'cash' ? CURRENCY : CURRENCY)} paid out
+                          {formatCurrency(payout.amount, tenantCurrency)} paid out
                           {' '}
                           <span className="font-normal text-emerald-500">
                             via {payout.medium === 'cash' ? 'Cash' : 'Bank Transfer'}
@@ -344,6 +355,52 @@ export function BillingTab({ memberId, branchId, memberName }: BillingTabProps) 
                       <p className="text-xs text-muted-foreground shrink-0">
                         {formatDate(payout.createdAt)}
                       </p>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </>
+          )}
+
+          {/* ── Wallet transaction ledger ──────────────────────────────────── */}
+          {walletTransactions.length > 0 && (
+            <>
+              <Separator />
+              <div className="space-y-2">
+                <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide flex items-center gap-1.5">
+                  <Wallet className="h-3.5 w-3.5" />
+                  Wallet Ledger
+                </p>
+                <div className="space-y-1 divide-y rounded-lg border overflow-hidden">
+                  {walletTransactions.map((txn: any) => (
+                    <div key={txn._id} className="flex items-center gap-3 px-3 py-2.5 bg-card">
+                      <div className={cn(
+                        'flex h-7 w-7 items-center justify-center rounded-full shrink-0',
+                        txn.type === 'credit'
+                          ? 'bg-emerald-500/15'
+                          : 'bg-red-500/15',
+                      )}>
+                        {txn.type === 'credit'
+                          ? <ArrowDownLeft className="h-3.5 w-3.5 text-emerald-600" />
+                          : <ArrowUpRight  className="h-3.5 w-3.5 text-red-500" />}
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-xs font-medium capitalize text-foreground">
+                          {txn.source?.replace(/_/g, ' ') ?? txn.type}
+                        </p>
+                        {txn.note && (
+                          <p className="text-[11px] text-muted-foreground truncate">{txn.note}</p>
+                        )}
+                      </div>
+                      <div className="text-right shrink-0">
+                        <p className={cn(
+                          'text-sm font-semibold',
+                          txn.type === 'credit' ? 'text-emerald-600' : 'text-red-500',
+                        )}>
+                          {txn.type === 'credit' ? '+' : '-'}{formatCurrency(txn.amount, tenantCurrency)}
+                        </p>
+                        <p className="text-[11px] text-muted-foreground">{formatDate(txn.createdAt)}</p>
+                      </div>
                     </div>
                   ))}
                 </div>

@@ -141,7 +141,7 @@ export function WalletPayoutDialog({ open, onOpenChange, memberId, walletBalance
             Record cash or bank transfer returned to the member.
             Available balance:{' '}
             <strong className="text-emerald-500">
-              {formatCurrency(walletBalance, CURRENCY)}
+              {formatCurrency(walletBalance, currency)}
             </strong>
           </DialogDescription>
         </DialogHeader>

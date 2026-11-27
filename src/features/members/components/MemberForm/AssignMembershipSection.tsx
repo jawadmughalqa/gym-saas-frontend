@@ -14,7 +14,8 @@
 
 import { useState } from 'react';
 import { useController, type Control, type FieldErrors } from 'react-hook-form';
-import { ChevronDown, ChevronUp, Plus } from 'lucide-react';
+import { useQuery } from '@tanstack/react-query';
+import { ChevronDown, ChevronUp, Plus, Timer } from 'lucide-react';
 import { Button }    from '@/components/ui/button';
 import { Input }     from '@/components/ui/input';
 import { Label }     from '@/components/ui/label';
@@ -31,6 +32,8 @@ import { useGetMembershipPlans } from '@/api/generated/membership-plans/membersh
 import type { MembershipPlan }   from '@/api/generated/schemas';
 import type { MemberFormValues } from './types';
 import { useTenantCurrency } from '@/hooks/use-tenant-currency';
+import { usePlanFeatures }   from '@/hooks/use-plan-features';
+import { api }               from '@/lib/axios';
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 
@@ -52,16 +55,19 @@ interface Props {
   isPending:  boolean;
   /** Populated once the member is saved — used to display currency symbol. */
   currency?:  string;
+  /** Branch the member is being registered at — needed for shift lookup. */
+  branchId?:  string;
 }
 
 // ─── Component ────────────────────────────────────────────────────────────────
 
-export function AssignMembershipSection({ control, errors, isPending, currency: currencyProp }: Props) {
+export function AssignMembershipSection({ control, errors, isPending, currency: currencyProp, branchId }: Props) {
   const { currency: tenantCurrency } = useTenantCurrency();
   const currency = currencyProp ?? tenantCurrency;
   const [expanded,      setExpanded]      = useState(false);
   const [pricingMode,   setPricingMode]   = useState<'plan' | 'custom'>('plan');
   const [selectedPlan,  setSelectedPlan]  = useState<MembershipPlan | null>(null);
+  const { hasFeature } = usePlanFeatures();
 
   // ── Fetch plans only when section is opened ───────────────────────────────
   const { data: plansResponse, isLoading: loadingPlans } = useGetMembershipPlans(
@@ -70,14 +76,27 @@ export function AssignMembershipSection({ control, errors, isPending, currency: 
   );
   const plans: MembershipPlan[] = plansResponse?.data ?? [];
 
+  // ── Fetch branch shifts when shifts feature is on ─────────────────────────
+  const { data: shiftsData } = useQuery({
+    queryKey: ['shifts', branchId ?? 'none'],
+    queryFn: () =>
+      api.get<{ success: boolean; data: { _id: string; name: string; startTime: string; endTime: string }[] }>(
+        '/shifts', { params: { branchId, isActive: 'true' } }
+      ).then((r) => r.data.data),
+    enabled: expanded && hasFeature('shifts') && !!branchId,
+    staleTime: 60_000,
+  });
+  const availableShifts = shiftsData ?? [];
+
   // ── Controlled fields via react-hook-form Controller ─────────────────────
-  const { field: planIdField }    = useController({ control, name: 'membership.planId' });
-  const { field: discountField }  = useController({ control, name: 'membership.discountAmount' });
-  const { field: labelField }     = useController({ control, name: 'membership.customLabel' });
-  const { field: priceField }     = useController({ control, name: 'membership.customPrice' });
-  const { field: freqField }      = useController({ control, name: 'membership.customBillingFrequency' });
-  const { field: startDateField } = useController({ control, name: 'membership.startDate' });
-  const { field: enabledField }   = useController({ control, name: 'membership.enabled' });
+  const { field: planIdField }        = useController({ control, name: 'membership.planId' });
+  const { field: discountField }      = useController({ control, name: 'membership.discountAmount' });
+  const { field: labelField }         = useController({ control, name: 'membership.customLabel' });
+  const { field: priceField }         = useController({ control, name: 'membership.customPrice' });
+  const { field: freqField }          = useController({ control, name: 'membership.customBillingFrequency' });
+  const { field: startDateField }     = useController({ control, name: 'membership.startDate' });
+  const { field: enabledField }       = useController({ control, name: 'membership.enabled' });
+  const { field: shiftIdsField }      = useController({ control, name: 'membership.allowedShiftIds' });
 
   // ── Price preview ─────────────────────────────────────────────────────────
   const discount      = Number(discountField.value)  || 0;
@@ -111,8 +130,17 @@ export function AssignMembershipSection({ control, errors, isPending, currency: 
       priceField.onChange(0);
       freqField.onChange('monthly');
       startDateField.onChange('');
+      shiftIdsField.onChange([]);
       setSelectedPlan(null);
     }
+  }
+
+  // ── Shift multi-select toggle ─────────────────────────────────────────────
+  function toggleShift(id: string) {
+    const current = (shiftIdsField.value as string[]) ?? [];
+    shiftIdsField.onChange(
+      current.includes(id) ? current.filter((x) => x !== id) : [...current, id],
+    );
   }
 
   // ── Mode switch ───────────────────────────────────────────────────────────
@@ -358,6 +386,38 @@ export function AssignMembershipSection({ control, errors, isPending, currency: 
               Defaults to today. Change if the membership starts on a different date.
             </p>
           </div>
+
+          {/* ── Shift access restriction (shifts feature + branchId required) ── */}
+          {hasFeature('shifts') && branchId && availableShifts.length > 0 && (
+            <div className="space-y-1.5">
+              <Label className="flex items-center gap-1.5">
+                <Timer className="h-3.5 w-3.5" />
+                Allowed Shifts
+                <span className="text-xs text-muted-foreground font-normal ml-1">(optional — leave empty for unrestricted access)</span>
+              </Label>
+              <div className="flex flex-wrap gap-2">
+                {availableShifts.map((s) => {
+                  const selected = ((shiftIdsField.value as string[]) ?? []).includes(s._id);
+                  return (
+                    <button
+                      key={s._id}
+                      type="button"
+                      onClick={() => toggleShift(s._id)}
+                      disabled={isPending}
+                      className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg border text-xs font-medium transition-colors ${
+                        selected
+                          ? 'border-primary bg-primary/10 text-primary'
+                          : 'border-border text-muted-foreground hover:border-primary/50 hover:text-foreground'
+                      }`}
+                    >
+                      <span>{s.name}</span>
+                      <span className="font-mono opacity-70">{s.startTime}–{s.endTime}</span>
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          )}
 
           {/* ── Final price preview — shown once plan/price is selected ──── */}
           {(selectedPlan || (pricingMode === 'custom' && Number(priceField.value) > 0)) && (

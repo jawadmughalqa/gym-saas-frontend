@@ -244,6 +244,9 @@ export default function MemberForm({
                   discountAmount:    Number(m.discountAmount) || 0,
                   startDate:         m.startDate || undefined,
                   autoCreateInvoice: true,
+                  ...(m.allowedShiftIds && m.allowedShiftIds.length > 0
+                    ? { allowedShiftIds: m.allowedShiftIds }
+                    : {}),
                 }
               : {
                   pricingType:            'custom',
@@ -255,6 +258,9 @@ export default function MemberForm({
                   discountAmount:         Number(m.discountAmount) || 0,
                   startDate:              m.startDate || undefined,
                   autoCreateInvoice:      true,
+                  ...(m.allowedShiftIds && m.allowedShiftIds.length > 0
+                    ? { allowedShiftIds: m.allowedShiftIds }
+                    : {}),
                 },
           });
 
@@ -417,6 +423,7 @@ export default function MemberForm({
                   control={control}
                   errors={errors}
                   isPending={isPending}
+                  branchId={watch('branchId') || undefined}
                 />
                 <AssignTrainerSection
                   control={control}

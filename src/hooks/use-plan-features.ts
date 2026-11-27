@@ -23,6 +23,7 @@ const ALL_FEATURES_ENABLED: Required<TenantFeatureFlags> = {
   notificationChannels: true,
   biometricAccess:      true,
   automatedCampaigns:   true,
+  shifts:               true,
 };
 
 export type PlanFeatureKey = keyof Required<TenantFeatureFlags>;
@@ -105,6 +106,7 @@ export function usePlanFeatures(): UsePlanFeaturesResult {
     notificationChannels: raw['notificationChannels'] ?? false,
     biometricAccess:      raw['biometricAccess']      ?? false,
     automatedCampaigns:   raw['automatedCampaigns']   ?? true,
+    shifts:               raw['shifts']               ?? false,
   };
 
   return {
